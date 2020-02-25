@@ -282,7 +282,7 @@ void DorisMetrics::initialize(
         _metrics->register_metric("disks_data_used_capacity", MetricLabels().add("path", path), gauge);
         gauge = disks_state.set_key(path);
         _metrics->register_metric("disks_state", MetricLabels().add("path", path), gauge);
-    } 
+    }
 
     REGISTER_DORIS_METRIC(push_request_write_bytes_per_second);
     REGISTER_DORIS_METRIC(query_scan_bytes_per_second);
