@@ -33,7 +33,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -118,7 +117,7 @@ public class FileSystemManager {
             if (components[1].equals("_HOST")) {
                 // Convert hostname(fqdn) to lower case according to SecurityUtil.getServerPrincipal
                 finalPrincipal = components[0] + "/" +
-                        StringUtils.toLowerCase(InetAddress.getLocalHost().getCanonicalHostName())
+                    InetAddress.getLocalHost().getCanonicalHostName().toLowerCase()
                         + "@" + components[2];
             } else if (components[1].equals("_IP")) {
                 finalPrincipal = components[0] + "/" +

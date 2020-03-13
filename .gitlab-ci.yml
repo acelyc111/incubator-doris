@@ -1,0 +1,26 @@
+image:
+  name: cr.d.xiaomi.net/doris/doris:1.2
+
+before_script:
+  - echo "Working Directory is $(pwd)"
+
+stages:
+  - test
+  - package
+
+build_and_test_be_job:
+  stage: test
+  script:
+    - ./run-ut.sh --run
+
+build_and_test_fe_job:
+  stage: test
+  script:
+    - ./run-fe-ut.sh
+
+package_job:
+  only:
+    - tags
+  stage: package
+  script:
+    - ./make_distribution.sh

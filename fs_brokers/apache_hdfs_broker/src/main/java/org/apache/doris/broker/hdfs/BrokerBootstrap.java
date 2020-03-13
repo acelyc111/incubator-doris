@@ -43,10 +43,10 @@ public class BrokerBootstrap {
                 return;
             }
             System.setProperty("BROKER_LOG_DIR", System.getenv("BROKER_LOG_DIR"));
-            PropertyConfigurator.configure(brokerHome + "/conf/log4j.properties");
+            PropertyConfigurator.configure(brokerHome + "/log4j.properties");
             Logger logger = Logger.getLogger(BrokerBootstrap.class);
             logger.info("starting apache hdfs broker....");
-            new BrokerConfig().init(brokerHome + "/conf/apache_hdfs_broker.conf");
+            new BrokerConfig().init(brokerHome + "/apache_hdfs_broker.conf");
 
             TProcessor tprocessor = new TPaloBrokerService.Processor<TPaloBrokerService.Iface>(
                     new HDFSBrokerServiceImpl());

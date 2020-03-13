@@ -82,7 +82,11 @@ public class PaloFe {
             }
 
             // init config
-            new Config().init(dorisHomeDir + "/conf/fe.conf");
+            String dorisConfHome = System.getenv("DORIS_CONF_HOME");
+            if (Strings.isNullOrEmpty(dorisConfHome)) {
+                dorisConfHome = dorisHomeDir + "/conf/";
+            }
+            new Config().init(dorisConfHome + "/fe.conf");
 
             // check it after Config is initialized, otherwise the config 'check_java_version' won't work.
             if (!JdkUtils.checkJavaVersion()) {

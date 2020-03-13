@@ -36,6 +36,7 @@ under the License.
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <hadoop.version>2.6.0-mdh3.12-jre8-SNAPSHOT</hadoop.version>
     </properties>
 
     <profiles>
@@ -170,28 +171,28 @@ under the License.
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-annotations</artifactId>
-            <version>2.7.3</version>
+            <version>${hadoop.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-auth -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-auth</artifactId>
-            <version>2.7.3</version>
+            <version>${hadoop.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-common -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>2.7.3</version>
+            <version>${hadoop.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-hdfs -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
-            <version>2.7.3</version>
+            <version>${hadoop.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.htrace/htrace-core -->

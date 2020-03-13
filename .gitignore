@@ -8,6 +8,7 @@ gensrc/build
 fe/target
 thirdparty/src
 thirdparty/installed
+thirdparty/log
 *.so.tmp
 .DS_Store
 *.iml
@@ -23,6 +24,12 @@ fe_plugins/*/target
 fe_plugins/output
 fe/mocked
 
+fs_brokers/apache_hdfs_broker/src/main/resources/
+fs_brokers/apache_hdfs_broker/src/main/thrift/
+doris-0.11-branch-mdh.tar.gz
+doris-0.11-branch-mdh/
+doris-0.12-branch-mdh.tar.gz
+doris-0.12-branch-mdh.tar.gz
 
 #ignore eclipse project file & idea  project file
 .cproject
