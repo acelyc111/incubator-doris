@@ -23,6 +23,7 @@
 
 #include "runtime/fragment_mgr.h"
 #include "runtime/result_queue_mgr.h"
+#include "util/doris_metrics.h"
 #include "util/uid_util.h"
 
 namespace doris {
@@ -32,6 +33,11 @@ ExternalScanContextMgr::ExternalScanContextMgr(ExecEnv* exec_env) : _exec_env(ex
     _keep_alive_reaper.reset(
             new std::thread(
                     std::bind<void>(std::mem_fn(&ExternalScanContextMgr::gc_expired_context), this)));
+    REGISTER_PRIVATE_VARIABLE_METRIC(active_scan_context_count);
+    DorisMetrics::metrics()->register_hook("active_scan_context_count", [&]() {
+        std::lock_guard<std::mutex> l(_lock);
+        _active_scan_context_count.set_value(_active_contexts.size());
+    });
 }
 
 Status ExternalScanContextMgr::create_scan_context(std::shared_ptr<ScanContext>* p_context) {

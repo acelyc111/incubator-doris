@@ -20,6 +20,7 @@
 #include "runtime/buffer_control_block.h"
 #include "runtime/raw_value.h"
 #include "util/debug_util.h"
+#include "util/doris_metrics.h"
 #include "gen_cpp/PaloInternalService_types.h"
 #include "gen_cpp/types.pb.h"
 
@@ -33,6 +34,11 @@ namespace doris {
 
 ResultBufferMgr::ResultBufferMgr()
     : _is_stop(false) {
+    REGISTER_PRIVATE_VARIABLE_METRIC(result_buffer_block_count);
+    DorisMetrics::metrics()->register_hook("result_buffer_block_count", [&]() {
+        boost::lock_guard<boost::mutex> l(_lock);
+        _result_buffer_block_count.set_value(_buffer_map.size());
+    });
 }
 
 ResultBufferMgr::~ResultBufferMgr() {

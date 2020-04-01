@@ -30,6 +30,7 @@
 #include "http/rest_monitor_iface.h"
 #include "gen_cpp/Types_types.h"
 #include "util/hash_util.hpp"
+#include "util/metrics.h"
 
 namespace doris {
 
@@ -101,6 +102,10 @@ private:
     std::unordered_set<TUniqueId> _running_jobs;
     LruCache<TUniqueId, EtlJobCtx> _success_jobs;
     LruCache<TUniqueId, EtlJobCtx> _failed_jobs;
+
+    UIntGauge _running_etl_job_count;
+    UIntGauge _cache_success_etl_job_count;
+    UIntGauge _cache_failed_etl_job_count;
 };
 
 }

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "olap/rowset/rowset_id_generator.h"
+#include "util/metrics.h"
 #include "util/spinlock.h"
 #include "util/uid_util.h"
 
@@ -40,6 +41,8 @@ private:
     const int64_t _version = 2; // modify it when create new version id generator
     std::atomic<int64_t> _inc_id;
     std::unordered_set<RowsetId, RowsetIdHash> _valid_rowset_ids;
+
+    UIntGauge _rowset_count_generated_and_in_use;
 
     DISALLOW_COPY_AND_ASSIGN(UniqueRowsetIdGenerator);
 }; // UniqueRowsetIdGenerator

@@ -22,6 +22,8 @@
 #include <mutex>
 
 #include "runtime/routine_load/data_consumer_pool.h"
+#include "util/doris_metrics.h"
+#include "util/metrics.h"
 #include "util/priority_thread_pool.hpp"
 #include "util/uid_util.h"
 
@@ -46,6 +48,11 @@ public:
         _exec_env(exec_env),
         _thread_pool(config::routine_load_thread_pool_size, 1),
         _data_consumer_pool(10) {
+        REGISTER_PRIVATE_VARIABLE_METRIC(routine_load_task_count);
+        DorisMetrics::metrics()->register_hook("routine_load_task_count", [&]() {
+            std::lock_guard<std::mutex> l(_lock);
+            _routine_load_task_count.set_value(_task_map.size());
+        });
 
         _data_consumer_pool.start_bg_worker();
     }
@@ -80,6 +87,8 @@ private:
     std::mutex _lock;
     // task id -> load context
     std::unordered_map<UniqueId, StreamLoadContext*> _task_map;
+
+    UIntGauge _routine_load_task_count;
 };
 
 } // end namespace

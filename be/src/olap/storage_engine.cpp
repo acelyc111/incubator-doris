@@ -123,6 +123,11 @@ StorageEngine::StorageEngine(const EngineOptions& options)
     if (_s_instance == nullptr) {
         _s_instance = this;
     }
+    REGISTER_PRIVATE_VARIABLE_METRIC(unused_rowsets_count);
+    DorisMetrics::metrics()->register_hook("unused_rowsets_count", [&]() {
+        MutexLock lock(&_gc_mutex);
+        _unused_rowsets_count.set_value(_unused_rowsets.size());
+    });
 }
 
 StorageEngine::~StorageEngine() {

@@ -24,6 +24,8 @@
 #include "gen_cpp/internal_service.pb.h"
 #include "gen_cpp/palo_internal_service.pb.h"
 #include "service/brpc.h"
+#include "util/doris_metrics.h"
+#include "util/metrics.h"
 #include "util/spinlock.h"
 
 namespace doris {
@@ -33,6 +35,11 @@ class BrpcStubCache {
 public:
     BrpcStubCache() {
         _stub_map.init(239);
+        REGISTER_PRIVATE_VARIABLE_METRIC(brpc_endpoint_stub_count);
+        DorisMetrics::metrics()->register_hook("brpc_endpoint_stub_count", [&]() {
+            std::lock_guard<SpinLock> l(_lock);
+            _brpc_endpoint_stub_count.set_value(_stub_map.size());
+        });
     }
     ~BrpcStubCache() {
         for (auto& stub : _stub_map) {
@@ -79,6 +86,8 @@ public:
 private:
     SpinLock _lock;
     butil::FlatMap<butil::EndPoint, palo::PInternalService_Stub*> _stub_map;
+
+    UIntGauge _brpc_endpoint_stub_count;
 };
 
 }

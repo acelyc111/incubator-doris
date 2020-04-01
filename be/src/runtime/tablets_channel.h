@@ -23,6 +23,7 @@
 #include "runtime/descriptors.h"
 #include "runtime/mem_tracker.h"
 #include "util/bitmap.h"
+#include "util/metrics.h"
 #include "util/priority_thread_pool.hpp"
 #include "util/uid_util.h"
 
@@ -124,6 +125,8 @@ private:
     std::unordered_set<int64_t> _partition_ids;
 
     std::unique_ptr<MemTracker> _mem_tracker;
+
+    static UIntGauge _s_tablet_writer_count;
 };
 
 

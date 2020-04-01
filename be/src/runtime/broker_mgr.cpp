@@ -25,12 +25,18 @@
 #include "service/backend_options.h"
 #include "runtime/exec_env.h"
 #include "runtime/client_cache.h"
+#include "util/doris_metrics.h"
 #include "util/thrift_util.h"
 
 namespace doris {
 
 BrokerMgr::BrokerMgr(ExecEnv* exec_env) : 
         _exec_env(exec_env), _thread_stop(false), _ping_thread(&BrokerMgr::ping_worker, this) {
+    REGISTER_PRIVATE_VARIABLE_METRIC(broker_count);
+    DorisMetrics::metrics()->register_hook("broker_count", [&]() {
+        std::lock_guard<std::mutex> l(_mutex);
+        _broker_count.set_value(_broker_set.size());
+    });
 }
 
 BrokerMgr::~BrokerMgr() {

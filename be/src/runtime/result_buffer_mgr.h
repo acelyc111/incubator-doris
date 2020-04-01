@@ -27,6 +27,7 @@
 #include <boost/thread/thread.hpp>
 #include "common/status.h"
 #include "gen_cpp/Types_types.h"
+#include "util/metrics.h"
 #include "util/uid_util.h"
 
 namespace doris {
@@ -83,6 +84,10 @@ private:
     TimeoutMap _timeout_map;
 
     boost::scoped_ptr<boost::thread> _cancel_thread;
+
+    // Each BufferControlBlock has a limited queue size of 1024, it's not needed to count the
+    // actual size of all BufferControlBlock.
+    UIntGauge _result_buffer_block_count;
 };
 
 // TUniqueId hash function used for boost::unordered_map

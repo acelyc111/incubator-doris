@@ -31,6 +31,7 @@
 #include "runtime/descriptors.h"  // for PlanNodeId
 #include "runtime/mem_tracker.h"
 #include "runtime/query_statistics.h"
+#include "util/metrics.h"
 #include "util/runtime_profile.h"
 #include "gen_cpp/palo_internal_service.pb.h"
 #include "gen_cpp/Types_types.h"  // for TUniqueId
@@ -66,7 +67,7 @@ class PUniqueId;
 // per-query memory limits.
 class DataStreamMgr {
 public:
-    DataStreamMgr() {}
+    DataStreamMgr();
 
     // Create a receiver for a specific fragment_instance_id/node_id destination;
     // If is_merging is true, the receiver maintains a separate queue of incoming row
@@ -132,6 +133,9 @@ private:
     Status deregister_recvr(const TUniqueId& fragment_instance_id, PlanNodeId node_id);
 
     inline uint32_t get_hash_value(const TUniqueId& fragment_instance_id, PlanNodeId node_id);
+
+    UIntGauge _data_stream_receiver_count;
+    UIntGauge _fragment_endpoint_count;
 };
 
 }

@@ -26,6 +26,7 @@
 #include "runtime/data_stream_recvr.h"
 #include "runtime/raw_value.h"
 #include "runtime/runtime_state.h"
+#include "util/doris_metrics.h"
 #include "util/uid_util.h"
 
 #include "gen_cpp/types.pb.h" // PUniqueId
@@ -39,6 +40,19 @@ using boost::shared_ptr;
 using boost::unique_lock;
 using boost::try_mutex;
 using boost::lock_guard;
+
+DataStreamMgr::DataStreamMgr() {
+    REGISTER_PRIVATE_VARIABLE_METRIC(data_stream_receiver_count);
+    DorisMetrics::metrics()->register_hook("data_stream_receiver_count", [&]() {
+        lock_guard<mutex> l(_lock);
+        _data_stream_receiver_count.set_value(_receiver_map.size());
+    });
+    REGISTER_PRIVATE_VARIABLE_METRIC(fragment_endpoint_count);
+    DorisMetrics::metrics()->register_hook("fragment_endpoint_count", [&]() {
+        lock_guard<mutex> l(_lock);
+        _fragment_endpoint_count.set_value(_fragment_stream_set.size());
+    });
+}
 
 inline uint32_t DataStreamMgr::get_hash_value(
         const TUniqueId& fragment_instance_id, PlanNodeId node_id) {

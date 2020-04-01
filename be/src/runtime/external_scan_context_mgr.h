@@ -28,6 +28,7 @@
 #include "common/status.h"
 #include "gen_cpp/Types_types.h"
 #include "runtime/exec_env.h"
+#include "util/metrics.h"
 
 namespace doris {
 
@@ -70,6 +71,8 @@ private:
     bool _is_stop;
     std::unique_ptr<std::thread> _keep_alive_reaper;
     std::mutex _lock;
+
+    UIntGauge _active_scan_context_count;
 };
 
 }

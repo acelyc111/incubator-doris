@@ -24,11 +24,18 @@
 #include "gen_cpp/Types_types.h"
 #include "runtime/exec_env.h"
 #include "util/arrow/row_batch.h"
+#include "util/doris_metrics.h"
 
 namespace doris {
 
-ResultQueueMgr::ResultQueueMgr() {
+ResultQueueMgr::ResultQueueMgr() : _max_sink_batch_count(config::max_memory_sink_batch_count) {
+    REGISTER_PRIVATE_VARIABLE_METRIC(result_block_queue_count);
+    DorisMetrics::metrics()->register_hook("result_block_queue_count", [&]() {
+        std::lock_guard<std::mutex> l(_lock);
+        _result_block_queue_count.set_value(_fragment_queue_map.size());
+    });
 }
+
 ResultQueueMgr::~ResultQueueMgr() {
 }
 

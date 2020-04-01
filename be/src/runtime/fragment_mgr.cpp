@@ -365,6 +365,11 @@ FragmentMgr::FragmentMgr(ExecEnv* exec_env) :
         // TODO(zc): we need a better thread-pool
         // now one user can use all the thread pool, others have no resource.
         _thread_pool(config::fragment_pool_thread_num, config::fragment_pool_queue_size) {
+    REGISTER_PRIVATE_VARIABLE_METRIC(plan_fragment_count);
+    DorisMetrics::metrics()->register_hook("plan_fragment_count", [&]() {
+        std::lock_guard<std::mutex> lock(_lock);
+        _plan_fragment_count.set_value(_fragment_map.size());
+    });
 }
 
 FragmentMgr::~FragmentMgr() {

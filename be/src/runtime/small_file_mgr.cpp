@@ -31,6 +31,7 @@
 #include "gen_cpp/HeartbeatService.h"
 #include "http/http_client.h"
 #include "runtime/exec_env.h"
+#include "util/doris_metrics.h"
 #include "util/file_utils.h"
 #include "util/md5.h"
 
@@ -42,6 +43,11 @@ SmallFileMgr::SmallFileMgr(
         const std::string& local_path) :
     _exec_env(env),
     _local_path(local_path) {
+    REGISTER_PRIVATE_VARIABLE_METRIC(small_file_cache_count);
+    DorisMetrics::metrics()->register_hook("small_file_cache_count", [&]() {
+        std::lock_guard<std::mutex> l(_lock);
+        _small_file_cache_count.set_value(_file_cache.size());
+    });
 }
 
 SmallFileMgr::~SmallFileMgr() {

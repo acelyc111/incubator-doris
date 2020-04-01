@@ -47,6 +47,9 @@ private:
     std::unordered_map<std::string, IntGauge> metrics;
 };
 
+#define REGISTER_METRIC(name, metric) DorisMetrics::metrics()->register_metric(#name, &metric)
+#define REGISTER_PRIVATE_VARIABLE_METRIC(name) REGISTER_METRIC(#name, _##name)
+
 class DorisMetrics {
 public:
     // counters

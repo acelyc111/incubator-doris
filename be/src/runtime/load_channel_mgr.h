@@ -28,6 +28,7 @@
 #include "gen_cpp/PaloInternalService_types.h"
 #include "gen_cpp/internal_service.pb.h"
 #include "runtime/tablets_channel.h"
+#include "util/metrics.h"
 #include "util/uid_util.h"
 
 namespace doris {
@@ -76,6 +77,8 @@ private:
     std::thread _load_channels_clean_thread;
     Status _start_load_channels_clean();
     std::atomic<bool> _is_stopped;
+
+    UIntGauge _load_channel_count;
 };
 
 }
