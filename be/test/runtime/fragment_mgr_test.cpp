@@ -23,8 +23,6 @@
 #include "exec/data_sink.h"
 #include "runtime/plan_fragment_executor.h"
 #include "runtime/row_batch.h"
-#include "exec/data_sink.h"
-#include "common/config.h"
 #include "util/doris_metrics.h"
 #include "util/monotime.h"
 
