@@ -28,7 +28,7 @@
 
 namespace doris {
 
-ResultQueueMgr::ResultQueueMgr() : _max_sink_batch_count(config::max_memory_sink_batch_count) {
+ResultQueueMgr::ResultQueueMgr() {
     REGISTER_PRIVATE_VARIABLE_METRIC(result_block_queue_count);
     DorisMetrics::metrics()->register_hook("result_block_queue_count", [&]() {
         std::lock_guard<std::mutex> l(_lock);

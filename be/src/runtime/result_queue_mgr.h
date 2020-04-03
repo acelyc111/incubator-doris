@@ -60,8 +60,6 @@ private:
     std::mutex _lock;
     std::unordered_map<TUniqueId, BlockQueueSharedPtr> _fragment_queue_map;
 
-    u_int32_t _max_sink_batch_count;
-
     // Each BlockingQueue has a limited size (default 20, by config::max_memory_sink_batch_count),
     // it's not needed to count the actual size of all BlockingQueue.
     UIntGauge _result_block_queue_count;
