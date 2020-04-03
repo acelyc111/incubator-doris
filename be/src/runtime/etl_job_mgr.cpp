@@ -30,7 +30,6 @@
 #include "runtime/data_spliter.h"
 #include "runtime/runtime_state.h"
 #include "runtime/client_cache.h"
-#include "util/doris_metrics.h"
 #include "util/file_utils.h"
 #include "gen_cpp/MasterService_types.h"
 #include "gen_cpp/HeartbeatService_types.h"
@@ -63,21 +62,6 @@ const std::string ERROR_FILE_PREFIX = "error_log";
 
 EtlJobMgr::EtlJobMgr(ExecEnv* exec_env) :
         _exec_env(exec_env), _success_jobs(5000), _failed_jobs(5000) {
-    REGISTER_PRIVATE_VARIABLE_METRIC(running_etl_job_count);
-    DorisMetrics::metrics()->register_hook("running_etl_job_count", [&]() {
-        std::lock_guard<std::mutex> lock(_lock);
-        _running_etl_job_count.set_value(_running_jobs.size());
-    });
-    REGISTER_PRIVATE_VARIABLE_METRIC(cache_success_etl_job_count);
-    DorisMetrics::metrics()->register_hook("cache_success_etl_job_count", [&]() {
-        std::lock_guard<std::mutex> lock(_lock);
-        _cache_success_etl_job_count.set_value(_success_jobs.size());
-    });
-    REGISTER_PRIVATE_VARIABLE_METRIC(cache_failed_etl_job_count);
-    DorisMetrics::metrics()->register_hook("cache_failed_etl_job_count", [&]() {
-        std::lock_guard<std::mutex> lock(_lock);
-        _cache_failed_etl_job_count.set_value(_failed_jobs.size());
-    });
 }
 
 EtlJobMgr::~EtlJobMgr() {
