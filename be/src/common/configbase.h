@@ -87,7 +87,6 @@ public:
 #define CONF_mInt64(name, defaultstr) DEFINE_FIELD(int64_t, name, defaultstr, true)
 #define CONF_mDouble(name, defaultstr) DEFINE_FIELD(double, name, defaultstr, true)
 #define CONF_mString(name, defaultstr) DEFINE_FIELD(std::string, name, defaultstr, true)
-#define CONF_mInt32s(name, defaultstr) DEFINE_FIELD(std::vector<int32_t>, name, defaultstr, true)
 #define CONF_mStrings(name, defaultstr) \
     DEFINE_FIELD(std::vector<std::string>, name, defaultstr, true)
 #else
@@ -109,7 +108,6 @@ public:
 #define CONF_mInt64(name, defaultstr) DECLARE_FIELD(int64_t, name)
 #define CONF_mDouble(name, defaultstr) DECLARE_FIELD(double, name)
 #define CONF_mString(name, defaultstr) DECLARE_FIELD(std::string, name)
-#define CONF_mInt32s(name, defaultstr) DECLARE_FIELD(std::vector<int32_t>, name)
 #define CONF_mStrings(name, defaultstr) DECLARE_FIELD(std::vector<std::string>, name)
 #endif
 

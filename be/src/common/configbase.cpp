@@ -323,10 +323,8 @@ Status set_config(const std::string& field, const std::string& value) {
     UPDATE_FIELD(it->second, value, int64_t);
     UPDATE_FIELD(it->second, value, double);
     UPDATE_FIELD(it->second, value, std::string);
-    UPDATE_FIELD(it->second, value, std::vector<int32_t>);
     UPDATE_FIELD(it->second, value, std::vector<std::string>);
 
-    // The other types are not thread safe to change dynamically.
     return Status::NotSupported(strings::Substitute(
             "'$0' is type of '$1' which is not support to modify", field, it->second.type));
 }

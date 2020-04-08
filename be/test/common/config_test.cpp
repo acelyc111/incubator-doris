@@ -20,6 +20,7 @@
 #undef __IN_CONFIGBASE_CPP__
 
 #include <gtest/gtest.h>
+
 #include "common/status.h"
 
 namespace doris {
@@ -74,7 +75,9 @@ TEST_F(ConfigTest, UpdateConfigs) {
     CONF_mInt16(cfg_int16_t, "2561");
     CONF_mInt32(cfg_int32_t, "65536123");
     CONF_mInt64(cfg_int64_t, "4294967296123");
-    CONF_String(cfg_std_string, "doris_config_test_string");
+    CONF_mString(cfg_std_string, "doris_config_test_string");
+    CONF_mStrings(cfg_std_vector_std_string, "doris,config,test,string");
+    CONF_Int32s(cfg_std_vector_int32_t, "65536123,65536234,65536345");
 
     config::init(nullptr, true);
 
@@ -102,6 +105,19 @@ TEST_F(ConfigTest, UpdateConfigs) {
     ASSERT_EQ(cfg_int64_t, 4294967296123);
     ASSERT_TRUE(config::set_config("cfg_int64_t", "4294967296124").ok());
     ASSERT_EQ(cfg_int64_t, 4294967296124);
+
+    // std::string
+    ASSERT_EQ(cfg_std_string, "doris_config_test_string");
+    ASSERT_TRUE(config::set_config("cfg_std_string", "doris_config_test_string_NEW").ok());
+    ASSERT_EQ(cfg_std_string, "doris_config_test_string_NEW");
+
+    // std::vector<std::string>
+    ASSERT_EQ(cfg_std_vector_std_string, "doris_config_test_string");
+    ASSERT_TRUE(config::set_config("cfg_std_vector_std_string",
+                                   "doris_NEW,config_NEW,test_NEW,string_NEW")
+                        .ok());
+    ASSERT_EQ(cfg_std_vector_std_string,
+              std::vector<std::string>({"doris_NEW", "config_NEW", "test_NEW", "string_NEW"}));
 
     // not exist
     Status s = config::set_config("cfg_not_exist", "123");
@@ -133,10 +149,10 @@ TEST_F(ConfigTest, UpdateConfigs) {
     ASSERT_EQ(cfg_int32_t, 65536124);
 
     // not support
-    s = config::set_config("cfg_std_string", "test");
+    s = config::set_config("cfg_std_vector_int32_t", "1,2,3");
     ASSERT_FALSE(s.ok());
-    ASSERT_EQ(s.to_string(), "Not supported: 'cfg_std_string' is not support to modify");
-    ASSERT_EQ(cfg_std_string, "doris_config_test_string");
+    ASSERT_EQ(s.to_string(), "Not supported: 'cfg_std_vector_int32_t' is not support to modify");
+    ASSERT_EQ(cfg_std_string, std::vector<int32_t>({65536123, 65536234, 65536345}));
 }
 
 } // namespace doris
