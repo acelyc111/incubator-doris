@@ -98,8 +98,11 @@ bool strtox(const std::string& valstr, std::vector<T>& retval) {
     std::stringstream ss(valstr);
     std::string item;
     T t;
+    T oldval = retval;
+    retval.clear();
     while (std::getline(ss, item, ',')) {
         if (!strtox(trim(item), t)) {
+            retval = oldval;
             return false;
         }
         retval.push_back(t);
@@ -130,10 +133,10 @@ bool strtointeger(const std::string& valstr, T& retval) {
     if (errno || end != valcstr + strlen(valcstr)) {
         return false; // bad parse
     }
-    T tmp = retval;
+    T oldval = retval;
     retval = static_cast<T>(ret64);
     if (retval != ret64) {
-        retval = tmp;
+        retval = oldval;
         return false;
     }
     return true;
