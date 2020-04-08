@@ -42,11 +42,6 @@ void UpdateConfigAction::handle(HttpRequest* req) {
     LOG(INFO) << req->debug_string();
 
     Status s = _update_config(*req->params());
-    if (s.ok()) {
-        LOG(INFO) << "set_config " << config << "=" << new_value << " success";
-    } else {
-        LOG(WARNING) << s.to_string();
-    }
     std::string status(s.ok() ? "OK" : "BAD");
     std::string msg = s.to_string();
 
@@ -64,48 +59,48 @@ void UpdateConfigAction::handle(HttpRequest* req) {
 
 Status UpdateConfigAction::_update_config(const std::map<std::string, std::string>& params) {
     if (params.size() != 1) {
-        return Status::InvalidArgument("Now only support to set a single config once, via 'config_name=new_value'");
+        return Status::InvalidArgument("now only support to set a single config once");
     }
 
     DCHECK(params.size() == 1);
     const std::string& config = params.begin()->first;
     const std::string& new_value = params.begin()->second;
-    static const std::set<std::string> log_configs({"sys_log_level", "sys_log_verbose_modules", "sys_log_verbose_level"});
-    if (log_configs.count(config) == 1) {
+    Status s;
+    if (config == "sys_log_level" || config == "sys_log_verbose_modules" || config == "sys_log_verbose_level") {
         // Update glog configs.
-        return _update_log_config();
+        s = _update_log_config();
     } else {
-        Status s = config::set_config(config, new_value);
-        RETURN_NOT_OK_LOG(S, strings::Substitute("set_config $0=$1 failed, reason: $2", config, new_value,
-                                                 s.to_string()));
-        if (!s.ok()) {
-            s = Status::InvalidArgument();
-        }
-        return s;
+        // The other configs can be updated by config::set_config directly.
+        s = config::set_config(config, new_value);
     }
+    if (s.ok()) {
+        LOG(INFO) << "update config " << config << "=" << new_value << " success";
+    } else {
+        LOG(WARNING) << "update config " << config << "=" << new_value << " failed, reason: " << s.to_string();
+    }
+    return s;
 }
 
 Status UpdateConfigAction::_update_log_config(const std::string& config, const std::string& new_value) {
+    std::lock_guard<SpinLock> l(_lock);
     if (config == "sys_log_level") {
         int32_t new_level = 0;
-        if (!convert_log_level(new_value, )) {
-            msg = "Bad glog level input. Valid inputs are INFO, WARNING, ERROR or FATAL"
-            LOG(WARNING) << msg;
-            return Status::InvalidArgument("");
+        if (!convert_log_level(new_value, &new_level)) {
+            return Status::InvalidArgument("invalid sys_log_level, valid value should be INFO, WARNING, ERROR or FATAL");
         }
-        string result = google::SetCommandLineOption("minloglevel", std::to_string(new_level));
-        DCHECK(!result.empty());  // result is empty when SetCommandLineOption failed
+        string result = google::SetCommandLineOption("minloglevel", std::to_string(new_level).c_str());
+        DCHECK(!result.empty());  // result is not empty when SetCommandLineOption success.
         Status s = config::set_config(config, new_value);
         DCHECK(s.ok());
         return s;
     } else if (config == "sys_log_verbose_modules" || config == "sys_log_verbose_level") {
+        update_modules_log_level(config::sys_log_verbose_modules, config::sys_log_verbose_level);
         Status s = config::set_config(config, new_value);
         DCHECK(s.ok());
-        update_modules_log_level(config::sys_log_verbose_modules, config::sys_log_verbose_level);
         return s;
     }
 
-    return Status::InvalidArgument("");
+    return Status::NotSupported(strings::Substitute("not support to update config $0", config));
 }
 
 } // namespace doris
