@@ -19,6 +19,7 @@
 #define DORIS_BE_SRC_COMMON_UTIL_LOGGING_H
 
 #include <string>
+
 #include "common/logging.h"
 
 namespace doris {
@@ -31,6 +32,9 @@ bool init_glog(const char* basename, bool install_signal_handler = false);
 // flushed. May only be called once.
 void shutdown_logging();
 
-}
+bool convert_log_level(const std::string& str, int32_t* level);
+
+void update_modules_log_level(const std::vector<std::string>& modules, int32_t level);
+} // namespace doris
 
 #endif // DORIS_BE_SRC_COMMON_UTIL_LOGGING_H

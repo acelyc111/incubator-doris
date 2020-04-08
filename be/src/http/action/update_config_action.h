@@ -17,7 +17,9 @@
 
 #pragma once
 
+#include "common/status.h"
 #include "http/http_handler.h"
+#include "util/spinlock.h"
 
 namespace doris {
 
@@ -28,6 +30,13 @@ public:
     virtual ~UpdateConfigAction() {}
 
     void handle(HttpRequest* req) override;
+
+private:
+    Status _update_config(const std::map<std::string, std::string>& params);
+    Status _update_log_config(const std::string& config, const std::string& new_value);
+
+    // Protect non thread-safe configs not to update concurrently.
+    SpinLock _lock;
 };
 
 } // namespace doris

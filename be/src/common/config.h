@@ -119,15 +119,15 @@ namespace config {
     CONF_String(sys_log_dir, "${DORIS_HOME}/log");
     CONF_String(user_function_dir, "${DORIS_HOME}/lib/udf");
     // INFO, WARNING, ERROR, FATAL
-    CONF_String(sys_log_level, "INFO");
+    CONF_mString(sys_log_level, "INFO");
     // TIME-DAY, TIME-HOUR, SIZE-MB-nnn
     CONF_String(sys_log_roll_mode, "SIZE-MB-1024");
     // log roll num
     CONF_Int32(sys_log_roll_num, "10");
     // verbose log
-    CONF_Strings(sys_log_verbose_modules, "");
+    CONF_mStrings(sys_log_verbose_modules, "");
     // verbose log level
-    CONF_Int32(sys_log_verbose_level, "10");
+    CONF_mInt32(sys_log_verbose_level, "10");
     // log buffer level
     CONF_String(log_buffer_level, "");
 

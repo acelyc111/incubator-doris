@@ -86,6 +86,10 @@ public:
 #define CONF_mInt32(name, defaultstr) DEFINE_FIELD(int32_t, name, defaultstr, true)
 #define CONF_mInt64(name, defaultstr) DEFINE_FIELD(int64_t, name, defaultstr, true)
 #define CONF_mDouble(name, defaultstr) DEFINE_FIELD(double, name, defaultstr, true)
+#define CONF_mString(name, defaultstr) DEFINE_FIELD(std::string, name, defaultstr, true)
+#define CONF_mInt32s(name, defaultstr) DEFINE_FIELD(std::vector<int32_t>, name, defaultstr, true)
+#define CONF_mStrings(name, defaultstr) \
+    DEFINE_FIELD(std::vector<std::string>, name, defaultstr, true)
 #else
 #define CONF_Bool(name, defaultstr) DECLARE_FIELD(bool, name)
 #define CONF_Int16(name, defaultstr) DECLARE_FIELD(int16_t, name)
@@ -104,6 +108,9 @@ public:
 #define CONF_mInt32(name, defaultstr) DECLARE_FIELD(int32_t, name)
 #define CONF_mInt64(name, defaultstr) DECLARE_FIELD(int64_t, name)
 #define CONF_mDouble(name, defaultstr) DECLARE_FIELD(double, name)
+#define CONF_mString(name, defaultstr) DECLARE_FIELD(std::string, name)
+#define CONF_mInt32s(name, defaultstr) DECLARE_FIELD(std::vector<int32_t>, name)
+#define CONF_mStrings(name, defaultstr) DECLARE_FIELD(std::vector<std::string>, name)
 #endif
 
 // configuration properties load from config file.
