@@ -98,7 +98,7 @@ bool strtox(const std::string& valstr, std::vector<T>& retval) {
     std::stringstream ss(valstr);
     std::string item;
     T t;
-    T oldval = retval;
+    std::vector<T> oldval = retval;
     retval.clear();
     while (std::getline(ss, item, ',')) {
         if (!strtox(trim(item), t)) {

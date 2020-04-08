@@ -112,7 +112,8 @@ TEST_F(ConfigTest, UpdateConfigs) {
     ASSERT_EQ(cfg_std_string, "doris_config_test_string_NEW");
 
     // std::vector<std::string>
-    ASSERT_EQ(cfg_std_vector_std_string, "doris_config_test_string");
+    ASSERT_EQ(cfg_std_vector_std_string,
+              std::vector<std::string>({"doris", "config", "test", "string"}));
     ASSERT_TRUE(config::set_config("cfg_std_vector_std_string",
                                    "doris_NEW,config_NEW,test_NEW,string_NEW")
                         .ok());
@@ -152,7 +153,7 @@ TEST_F(ConfigTest, UpdateConfigs) {
     s = config::set_config("cfg_std_vector_int32_t", "1,2,3");
     ASSERT_FALSE(s.ok());
     ASSERT_EQ(s.to_string(), "Not supported: 'cfg_std_vector_int32_t' is not support to modify");
-    ASSERT_EQ(cfg_std_string, std::vector<int32_t>({65536123, 65536234, 65536345}));
+    ASSERT_EQ(cfg_std_vector_int32_t, std::vector<int32_t>({65536123, 65536234, 65536345}));
 }
 
 } // namespace doris
