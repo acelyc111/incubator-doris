@@ -28,6 +28,10 @@ public:
     virtual ~UpdateConfigAction() {}
 
     void handle(HttpRequest* req) override;
+
+private:
+    Status _update_config(const std::map<std::string, std::string>& params);
+    Status _update_log_config(const std::string& config, const std::string& new_value);
 };
 
 } // namespace doris

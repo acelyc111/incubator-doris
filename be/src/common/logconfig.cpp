@@ -68,17 +68,8 @@ bool init_glog(const char* basename, bool install_signal_handler) {
     FLAGS_log_filenum_quota = config::sys_log_roll_num;
     
     // set log level
-    std::string& loglevel = config::sys_log_level;
-    if (iequals(loglevel, "INFO")) {
-        FLAGS_minloglevel = 0;
-    } else if (iequals(loglevel, "WARNING")) {
-        FLAGS_minloglevel = 1;
-    } else if (iequals(loglevel, "ERROR")) {
-        FLAGS_minloglevel = 2;
-    } else if (iequals(loglevel, "FATAL")) {
-        FLAGS_minloglevel = 3;
-    } else {
-        std::cerr << "sys_log_level needs to be INFO, WARNING, ERROR, FATAL" << std::endl;
+    if (!convert_log_level(config::sys_log_level, &FLAGS_minloglevel)) {
+        std::cerr << "sys_log_level needs to be INFO, WARNING, ERROR or FATAL" << std::endl;
         return false;
     }
 
@@ -127,25 +118,44 @@ bool init_glog(const char* basename, bool install_signal_handler) {
 
     // set verbose modules.
     FLAGS_v = -1;
-    std::vector<std::string>& verbose_modules = config::sys_log_verbose_modules;
-    int32_t vlog_level = config::sys_log_verbose_level;
-    for (size_t i = 0; i < verbose_modules.size(); i++) {
-        if (verbose_modules[i].size() != 0) {
-            google::SetVLOGLevel(verbose_modules[i].c_str(), vlog_level);
-        }
-    }
+    update_modules_log_level(config::sys_log_verbose_modules, config::sys_log_verbose_level);
 
     google::InitGoogleLogging(basename);
 
     logging_initialized = true;
  
     return true;
-
 }
 
 void shutdown_logging() {
     std::lock_guard<std::mutex> logging_lock(logging_mutex);
     google::ShutdownGoogleLogging();
+}
+
+bool convert_log_level(const std::string& str, int32_t* level) {
+    if (iequals(str, "INFO")) {
+        level = 0;
+        return true;
+    } else if (iequals(str, "WARNING")) {
+        level = 1;
+        return true;
+    } else if (iequals(str, "ERROR")) {
+        level = 2;
+        return true;
+    } else if (iequals(str, "FATAL")) {
+        level = 3;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void update_modules_log_level(const std::vector<std::string>& modules, int32_t level) {
+    for (const auto& module : modules) {
+        if (!module.empty()) {
+            google::SetVLOGLevel(module.c_str(), level);
+        }
+    }
 }
 
 } // namespace doris

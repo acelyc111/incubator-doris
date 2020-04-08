@@ -41,26 +41,15 @@ const static std::string HEADER_JSON = "application/json";
 void UpdateConfigAction::handle(HttpRequest* req) {
     LOG(INFO) << req->debug_string();
 
-    Status s;
-    std::string msg;
-    if (req->params()->size() != 1) {
-        s = Status::InvalidArgument("");
-        msg = "Now only support to set a single config once, via 'config_name=new_value'";
+    Status s = _update_config(*req->params());
+    if (s.ok()) {
+        LOG(INFO) << "set_config " << config << "=" << new_value << " success";
     } else {
-        DCHECK(req->params()->size() == 1);
-        const std::string& config = req->params()->begin()->first;
-        const std::string& new_value = req->params()->begin()->second;
-        s = config::set_config(config, new_value);
-        if (s.ok()) {
-            LOG(INFO) << "set_config " << config << "=" << new_value << " success";
-        } else {
-            LOG(WARNING) << "set_config " << config << "=" << new_value << " failed";
-            msg = strings::Substitute("set $0=$1 failed, reason: $2", config, new_value,
-                                      s.to_string());
-        }
+        LOG(WARNING) << s.to_string();
     }
-
     std::string status(s.ok() ? "OK" : "BAD");
+    std::string msg = s.to_string();
+
     rapidjson::Document root;
     root.SetObject();
     root.AddMember("status", rapidjson::Value(status.c_str(), status.size()), root.GetAllocator());
@@ -71,6 +60,52 @@ void UpdateConfigAction::handle(HttpRequest* req) {
 
     req->add_output_header(HttpHeaders::CONTENT_TYPE, HEADER_JSON.c_str());
     HttpChannel::send_reply(req, HttpStatus::OK, strbuf.GetString());
+}
+
+Status UpdateConfigAction::_update_config(const std::map<std::string, std::string>& params) {
+    if (params.size() != 1) {
+        return Status::InvalidArgument("Now only support to set a single config once, via 'config_name=new_value'");
+    }
+
+    DCHECK(params.size() == 1);
+    const std::string& config = params.begin()->first;
+    const std::string& new_value = params.begin()->second;
+    static const std::set<std::string> log_configs({"sys_log_level", "sys_log_verbose_modules", "sys_log_verbose_level"});
+    if (log_configs.count(config) == 1) {
+        // Update glog configs.
+        return _update_log_config();
+    } else {
+        Status s = config::set_config(config, new_value);
+        RETURN_NOT_OK_LOG(S, strings::Substitute("set_config $0=$1 failed, reason: $2", config, new_value,
+                                                 s.to_string()));
+        if (!s.ok()) {
+            s = Status::InvalidArgument();
+        }
+        return s;
+    }
+}
+
+Status UpdateConfigAction::_update_log_config(const std::string& config, const std::string& new_value) {
+    if (config == "sys_log_level") {
+        int32_t new_level = 0;
+        if (!convert_log_level(new_value, )) {
+            msg = "Bad glog level input. Valid inputs are INFO, WARNING, ERROR or FATAL"
+            LOG(WARNING) << msg;
+            return Status::InvalidArgument("");
+        }
+        string result = google::SetCommandLineOption("minloglevel", std::to_string(new_level));
+        DCHECK(!result.empty());  // result is empty when SetCommandLineOption failed
+        Status s = config::set_config(config, new_value);
+        DCHECK(s.ok());
+        return s;
+    } else if (config == "sys_log_verbose_modules" || config == "sys_log_verbose_level") {
+        Status s = config::set_config(config, new_value);
+        DCHECK(s.ok());
+        update_modules_log_level(config::sys_log_verbose_modules, config::sys_log_verbose_level);
+        return s;
+    }
+
+    return Status::InvalidArgument("");
 }
 
 } // namespace doris
