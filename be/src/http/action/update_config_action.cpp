@@ -68,7 +68,8 @@ Status UpdateConfigAction::_update_config(const std::map<std::string, std::strin
     const std::string& config = params.begin()->first;
     const std::string& new_value = params.begin()->second;
     Status s;
-    if (config == "sys_log_level" || config == "sys_log_verbose_modules" || config == "sys_log_verbose_level") {
+    if (config == "sys_log_level" || config == "sys_log_verbose_modules" ||
+        config == "sys_log_verbose_level") {
         // Update glog configs.
         s = _update_log_config(config, new_value);
     } else {
@@ -78,20 +79,24 @@ Status UpdateConfigAction::_update_config(const std::map<std::string, std::strin
     if (s.ok()) {
         LOG(INFO) << "update config " << config << "=" << new_value << " success";
     } else {
-        LOG(WARNING) << "update config " << config << "=" << new_value << " failed, reason: " << s.to_string();
+        LOG(WARNING) << "update config " << config << "=" << new_value
+                     << " failed, reason: " << s.to_string();
     }
     return s;
 }
 
-Status UpdateConfigAction::_update_log_config(const std::string& config, const std::string& new_value) {
+Status UpdateConfigAction::_update_log_config(const std::string& config,
+                                              const std::string& new_value) {
     std::lock_guard<SpinLock> l(_lock);
     if (config == "sys_log_level") {
         int32_t new_level = 0;
         if (!convert_log_level(new_value, &new_level)) {
-            return Status::InvalidArgument("invalid sys_log_level, valid value should be INFO, WARNING, ERROR or FATAL");
+            return Status::InvalidArgument(
+                    "invalid sys_log_level, valid value should be INFO, WARNING, ERROR or FATAL");
         }
-        string result = google::SetCommandLineOption("minloglevel", std::to_string(new_level).c_str());
-        DCHECK(!result.empty());  // result is not empty when SetCommandLineOption success.
+        string result =
+                google::SetCommandLineOption("minloglevel", std::to_string(new_level).c_str());
+        DCHECK(!result.empty()); // result is not empty when SetCommandLineOption success.
         Status s = config::set_config(config, new_value);
         DCHECK(s.ok());
         return s;
