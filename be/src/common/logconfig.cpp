@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#include "util/logging.h"
+
 #include <iostream>
 #include <cerrno>
 #include <cstring>
@@ -134,16 +136,16 @@ void shutdown_logging() {
 
 bool convert_log_level(const std::string& str, int32_t* level) {
     if (iequals(str, "INFO")) {
-        level = 0;
+        *level = 0;
         return true;
     } else if (iequals(str, "WARNING")) {
-        level = 1;
+        *level = 1;
         return true;
     } else if (iequals(str, "ERROR")) {
-        level = 2;
+        *level = 2;
         return true;
     } else if (iequals(str, "FATAL")) {
-        level = 3;
+        *level = 3;
         return true;
     } else {
         return false;

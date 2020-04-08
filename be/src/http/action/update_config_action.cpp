@@ -22,17 +22,19 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/stringbuffer.h>
 
+#include <mutex>
 #include <string>
 
+#include "common/config.h"
 #include "common/configbase.h"
 #include "common/logging.h"
-#include "common/status.h"
 #include "gutil/strings/substitute.h"
 #include "http/http_channel.h"
 #include "http/http_headers.h"
 #include "http/http_request.h"
 #include "http/http_response.h"
 #include "http/http_status.h"
+#include "util/logging.h"
 
 namespace doris {
 
@@ -41,7 +43,7 @@ const static std::string HEADER_JSON = "application/json";
 void UpdateConfigAction::handle(HttpRequest* req) {
     LOG(INFO) << req->debug_string();
 
-    Status s = _update_config(*req->params());
+    Status s = _update_config(*(req->params()));
     std::string status(s.ok() ? "OK" : "BAD");
     std::string msg = s.to_string();
 
@@ -68,7 +70,7 @@ Status UpdateConfigAction::_update_config(const std::map<std::string, std::strin
     Status s;
     if (config == "sys_log_level" || config == "sys_log_verbose_modules" || config == "sys_log_verbose_level") {
         // Update glog configs.
-        s = _update_log_config();
+        s = _update_log_config(config, new_value);
     } else {
         // The other configs can be updated by config::set_config directly.
         s = config::set_config(config, new_value);

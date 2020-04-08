@@ -17,7 +17,9 @@
 
 #pragma once
 
+#include "common/status.h"
 #include "http/http_handler.h"
+#include "util/spinlock.h"
 
 namespace doris {
 
