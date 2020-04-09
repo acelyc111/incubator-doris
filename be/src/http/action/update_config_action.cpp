@@ -103,6 +103,7 @@ Status UpdateConfigAction::_update_log_config(const std::string& config,
         DCHECK(s.ok()); // Status is definity ok when set 'sys_log_level'
         return s;
     } else if (config == "sys_log_verbose_modules" || config == "sys_log_verbose_level") {
+        // ATTN: google::SetVLOGLevel in update_modules_log_level can not be called in runtime, because a static local variable in VLOG_IS_ON has been initilized!!!
         update_modules_log_level(config::sys_log_verbose_modules, config::sys_log_verbose_level);
         Status s = config::set_config(config, new_value);
         DCHECK(s.ok()); // Status is definity ok when set 'sys_log_verbose_modules' or 'sys_log_verbose_level'
