@@ -46,10 +46,6 @@ TEST_F(ConfigTest, DumpAllConfigs) {
     CONF_Strings(cfg_std_vector_std_string, "doris,config,test,string");
 
     config::init(nullptr, true);
-    std::stringstream ss;
-    for (const auto& it : *(config::full_conf_map)) {
-        ss << it.first << "=" << it.second << std::endl;
-    }
     ASSERT_EQ(
             R"*(cfg_bool_false=0
 cfg_bool_true=1
@@ -65,7 +61,7 @@ cfg_std_vector_int32_t=65536123, 65536234, 65536345
 cfg_std_vector_int64_t=4294967296123, 4294967296234, 4294967296345
 cfg_std_vector_std_string=doris, config, test, string
 )*",
-            ss.str());
+            config::dump_full_confs());
 }
 
 TEST_F(ConfigTest, UpdateConfigs) {

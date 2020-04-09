@@ -22,6 +22,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <mutex>
 #include <sstream>
 
 #define __IN_CONFIGBASE_CPP__
@@ -30,11 +31,15 @@
 
 #include "common/status.h"
 #include "gutil/strings/substitute.h"
+#include "util/spinlock.h"
 
 namespace doris {
 namespace config {
 
 std::map<std::string, Register::Field>* Register::_s_field_map = nullptr;
+
+// full configurations.
+SpinLock full_conf_map_lock;
 std::map<std::string, std::string>* full_conf_map = nullptr;
 
 Properties props;
@@ -261,6 +266,7 @@ std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
         if (FILL_CONFMAP) {                                                                        \
             std::ostringstream oss;                                                                \
             oss << (*reinterpret_cast<TYPE*>((FIELD).storage));                                    \
+            std::lock_guard<SpinLock> l(full_conf_map_lock);                                       \
             (*full_conf_map)[(FIELD).name] = oss.str();                                            \
         }                                                                                          \
         continue;                                                                                  \
@@ -305,6 +311,7 @@ bool init(const char* filename, bool fillconfmap) {
         if (full_conf_map != nullptr) {                                              \
             std::ostringstream oss;                                                  \
             oss << (*reinterpret_cast<TYPE*>((FIELD).storage));                      \
+            std::lock_guard<SpinLock> l(full_conf_map_lock);                         \
             (*full_conf_map)[(FIELD).name] = oss.str();                              \
         }                                                                            \
         return Status::OK();                                                         \
@@ -330,6 +337,15 @@ Status set_config(const std::string& field, const std::string& value) {
 
     return Status::NotSupported(strings::Substitute(
             "'$0' is type of '$1' which is not support to modify", field, it->second.type));
+}
+
+std::string dump_full_confs() {
+    std::lock_guard<SpinLock> l(full_conf_map_lock);
+    std::stringstream ss;
+    for (const auto& it : *full_conf_map) {
+        ss << it.first << "=" << it.second << std::endl;
+    }
+    return ss.str();
 }
 
 } // namespace config

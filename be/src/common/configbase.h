@@ -124,8 +124,8 @@ private:
 
 extern Properties props;
 
-// full configurations.
-extern std::map<std::string, std::string>* full_conf_map;
+// Dump full configurations.
+std::string dump_full_confs();
 
 bool init(const char* filename, bool fillconfmap = false);
 
