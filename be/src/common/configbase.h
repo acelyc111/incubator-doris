@@ -125,7 +125,7 @@ private:
 extern Properties props;
 
 // Dump full configurations.
-std::string dump_full_confs();
+std::string dump_full_configs();
 
 bool init(const char* filename, bool fillconfmap = false);
 

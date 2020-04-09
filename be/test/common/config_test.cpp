@@ -61,7 +61,7 @@ cfg_std_vector_int32_t=65536123, 65536234, 65536345
 cfg_std_vector_int64_t=4294967296123, 4294967296234, 4294967296345
 cfg_std_vector_std_string=doris, config, test, string
 )*",
-            config::dump_full_confs());
+            config::dump_full_configs());
 }
 
 TEST_F(ConfigTest, UpdateConfigs) {

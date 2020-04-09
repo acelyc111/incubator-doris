@@ -96,14 +96,16 @@ Status UpdateConfigAction::_update_log_config(const std::string& config,
         }
         string result =
                 google::SetCommandLineOption("minloglevel", std::to_string(new_level).c_str());
-        DCHECK(!result.empty()); // result is not empty when SetCommandLineOption success.
+        // result is not empty when SetCommandLineOption success.
+        // Now SetCommandLineOption parameters are valid and the result should be success.
+        DCHECK(!result.empty());
         Status s = config::set_config(config, new_value);
-        DCHECK(s.ok());
+        DCHECK(s.ok()); // Status is definity ok when set 'sys_log_level'
         return s;
     } else if (config == "sys_log_verbose_modules" || config == "sys_log_verbose_level") {
         update_modules_log_level(config::sys_log_verbose_modules, config::sys_log_verbose_level);
         Status s = config::set_config(config, new_value);
-        DCHECK(s.ok());
+        DCHECK(s.ok()); // Status is definity ok when set 'sys_log_verbose_modules' or 'sys_log_verbose_level'
         return s;
     }
 

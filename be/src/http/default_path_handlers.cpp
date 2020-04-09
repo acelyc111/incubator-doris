@@ -68,7 +68,7 @@ void logs_handler(const WebPageHandler::ArgumentMap& args, std::stringstream* ou
 void config_handler(const WebPageHandler::ArgumentMap& args, std::stringstream* output) {
     (*output) << "<h2>Configurations</h2>";
     (*output) << "<pre>";
-    (*output) << config::dump_full_confs();
+    (*output) << config::dump_full_configs();
     (*output) << "</pre>";
 }
 

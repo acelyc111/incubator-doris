@@ -339,7 +339,7 @@ Status set_config(const std::string& field, const std::string& value) {
             "'$0' is type of '$1' which is not support to modify", field, it->second.type));
 }
 
-std::string dump_full_confs() {
+std::string dump_full_configs() {
     std::lock_guard<SpinLock> l(full_conf_map_lock);
     std::stringstream ss;
     for (const auto& it : *full_conf_map) {
