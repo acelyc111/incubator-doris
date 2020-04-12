@@ -25,10 +25,9 @@ namespace doris {
 
 UniqueRowsetIdGenerator::UniqueRowsetIdGenerator(const UniqueId& backend_uid) :
     _backend_uid(backend_uid), _inc_id(0) {
-    REGISTER_PRIVATE_VARIABLE_METRIC(rowset_count_generated_and_in_use);
-    DorisMetrics::metrics()->register_hook("rowset_count_generated_and_in_use", [&]() {
+    REGISTER_GAUGE_DORIS_METRIC(rowset_count_generated_and_in_use, [this]() {
         std::lock_guard<SpinLock> l(_lock);
-        _rowset_count_generated_and_in_use.set_value(_valid_rowset_ids.size());
+        return _valid_rowset_ids.size();
     });
 }
 

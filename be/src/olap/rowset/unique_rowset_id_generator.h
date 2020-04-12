@@ -42,8 +42,6 @@ private:
     std::atomic<int64_t> _inc_id;
     std::unordered_set<RowsetId, RowsetIdHash> _valid_rowset_ids;
 
-    UIntGauge _rowset_count_generated_and_in_use;
-
     DISALLOW_COPY_AND_ASSIGN(UniqueRowsetIdGenerator);
 }; // UniqueRowsetIdGenerator
 

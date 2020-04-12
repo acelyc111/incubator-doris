@@ -49,6 +49,11 @@ private:
 
 #define REGISTER_METRIC(name, metric) DorisMetrics::metrics()->register_metric(name, &metric)
 #define REGISTER_PRIVATE_VARIABLE_METRIC(name) REGISTER_METRIC(#name, _##name)
+#define REGISTER_GAUGE_DORIS_METRIC(name, func) \
+  DorisMetrics::metrics()->register_metric(#name, &DorisMetrics::name); \
+  DorisMetrics::metrics()->register_hook(#name, [this]() { \
+      DorisMetrics::name.set_value(func());  \
+});
 
 class DorisMetrics {
 public:
@@ -168,6 +173,8 @@ public:
     static IntGauge blocks_open_writing;
 
     static IntCounter blocks_push_remote_duration_us;
+
+    static UIntGauge rowset_count_generated_and_in_use;
 
     ~DorisMetrics();
     // call before calling metrics

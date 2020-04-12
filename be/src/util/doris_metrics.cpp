@@ -136,6 +136,8 @@ IntGauge DorisMetrics::blocks_open_writing;
 
 IntCounter DorisMetrics::blocks_push_remote_duration_us;
 
+UIntGauge DorisMetrics::rowset_count_generated_and_in_use;
+
 DorisMetrics::DorisMetrics() : _metrics(nullptr), _system_metrics(nullptr) {
 }
 
