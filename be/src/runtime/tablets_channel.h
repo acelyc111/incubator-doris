@@ -126,7 +126,7 @@ private:
 
     std::unique_ptr<MemTracker> _mem_tracker;
 
-    static UIntGauge _s_tablet_writer_count;
+    static std::atomic<uint64_t> _s_tablet_writer_count;
 };
 
 

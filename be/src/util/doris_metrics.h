@@ -49,7 +49,7 @@ private:
 
 #define REGISTER_GAUGE_DORIS_METRIC(name, func) \
   DorisMetrics::metrics()->register_metric(#name, &DorisMetrics::name); \
-  DorisMetrics::metrics()->register_hook(#name, [this]() { \
+  DorisMetrics::metrics()->register_hook(#name, [&]() { \
       DorisMetrics::name.set_value(func());  \
 });
 
@@ -172,6 +172,7 @@ public:
 
     static IntCounter blocks_push_remote_duration_us;
 
+    // Size of some global containers
     static UIntGauge rowset_count_generated_and_in_use;
     static UIntGauge unused_rowsets_count;
     static UIntGauge broker_count;
@@ -186,6 +187,7 @@ public:
     static UIntGauge small_file_cache_count;
     static UIntGauge stream_load_pipe_count;
     static UIntGauge brpc_endpoint_stub_count;
+    static UIntGauge tablet_writer_count;
 
     ~DorisMetrics();
     // call before calling metrics

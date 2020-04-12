@@ -150,6 +150,7 @@ UIntGauge DorisMetrics::routine_load_task_count;
 UIntGauge DorisMetrics::small_file_cache_count;
 UIntGauge DorisMetrics::stream_load_pipe_count;
 UIntGauge DorisMetrics::brpc_endpoint_stub_count;
+UIntGauge DorisMetrics::tablet_writer_count;
 
 DorisMetrics::DorisMetrics() : _metrics(nullptr), _system_metrics(nullptr) {
 }
