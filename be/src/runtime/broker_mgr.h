@@ -24,7 +24,6 @@
 
 #include "gen_cpp/Types_types.h"
 #include "util/hash_util.hpp"
-#include "util/metrics.h"
 
 namespace doris {
 
@@ -46,8 +45,6 @@ private:
     std::unordered_set<TNetworkAddress> _broker_set;
     bool _thread_stop;
     std::thread _ping_thread;
-
-    UIntGauge _broker_count;
 };
 
 }

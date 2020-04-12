@@ -29,10 +29,11 @@
 namespace doris {
 
 ResultQueueMgr::ResultQueueMgr() {
-    REGISTER_PRIVATE_VARIABLE_METRIC(result_block_queue_count);
-    DorisMetrics::metrics()->register_hook("result_block_queue_count", [&]() {
+    // Each BlockingQueue has a limited size (default 20, by config::max_memory_sink_batch_count),
+    // it's not needed to count the actual size of all BlockingQueue.
+    REGISTER_GAUGE_DORIS_METRIC(result_block_queue_count, [this]() {
         std::lock_guard<std::mutex> l(_lock);
-        _result_block_queue_count.set_value(_fragment_queue_map.size());
+        return _fragment_queue_map.size();
     });
 }
 

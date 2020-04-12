@@ -30,7 +30,6 @@
 
 #include "common/status.h"
 #include "runtime/client_cache.h"
-#include "util/metrics.h"
 
 namespace doris {
 
@@ -82,8 +81,6 @@ private:
     std::string _local_path;
     // file id -> small file
     std::unordered_map<int64_t, CacheEntry> _file_cache;
-
-    UIntGauge _small_file_cache_count;
 };
 
 } // end namespace doris

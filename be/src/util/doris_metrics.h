@@ -47,8 +47,6 @@ private:
     std::unordered_map<std::string, IntGauge> metrics;
 };
 
-#define REGISTER_METRIC(name, metric) DorisMetrics::metrics()->register_metric(name, &metric)
-#define REGISTER_PRIVATE_VARIABLE_METRIC(name) REGISTER_METRIC(#name, _##name)
 #define REGISTER_GAUGE_DORIS_METRIC(name, func) \
   DorisMetrics::metrics()->register_metric(#name, &DorisMetrics::name); \
   DorisMetrics::metrics()->register_hook(#name, [this]() { \
@@ -175,6 +173,19 @@ public:
     static IntCounter blocks_push_remote_duration_us;
 
     static UIntGauge rowset_count_generated_and_in_use;
+    static UIntGauge unused_rowsets_count;
+    static UIntGauge broker_count;
+    static UIntGauge data_stream_receiver_count;
+    static UIntGauge fragment_endpoint_count;
+    static UIntGauge active_scan_context_count;
+    static UIntGauge plan_fragment_count;
+    static UIntGauge load_channel_count;
+    static UIntGauge result_buffer_block_count;
+    static UIntGauge result_block_queue_count;
+    static UIntGauge routine_load_task_count;
+    static UIntGauge small_file_cache_count;
+    static UIntGauge stream_load_pipe_count;
+    static UIntGauge brpc_endpoint_stub_count;
 
     ~DorisMetrics();
     // call before calling metrics

@@ -34,10 +34,11 @@ namespace doris {
 
 ResultBufferMgr::ResultBufferMgr()
     : _is_stop(false) {
-    REGISTER_PRIVATE_VARIABLE_METRIC(result_buffer_block_count);
-    DorisMetrics::metrics()->register_hook("result_buffer_block_count", [&]() {
+    // Each BufferControlBlock has a limited queue size of 1024, it's not needed to count the
+    // actual size of all BufferControlBlock.
+    REGISTER_GAUGE_DORIS_METRIC(result_buffer_block_count, [this]() {
         boost::lock_guard<boost::mutex> l(_lock);
-        _result_buffer_block_count.set_value(_buffer_map.size());
+        return _buffer_map.size();
     });
 }
 

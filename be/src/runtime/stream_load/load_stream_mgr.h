@@ -23,7 +23,6 @@
 
 #include "runtime/stream_load/stream_load_pipe.h" // for StreamLoadPipe
 #include "util/doris_metrics.h"
-#include "util/metrics.h"
 #include "util/uid_util.h" // for std::hash for UniqueId
 
 namespace doris {
@@ -32,10 +31,11 @@ namespace doris {
 class LoadStreamMgr {
 public:
     LoadStreamMgr() {
-        REGISTER_PRIVATE_VARIABLE_METRIC(stream_load_pipe_count);
-        DorisMetrics::metrics()->register_hook("stream_load_pipe_count", [&]() {
+        // Each StreamLoadPipe has a limited buffer size (default 1M), it's not needed to count the
+        // actual size of all StreamLoadPipe.
+        REGISTER_GAUGE_DORIS_METRIC(stream_load_pipe_count, [this]() {
             std::lock_guard<std::mutex> l(_lock);
-            _stream_load_pipe_count.set_value(_stream_map.size());
+            return _stream_map.size();
         });
     }
     ~LoadStreamMgr() { }
@@ -76,10 +76,6 @@ public:
 private:
     std::mutex _lock;
     std::unordered_map<UniqueId, std::shared_ptr<StreamLoadPipe>> _stream_map;
-
-    // Each StreamLoadPipe has a limited buffer size (default 1M), it's not needed to count the
-    // actual size of all StreamLoadPipe.
-    UIntGauge _stream_load_pipe_count;
 };
 
 }

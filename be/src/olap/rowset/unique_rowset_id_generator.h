@@ -18,7 +18,6 @@
 #pragma once
 
 #include "olap/rowset/rowset_id_generator.h"
-#include "util/metrics.h"
 #include "util/spinlock.h"
 #include "util/uid_util.h"
 

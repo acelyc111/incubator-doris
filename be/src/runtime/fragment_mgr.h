@@ -29,7 +29,6 @@
 #include "gen_cpp/DorisExternalService_types.h"
 #include "gen_cpp/Types_types.h"
 #include "gen_cpp/internal_service.pb.h"
-#include "util/metrics.h"
 #include "util/priority_thread_pool.hpp"
 #include "util/hash_util.hpp"
 #include "http/rest_monitor_iface.h"
@@ -92,8 +91,6 @@ private:
     std::thread _cancel_thread;
     // every job is a pool
     PriorityThreadPool _thread_pool;
-
-    UIntGauge _plan_fragment_count;
 };
 
 }

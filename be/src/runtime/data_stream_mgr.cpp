@@ -42,15 +42,13 @@ using boost::try_mutex;
 using boost::lock_guard;
 
 DataStreamMgr::DataStreamMgr() {
-    REGISTER_PRIVATE_VARIABLE_METRIC(data_stream_receiver_count);
-    DorisMetrics::metrics()->register_hook("data_stream_receiver_count", [&]() {
+    REGISTER_GAUGE_DORIS_METRIC(data_stream_receiver_count, [this]() {
         lock_guard<mutex> l(_lock);
-        _data_stream_receiver_count.set_value(_receiver_map.size());
+        return _receiver_map.size();
     });
-    REGISTER_PRIVATE_VARIABLE_METRIC(fragment_endpoint_count);
-    DorisMetrics::metrics()->register_hook("fragment_endpoint_count", [&]() {
+    REGISTER_GAUGE_DORIS_METRIC(fragment_endpoint_count, [this]() {
         lock_guard<mutex> l(_lock);
-        _fragment_endpoint_count.set_value(_fragment_stream_set.size());
+        return _fragment_stream_set.size();
     });
 }
 

@@ -43,10 +43,9 @@ SmallFileMgr::SmallFileMgr(
         const std::string& local_path) :
     _exec_env(env),
     _local_path(local_path) {
-    REGISTER_PRIVATE_VARIABLE_METRIC(small_file_cache_count);
-    DorisMetrics::metrics()->register_hook("small_file_cache_count", [&]() {
+    REGISTER_GAUGE_DORIS_METRIC(small_file_cache_count, [this]() {
         std::lock_guard<std::mutex> l(_lock);
-        _small_file_cache_count.set_value(_file_cache.size());
+        return _file_cache.size();
     });
 }
 

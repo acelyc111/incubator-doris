@@ -33,10 +33,9 @@ ExternalScanContextMgr::ExternalScanContextMgr(ExecEnv* exec_env) : _exec_env(ex
     _keep_alive_reaper.reset(
             new std::thread(
                     std::bind<void>(std::mem_fn(&ExternalScanContextMgr::gc_expired_context), this)));
-    REGISTER_PRIVATE_VARIABLE_METRIC(active_scan_context_count);
-    DorisMetrics::metrics()->register_hook("active_scan_context_count", [&]() {
+    REGISTER_GAUGE_DORIS_METRIC(active_scan_context_count, [this]() {
         std::lock_guard<std::mutex> l(_lock);
-        _active_scan_context_count.set_value(_active_contexts.size());
+        return _active_contexts.size();
     });
 }
 

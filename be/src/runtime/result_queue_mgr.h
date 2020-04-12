@@ -24,7 +24,6 @@
 
 #include "common/status.h"
 #include "util/hash_util.hpp"
-#include "util/metrics.h"
 #include "runtime/primitive_type.h"
 #include "runtime/raw_value.h"
 #include "runtime/record_batch_queue.h"
@@ -59,10 +58,6 @@ public:
 private:
     std::mutex _lock;
     std::unordered_map<TUniqueId, BlockQueueSharedPtr> _fragment_queue_map;
-
-    // Each BlockingQueue has a limited size (default 20, by config::max_memory_sink_batch_count),
-    // it's not needed to count the actual size of all BlockingQueue.
-    UIntGauge _result_block_queue_count;
 };
 
 }

@@ -32,10 +32,9 @@ namespace doris {
 
 BrokerMgr::BrokerMgr(ExecEnv* exec_env) : 
         _exec_env(exec_env), _thread_stop(false), _ping_thread(&BrokerMgr::ping_worker, this) {
-    REGISTER_PRIVATE_VARIABLE_METRIC(broker_count);
-    DorisMetrics::metrics()->register_hook("broker_count", [&]() {
+    REGISTER_GAUGE_DORIS_METRIC(broker_count, [this]() {
         std::lock_guard<std::mutex> l(_mutex);
-        _broker_count.set_value(_broker_set.size());
+        return _broker_set.size();
     });
 }
 

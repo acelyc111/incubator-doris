@@ -62,10 +62,9 @@ static int64_t calc_job_timeout_s(int64_t timeout_in_req_s) {
 }
 
 LoadChannelMgr::LoadChannelMgr() : _is_stopped(false) {
-    REGISTER_PRIVATE_VARIABLE_METRIC(load_channel_count);
-    DorisMetrics::metrics()->register_hook("load_channel_count", [&]() {
+    REGISTER_GAUGE_DORIS_METRIC(load_channel_count, [this]() {
         std::lock_guard<std::mutex> l(_lock);
-        _load_channel_count.set_value(_load_channels.size());
+        return _load_channels.size();
     });
     _lastest_success_channel = new_lru_cache(1024);
 }

@@ -48,7 +48,6 @@
 #include "olap/rowset/rowset_id_generator.h"
 #include "olap/fs/fs_util.h"
 #include "runtime/heartbeat_flags.h"
-#include "util/metrics.h"
 
 namespace doris {
 
@@ -341,8 +340,6 @@ private:
     RowsetTypePB _default_rowset_type;
 
     HeartbeatFlags* _heartbeat_flags;
-
-    UIntGauge _unused_rowsets_count;
 
     DISALLOW_COPY_AND_ASSIGN(StorageEngine);
 };
