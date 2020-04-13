@@ -64,6 +64,7 @@ private:
     int _real_port;
 
     int _server_fd = -1;
+    std::vector<std::shared_ptr<event_base>> _event_bases;
     std::vector<std::thread> _workers;
 
     pthread_rwlock_t _rw_lock;

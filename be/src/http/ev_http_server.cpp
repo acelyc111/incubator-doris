@@ -26,6 +26,7 @@
 #include <event2/http.h>
 #include <event2/http_struct.h>
 #include <event2/keyvalq_struct.h>
+#include <event2/thread.h>
 
 #include "common/logging.h"
 #include "service/brpc.h"
@@ -90,6 +91,11 @@ EvHttpServer::~EvHttpServer() {
 Status EvHttpServer::start() {
     // bind to 
     RETURN_IF_ERROR(_bind());
+    int ret = evthread_use_pthreads();
+    if (ret < 0) {
+        LOG(WARNING) << "evthread_use_pthreads failed";
+        return Status::InternalError("evthread_use_pthreads failed");
+    }
     for (int i = 0; i < _num_workers; ++i) {
         auto worker = [this, i] () {
             LOG(INFO) << "EvHttpServer worker start, id=" << i;
@@ -115,7 +121,11 @@ Status EvHttpServer::start() {
             evhttp_set_newreqcb(http.get(), on_connection, this);
             evhttp_set_gencb(http.get(), on_request, this);
 
-            event_base_dispatch(base.get());
+            res = event_base_dispatch(base.get());
+            if (res < 0) {
+                LOG(WARNING) << "evhttp accept socket failed";
+                return;
+            }
         };
         _workers.emplace_back(worker);
         _workers[i].detach();
@@ -124,6 +134,13 @@ Status EvHttpServer::start() {
 }
 
 void EvHttpServer::stop() {
+    close(_server_fd);
+    for (auto event_base : _event_bases) {
+        int res = event_base_loopbreak(event_base.get());
+        if (res != 0) {
+            LOG(WARNING) << "break loop failed";
+        }
+    }
 }
 
 void EvHttpServer::join() {

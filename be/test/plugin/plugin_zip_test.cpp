@@ -80,10 +80,10 @@ public:
         _server->start();
         
         std::cout << "the path: " << _path << std::endl;
-
     }
 
     ~PluginZipTest() {
+        _server->join();
         _server->stop();
     };
 
@@ -122,13 +122,9 @@ TEST_F(PluginZipTest, http_normal) {
 
     //    ASSERT_TRUE(zip.extract(_path + "/plugin_test/target/", "test").ok());
     Status st = (zip.extract(_path + "/plugin_test/target/", "test"));
-
-    std::cout << st.to_string() << std::endl;
-    
-    
+    ASSERT_TRUE(st.ok()) << st.to_string();
     ASSERT_TRUE(FileUtils::check_exist(_path + "/plugin_test/target/test"));
     ASSERT_TRUE(FileUtils::check_exist(_path + "/plugin_test/target/test/test.txt"));
-
 
     std::unique_ptr<RandomAccessFile> file;
     Env::Default()->new_random_access_file(_path + "/plugin_test/target/test/test.txt", &file);
@@ -150,6 +146,7 @@ TEST_F(PluginZipTest, http_normal) {
 }
 
 TEST_F(PluginZipTest, already_install) {
+    sleep(1);
     FileUtils::remove_all(_path + "/plugin_test/target");
 
     PluginZip zip("http://127.0.0.1:29191/test.zip");

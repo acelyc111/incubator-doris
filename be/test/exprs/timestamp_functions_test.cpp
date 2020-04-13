@@ -34,9 +34,7 @@ class FunctionContextImpl;
 
 class TimestampFunctionsTest : public testing::Test {
 public:
-    TimestampFunctionsTest() { }
-
-    void SetUp() {
+    TimestampFunctionsTest() {
         TimezoneDatabase::init();
         
         TQueryGlobals globals;
@@ -47,14 +45,18 @@ public:
         utils = new FunctionUtils(state);
         ctx = utils->get_fn_ctx();
     }
-    void TearDown() {
+
+    ~TimestampFunctionsTest() {
         delete state;
+        state = nullptr;
         delete utils;
+        utils = nullptr;
     }
+
 private:
-    RuntimeState* state;
-    FunctionUtils* utils;
-    FunctionContext* ctx;
+    RuntimeState* state = nullptr;
+    FunctionUtils* utils = nullptr;
+    FunctionContext* ctx = nullptr;
 };
 
 TEST_F(TimestampFunctionsTest, day_of_week_test) {

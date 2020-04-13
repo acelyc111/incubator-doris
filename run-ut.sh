@@ -25,7 +25,7 @@ export DORIS_HOME=${ROOT}
 
 . ${DORIS_HOME}/env.sh
 
-PARALLEL=$[$(nproc)/4+1]
+PARALLEL=32 #$[$(nproc)/4+1]
 
 # Check args
 usage() {
@@ -205,6 +205,7 @@ ${DORIS_TEST_BINARY_DIR}/exec/broker_scanner_test
 ${DORIS_TEST_BINARY_DIR}/exec/parquet_scanner_test
 ${DORIS_TEST_BINARY_DIR}/exec/orc_scanner_test
 ${DORIS_TEST_BINARY_DIR}/exec/broker_scan_node_test
+${DORIS_TEST_BINARY_DIR}/exec/es_scan_node_test
 ${DORIS_TEST_BINARY_DIR}/exec/es_http_scan_node_test
 ${DORIS_TEST_BINARY_DIR}/exec/es_predicate_test
 ${DORIS_TEST_BINARY_DIR}/exec/es_scan_reader_test
