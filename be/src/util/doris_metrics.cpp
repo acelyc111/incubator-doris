@@ -152,20 +152,8 @@ UIntGauge DorisMetrics::stream_load_pipe_count;
 UIntGauge DorisMetrics::brpc_endpoint_stub_count;
 UIntGauge DorisMetrics::tablet_writer_count;
 
-DorisMetrics::DorisMetrics() : _metrics(nullptr), _system_metrics(nullptr) {
-}
-
-DorisMetrics::~DorisMetrics() {
-    delete _system_metrics;
-    delete _metrics;
-}
-
-void DorisMetrics::initialize(
-        const std::string& name,
-        const std::vector<std::string>& paths,
-        bool init_system_metrics,
-        const std::set<std::string>& disk_devices,
-        const std::vector<std::string>& network_interfaces) {
+DorisMetrics::DorisMetrics() {
+    const std::string name("doris_be");
     _metrics = new MetricRegistry(name);
 #define REGISTER_DORIS_METRIC(name) _metrics->register_metric(#name, &name)
 
@@ -299,7 +287,19 @@ void DorisMetrics::initialize(
 
     REGISTER_DORIS_METRIC(tablet_cumulative_max_compaction_score);
     REGISTER_DORIS_METRIC(tablet_base_max_compaction_score);
+}
 
+DorisMetrics::~DorisMetrics() {
+    delete _system_metrics;
+    delete _metrics;
+}
+
+void DorisMetrics::initialize(
+        const std::string& name,
+        const std::vector<std::string>& paths,
+        bool init_system_metrics,
+        const std::set<std::string>& disk_devices,
+        const std::vector<std::string>& network_interfaces) {
     // disk usage
     for (auto& path : paths) {
         IntGauge* gauge = disks_total_capacity.set_key(path);

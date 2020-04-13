@@ -67,6 +67,19 @@ protected:
     virtual void TearDown() {
         _obj_pool.clear();
         system("rm -rf ./test_run");
+
+        if (_state != nullptr) {
+            delete _state;
+        }
+        if (_mem_tracker != nullptr) {
+            delete _mem_tracker;
+        }
+        if (_desc_tbl != nullptr) {
+            delete _desc_tbl;
+        }
+        if (_desc_tbl != nullptr) {
+            delete _desc_tbl;
+        }
     }
 
     void init();
@@ -81,7 +94,6 @@ private:
     ExecEnv* _exec_env;
     RuntimeState* _state;
     MemTracker *_mem_tracker;
-    RowDescriptor* _row_desc;
 }; // end class ArrowWorkFlowTest
 
 void ArrowWorkFlowTest::init() {
@@ -256,7 +268,6 @@ void ArrowWorkFlowTest::init_desc_tbl() {
 
     vector<bool> nullable_tuples;
     nullable_tuples.push_back(false);
-    // _row_desc = _pool.add(new RowDescriptor(*_desc_tbl, row_tids, nullable_tuples));
 
     // node
     _tnode.node_id = 0;
@@ -337,7 +348,8 @@ TEST_F(ArrowWorkFlowTest, NormalUse) {
     status = scan_node.open(_state);
     ASSERT_TRUE(status.ok());
 
-    RowBatch row_batch(scan_node._row_descriptor, _state->batch_size(), new MemTracker(-1));
+    std::unique_ptr<MemTracker> mem_tracker(new MemTracker(-1));
+    RowBatch row_batch(scan_node._row_descriptor, _state->batch_size(), mem_tracker.get());
     bool eos = false;
 
     while (!eos) {

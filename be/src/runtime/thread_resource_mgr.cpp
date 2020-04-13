@@ -44,6 +44,16 @@ ThreadResourceMgr::ThreadResourceMgr() {
     _per_pool_quota = 0;
 }
 
+ThreadResourceMgr::~ThreadResourceMgr() {
+    for (auto pool : _free_pool_objs) {
+        delete pool;
+    }
+    for (auto pool : _pools) {
+        delete pool;
+    }
+
+}
+
 ThreadResourceMgr::ResourcePool::ResourcePool(ThreadResourceMgr* parent)
     : _parent(parent) {
 }

@@ -214,8 +214,8 @@ private:
 
     static DorisMetrics _s_doris_metrics;
 
-    MetricRegistry* _metrics;
-    SystemMetrics* _system_metrics;
+    MetricRegistry* _metrics = nullptr;
+    SystemMetrics* _system_metrics = nullptr;
 };
 
 };

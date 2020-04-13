@@ -171,6 +171,7 @@ RuntimeState::~RuntimeState() {
     }
     _query_mem_tracker.reset();
 #endif
+    _exec_env->thread_mgr()->unregister_pool(_resource_pool);
 }
 
 Status RuntimeState::init(

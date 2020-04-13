@@ -34,6 +34,7 @@
 #include "runtime/mem_tracker.h"
 #include "runtime/row_batch.h"
 #include "util/debug_util.h"
+#include "util/doris_metrics.h"
 
 namespace doris {
 
@@ -41,6 +42,9 @@ class ArrowRowBatchTest : public testing::Test {
 public:
     ArrowRowBatchTest() { }
     virtual ~ArrowRowBatchTest() {
+    }
+    void SetUp() override {
+        DorisMetrics::instance()->initialize("arrow_row_batch_test");
     }
 };
 

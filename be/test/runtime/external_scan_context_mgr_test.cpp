@@ -40,6 +40,9 @@ public:
         _exec_env._result_queue_mgr = result_queue_mgr;
     }
     virtual ~ExternalScanContextMgrTest() {
+        delete _exec_env._fragment_mgr;
+        delete _exec_env._thread_mgr;
+        delete _exec_env._result_queue_mgr;
     }
 
 protected:

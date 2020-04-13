@@ -251,6 +251,10 @@ TEST_F(BooleanQueryBuilderTest, bool_query) {
     std::string expected_json = "{\"bool\":{\"should\":[{\"wildcard\":{\"content\":\"a*e*g?\"}},{\"bool\":{\"must_not\":{\"exists\":{\"field\":\"f1\"}}}},{\"range\":{\"k\":{\"gte\":\"a\"}}},{\"term\":{\"content\":\"wyf\"}}]}}";
     //LOG(INFO) << "bool query" << actual_json;
     ASSERT_STREQ(expected_json.c_str(), actual_json.c_str());
+
+    for (auto predicate : or_predicates) {
+        delete predicate;
+    }
 }
 
 TEST_F(BooleanQueryBuilderTest, compound_bool_query) {
@@ -261,7 +265,7 @@ TEST_F(BooleanQueryBuilderTest, compound_bool_query) {
     StringValue like_term_value(like_value, like_value_length);
     ExtLiteral like_literal(TYPE_VARCHAR, &like_term_value);
     std::string like_field_name = "content";
-    ExtLikePredicate* like_predicate = new ExtLikePredicate(TExprNodeType::LIKE_PRED, like_field_name, like_type_desc, like_literal);
+    std::unique_ptr<ExtLikePredicate> like_predicate(new ExtLikePredicate(TExprNodeType::LIKE_PRED, like_field_name, like_type_desc, like_literal));
 
     char es_query_str[] = "{\"bool\": {\"must_not\": {\"exists\": {\"field\": \"f1\"}}}}";
     int es_query_length = (int)strlen(es_query_str);
@@ -274,9 +278,9 @@ TEST_F(BooleanQueryBuilderTest, compound_bool_query) {
     ExtLiteral es_query_term_literal(TYPE_VARCHAR, &es_query_value);
     std::vector<ExtLiteral> es_query_values = {es_query_term_literal};
     std::string function_name = "esquery";
-    ExtFunction* function_predicate = new ExtFunction(TExprNodeType::FUNCTION_CALL, function_name, es_query_cols, es_query_values);
-    std::vector<ExtPredicate*> bool_predicates_1 = {like_predicate, function_predicate};
-    EsPredicate* bool_predicate_1 = new EsPredicate(bool_predicates_1);
+    std::unique_ptr<ExtFunction> function_predicate(new ExtFunction(TExprNodeType::FUNCTION_CALL, function_name, es_query_cols, es_query_values));
+    std::vector<ExtPredicate*> bool_predicates_1 = {like_predicate.get(), function_predicate.get()};
+    std::unique_ptr<EsPredicate> bool_predicate_1(new EsPredicate(bool_predicates_1));
 
     // k >= "a"
     char range_value_str[] = "a";
@@ -285,10 +289,10 @@ TEST_F(BooleanQueryBuilderTest, compound_bool_query) {
     ExtLiteral range_literal(TYPE_VARCHAR, &range_value);
     TypeDescriptor range_type_desc = TypeDescriptor::create_varchar_type(range_value_length);
     std::string range_field_name = "k";
-    ExtBinaryPredicate* range_predicate = new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, range_field_name, range_type_desc, TExprOpcode::GE, range_literal);
+    std::unique_ptr<ExtBinaryPredicate> range_predicate(new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, range_field_name, range_type_desc, TExprOpcode::GE, range_literal));
     
-    std::vector<ExtPredicate*> bool_predicates_2 = {range_predicate};
-    EsPredicate* bool_predicate_2 = new EsPredicate(bool_predicates_2);
+    std::vector<ExtPredicate*> bool_predicates_2 = {range_predicate.get()};
+    std::unique_ptr<EsPredicate> bool_predicate_2(new EsPredicate(bool_predicates_2));
 
     // content != "wyf"
     char term_str[] = "wyf";
@@ -297,9 +301,9 @@ TEST_F(BooleanQueryBuilderTest, compound_bool_query) {
     ExtLiteral term_literal(TYPE_VARCHAR, &term_value);
     TypeDescriptor term_type_desc = TypeDescriptor::create_varchar_type(term_value_length);
     std::string term_field_name = "content";
-    ExtBinaryPredicate* term_ne_predicate = new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, term_field_name, term_type_desc, TExprOpcode::NE, term_literal);
-    std::vector<ExtPredicate*> bool_predicates_3 = {term_ne_predicate};
-    EsPredicate* bool_predicate_3 = new EsPredicate(bool_predicates_3);
+    std::unique_ptr<ExtBinaryPredicate> term_ne_predicate(new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, term_field_name, term_type_desc, TExprOpcode::NE, term_literal));
+    std::vector<ExtPredicate*> bool_predicates_3 = {term_ne_predicate.get()};
+    std::unique_ptr<EsPredicate> bool_predicate_3(new EsPredicate(bool_predicates_3));
 
     // fv not in [8.0, 16.0]
     std::string terms_in_field = "fv";
@@ -317,12 +321,12 @@ TEST_F(BooleanQueryBuilderTest, compound_bool_query) {
     ExtLiteral term_literal_2(TYPE_VARCHAR, &string_value_2);
 
     std::vector<ExtLiteral> terms_values = {term_literal_1, term_literal_2};
-    ExtInPredicate* in_predicate = new ExtInPredicate(TExprNodeType::IN_PRED, true, terms_in_field, terms_in_col_type_desc, terms_values);
-    std::vector<ExtPredicate*> bool_predicates_4 = {in_predicate};
-    EsPredicate* bool_predicate_4 = new EsPredicate(bool_predicates_4);
+    std::unique_ptr<ExtInPredicate> in_predicate(new ExtInPredicate(TExprNodeType::IN_PRED, true, terms_in_field, terms_in_col_type_desc, terms_values));
+    std::vector<ExtPredicate*> bool_predicates_4 = {in_predicate.get()};
+    std::unique_ptr<EsPredicate> bool_predicate_4(new EsPredicate(bool_predicates_4));
 
     // (content like "a%e%g_" or esquery(random, '{"bool": {"must_not": {"exists": {"field": "f1"}}}}')) and content != "wyf" and fv not in [8.0, 16.0]
-    std::vector<EsPredicate*> and_bool_predicates = {bool_predicate_1, bool_predicate_2, bool_predicate_3, bool_predicate_4};
+    std::vector<EsPredicate*> and_bool_predicates = {bool_predicate_1.get(), bool_predicate_2.get(), bool_predicate_3.get(), bool_predicate_4.get()};
     
     rapidjson::Document document;
     rapidjson::Value compound_bool_value(rapidjson::kObjectType);
@@ -336,6 +340,7 @@ TEST_F(BooleanQueryBuilderTest, compound_bool_query) {
     //LOG(INFO) << "compound bool query" << actual_bool_json;
     ASSERT_STREQ(expected_json.c_str(), actual_bool_json.c_str());
 }
+
 TEST_F(BooleanQueryBuilderTest, validate_esquery) {
     std::string function_name = "esquery";
     char field[] = "random";
@@ -393,7 +398,7 @@ TEST_F(BooleanQueryBuilderTest, validate_partial) {
     StringValue like_term_value(like_value, like_value_length);
     ExtLiteral like_literal(TYPE_VARCHAR, &like_term_value);
     std::string like_field_name = "content";
-    ExtLikePredicate* like_predicate = new ExtLikePredicate(TExprNodeType::LIKE_PRED, like_field_name, like_type_desc, like_literal);
+    std::unique_ptr<ExtLikePredicate> like_predicate(new ExtLikePredicate(TExprNodeType::LIKE_PRED, like_field_name, like_type_desc, like_literal));
 
     // k >= "a"
     char range_value_str[] = "a";
@@ -402,10 +407,10 @@ TEST_F(BooleanQueryBuilderTest, validate_partial) {
     ExtLiteral range_literal(TYPE_VARCHAR, &range_value);
     TypeDescriptor range_type_desc = TypeDescriptor::create_varchar_type(range_value_length);
     std::string range_field_name = "k";
-    ExtBinaryPredicate* range_predicate = new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, range_field_name, range_type_desc, TExprOpcode::GE, range_literal);
+    std::unique_ptr<ExtBinaryPredicate> range_predicate(new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, range_field_name, range_type_desc, TExprOpcode::GE, range_literal));
     
-    std::vector<ExtPredicate*> bool_predicates_1 = {like_predicate, range_predicate};
-    EsPredicate* bool_predicate_1 = new EsPredicate(bool_predicates_1);
+    std::vector<ExtPredicate*> bool_predicates_1 = {like_predicate.get(), range_predicate.get()};
+    std::unique_ptr<EsPredicate> bool_predicate_1(new EsPredicate(bool_predicates_1));
 
     // fv not in [8.0, 16.0]
     std::string terms_in_field = "fv";
@@ -423,9 +428,9 @@ TEST_F(BooleanQueryBuilderTest, validate_partial) {
     ExtLiteral term_literal_2(TYPE_VARCHAR, &string_value_2);
 
     std::vector<ExtLiteral> terms_values = {term_literal_1, term_literal_2};
-    ExtInPredicate* in_predicate = new ExtInPredicate(TExprNodeType::IN_PRED, true, terms_in_field, terms_in_col_type_desc, terms_values);
-    std::vector<ExtPredicate*> bool_predicates_2 = {in_predicate};
-    EsPredicate* bool_predicate_2 = new EsPredicate(bool_predicates_2);
+    std::unique_ptr<ExtInPredicate> in_predicate(new ExtInPredicate(TExprNodeType::IN_PRED, true, terms_in_field, terms_in_col_type_desc, terms_values));
+    std::vector<ExtPredicate*> bool_predicates_2 = {in_predicate.get()};
+    std::unique_ptr<EsPredicate> bool_predicate_2(new EsPredicate(bool_predicates_2));
 
     // content != "wyf"
     char term_str[] = "wyf";
@@ -434,7 +439,7 @@ TEST_F(BooleanQueryBuilderTest, validate_partial) {
     ExtLiteral term_literal(TYPE_VARCHAR, &term_value);
     TypeDescriptor term_type_desc = TypeDescriptor::create_varchar_type(term_value_length);
     std::string term_field_name = "content";
-    ExtBinaryPredicate* term_ne_predicate = new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, term_field_name, term_type_desc, TExprOpcode::NE, term_literal);
+    std::unique_ptr<ExtBinaryPredicate> term_ne_predicate(new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, term_field_name, term_type_desc, TExprOpcode::NE, term_literal));
     
     char es_query_str[] = "{\"bool\": {\"must_not\": {\"exists\": {\"field\": \"f1\"}}}}";
     int es_query_length = (int)strlen(es_query_str);
@@ -447,11 +452,11 @@ TEST_F(BooleanQueryBuilderTest, validate_partial) {
     ExtLiteral es_query_term_literal(TYPE_VARCHAR, &es_query_value);
     std::vector<ExtLiteral> es_query_values = {es_query_term_literal};
     std::string function_name = "esquery";
-    ExtFunction* function_predicate = new ExtFunction(TExprNodeType::FUNCTION_CALL, function_name, es_query_cols, es_query_values);
-    std::vector<ExtPredicate*> bool_predicates_3 = {term_ne_predicate, function_predicate};
-    EsPredicate* bool_predicate_3 = new EsPredicate(bool_predicates_3);
+    std::unique_ptr<ExtFunction> function_predicate(new ExtFunction(TExprNodeType::FUNCTION_CALL, function_name, es_query_cols, es_query_values));
+    std::vector<ExtPredicate*> bool_predicates_3 = {term_ne_predicate.get(), function_predicate.get()};
+    std::unique_ptr<EsPredicate> bool_predicate_3(new EsPredicate(bool_predicates_3));
     
-    std::vector<EsPredicate*> and_bool_predicates = {bool_predicate_1, bool_predicate_2, bool_predicate_3};
+    std::vector<EsPredicate*> and_bool_predicates = {bool_predicate_1.get(), bool_predicate_2.get(), bool_predicate_3.get()};
     std::vector<bool> result;
     BooleanQueryBuilder::validate(and_bool_predicates, &result);
     std::vector<bool> expected = {true, true, true};
@@ -461,10 +466,10 @@ TEST_F(BooleanQueryBuilderTest, validate_partial) {
     StringValue illegal_query_value(illegal_query, illegal_query_length);
     ExtLiteral illegal_query_term_literal(TYPE_VARCHAR, &illegal_query_value);
     std::vector<ExtLiteral> illegal_query_values = {illegal_query_term_literal};
-    ExtFunction* illegal_function_preficate = new ExtFunction(TExprNodeType::FUNCTION_CALL, function_name, es_query_cols, illegal_query_values);
-    std::vector<ExtPredicate*> illegal_bool_predicates_3 = {term_ne_predicate, illegal_function_preficate};
-    EsPredicate* illegal_bool_predicate_3 = new EsPredicate(illegal_bool_predicates_3);
-    std::vector<EsPredicate*> and_bool_predicates_1 = {bool_predicate_1, bool_predicate_2, illegal_bool_predicate_3};
+    std::unique_ptr<ExtFunction> illegal_function_preficate(new ExtFunction(TExprNodeType::FUNCTION_CALL, function_name, es_query_cols, illegal_query_values));
+    std::vector<ExtPredicate*> illegal_bool_predicates_3 = {term_ne_predicate.get(), illegal_function_preficate.get()};
+    std::unique_ptr<EsPredicate> illegal_bool_predicate_3(new EsPredicate(illegal_bool_predicates_3));
+    std::vector<EsPredicate*> and_bool_predicates_1 = {bool_predicate_1.get(), bool_predicate_2.get(), illegal_bool_predicate_3.get()};
     std::vector<bool> result1;
     BooleanQueryBuilder::validate(and_bool_predicates_1, &result1);
     std::vector<bool> expected1 = {true, true, false};
@@ -490,7 +495,7 @@ TEST_F(BooleanQueryBuilderTest, validate_compound_and) {
     ExtLiteral term_literal_2(TYPE_VARCHAR, &string_value_2);
 
     std::vector<ExtLiteral> terms_values = {term_literal_1, term_literal_2};
-    ExtInPredicate* in_predicate = new ExtInPredicate(TExprNodeType::IN_PRED, true, terms_in_field, terms_in_col_type_desc, terms_values);
+    std::unique_ptr<ExtInPredicate> in_predicate(new ExtInPredicate(TExprNodeType::IN_PRED, true, terms_in_field, terms_in_col_type_desc, terms_values));
 
     char term_str[] = "wyf";
     int term_value_length = (int)strlen(term_str);
@@ -498,11 +503,9 @@ TEST_F(BooleanQueryBuilderTest, validate_compound_and) {
     ExtLiteral term_literal(TYPE_VARCHAR, &term_value);
     TypeDescriptor term_type_desc = TypeDescriptor::create_varchar_type(term_value_length);
     std::string term_field_name = "content";
-    ExtBinaryPredicate* term_ne_predicate = new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, term_field_name, term_type_desc, TExprOpcode::NE, term_literal);
-
-    std::vector<ExtPredicate*> innner_or_content = {term_ne_predicate, in_predicate};
-
-    EsPredicate* innner_or_predicate = new EsPredicate(innner_or_content);
+    std::unique_ptr<ExtBinaryPredicate> term_ne_predicate(new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, term_field_name, term_type_desc, TExprOpcode::NE, term_literal));
+    std::vector<ExtPredicate*> innner_or_content = {term_ne_predicate.get(), in_predicate.get()};
+    std::unique_ptr<EsPredicate> innner_or_predicate(new EsPredicate(innner_or_content));
 
     char range_value_str[] = "a"; // k >= "a"
     int range_value_length = (int)strlen(range_value_str);
@@ -510,13 +513,13 @@ TEST_F(BooleanQueryBuilderTest, validate_compound_and) {
     ExtLiteral range_literal(TYPE_VARCHAR, &range_value);
     TypeDescriptor range_type_desc = TypeDescriptor::create_varchar_type(range_value_length);
     std::string range_field_name = "k";
-    ExtBinaryPredicate* range_predicate = new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, range_field_name, range_type_desc, TExprOpcode::GE, range_literal);
-    std::vector<ExtPredicate*> range_predicates = {range_predicate};
-    EsPredicate* left_inner_or_predicate = new EsPredicate(range_predicates);
+    std::unique_ptr<ExtBinaryPredicate> range_predicate(new ExtBinaryPredicate(TExprNodeType::BINARY_PRED, range_field_name, range_type_desc, TExprOpcode::GE, range_literal));
+    std::vector<ExtPredicate*> range_predicates = {range_predicate.get()};
+    std::unique_ptr<EsPredicate> left_inner_or_predicate(new EsPredicate(range_predicates));
 
-    std::vector<EsPredicate*> ourter_left_predicates_1 = {left_inner_or_predicate, innner_or_predicate};
+    std::vector<EsPredicate*> ourter_left_predicates_1 = {left_inner_or_predicate.get(), innner_or_predicate.get()};
 
-    ExtCompPredicates* comp_predicate = new ExtCompPredicates(TExprOpcode::COMPOUND_AND, ourter_left_predicates_1);
+    std::unique_ptr<ExtCompPredicates> comp_predicate(new ExtCompPredicates(TExprOpcode::COMPOUND_AND, ourter_left_predicates_1));
 
     char like_value[] = "a%e%g_";
     int like_value_length = (int)strlen(like_value);
@@ -524,13 +527,13 @@ TEST_F(BooleanQueryBuilderTest, validate_compound_and) {
     StringValue like_term_value(like_value, like_value_length);
     ExtLiteral like_literal(TYPE_VARCHAR, &like_term_value);
     std::string like_field_name = "content";
-    ExtLikePredicate* like_predicate = new ExtLikePredicate(TExprNodeType::LIKE_PRED, like_field_name, like_type_desc, like_literal);
+    std::unique_ptr<ExtLikePredicate> like_predicate(new ExtLikePredicate(TExprNodeType::LIKE_PRED, like_field_name, like_type_desc, like_literal));
 
     
-    std::vector<ExtPredicate*> or_predicate_vector = {comp_predicate, like_predicate};
-    EsPredicate* or_predicate = new EsPredicate(or_predicate_vector);
+    std::vector<ExtPredicate*> or_predicate_vector = {comp_predicate.get(), like_predicate.get()};
+    std::unique_ptr<EsPredicate> or_predicate(new EsPredicate(or_predicate_vector));
 
-    std::vector<EsPredicate*> or_predicates = {or_predicate};
+    std::vector<EsPredicate*> or_predicates = {or_predicate.get()};
     std::vector<bool> result1;
     BooleanQueryBuilder::validate(or_predicates, &result1);
     std::vector<bool> expected1 = {true};

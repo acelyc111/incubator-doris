@@ -43,6 +43,7 @@ HttpRequest::HttpRequest(evhttp_request* evhttp_request)
 }
 
 HttpRequest::~HttpRequest() {
+    LOG(WARNING) << "========================================================" << _handler << " vs " << _handler_ctx;
     if (_handler != nullptr && _handler_ctx != nullptr) {
         _handler->free_handler_ctx(_handler_ctx);
     }
