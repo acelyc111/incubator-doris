@@ -50,6 +50,9 @@ protected:
     OlapReaderStatistics _stats;
 
     void SetUp() override {
+        config::tablet_map_shard_size = 1;
+        config::txn_map_shard_size = 1;
+        config::txn_shard_size = 1;
         DorisMetrics::instance()->initialize("test", {}, false, {}, {});
         char buffer[MAX_PATH_LEN];
         getcwd(buffer, MAX_PATH_LEN);
@@ -341,6 +344,7 @@ TEST_F(BetaRowsetTest, BasicFunctionTest) {
             EXPECT_EQ(OLAP_ERR_DATA_EOF, s);
             EXPECT_TRUE(output_block == nullptr);
             EXPECT_EQ(100, num_rows_read);
+            delete predicate;
         }
     }
 }

@@ -31,6 +31,12 @@ using namespace strings;
     }   \
 }
 
+PluginMgr::~PluginMgr() {
+    // TODO(yingchun): maybe not right, just for LSAN
+    for (int i = 0; i < PLUGIN_TYPE_MAX; ++i) {
+        _plugins[i].clear();
+    }
+}
 
 Status PluginMgr::install_plugin(const TPluginMetaInfo& info) {
     {

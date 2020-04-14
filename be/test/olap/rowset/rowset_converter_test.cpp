@@ -151,6 +151,9 @@ void create_tablet_meta(TabletSchema* tablet_schema, TabletMeta* tablet_meta) {
 class RowsetConverterTest : public testing::Test {
 public:
     virtual void SetUp() {
+        config::tablet_map_shard_size = 1;
+        config::txn_map_shard_size = 1;
+        config::txn_shard_size = 1;
         DorisMetrics::instance()->initialize("test", {}, false, {}, {});
         config::path_gc_check = false;
         char buffer[MAX_PATH_LEN];
@@ -163,7 +166,9 @@ public:
 
         doris::EngineOptions options;
         options.store_paths = paths;
-        doris::StorageEngine::open(options, &k_engine);
+        if (k_engine == nullptr) {
+            doris::StorageEngine::open(options, &k_engine);
+        }
 
         ExecEnv* exec_env = doris::ExecEnv::GetInstance();
         exec_env->set_storage_engine(k_engine);
@@ -275,6 +280,7 @@ void RowsetConverterTest::process(RowsetTypePB src_type, RowsetTypePB dst_type) 
         ASSERT_EQ("well" + std::to_string(i), (*(Slice*)row_cursor.cell_ptr(1)).to_string());
         ASSERT_EQ(10000 + i, *(uint32_t*)row_cursor.cell_ptr(2));
     }
+    delete cache;
 }
 
 TEST_F(RowsetConverterTest, TestConvertAlphaRowsetToBeta) {
@@ -289,5 +295,7 @@ TEST_F(RowsetConverterTest, TestConvertBetaRowsetToAlpha) {
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    int ret = RUN_ALL_TESTS();
+    delete doris::k_engine;
+    return ret;
 }

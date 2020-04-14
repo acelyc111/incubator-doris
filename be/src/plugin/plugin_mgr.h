@@ -42,7 +42,7 @@ public:
     
     PluginMgr() {}
     
-    ~PluginMgr() {}
+    ~PluginMgr();
     
     Status install_plugin(const TPluginMetaInfo& info);
     

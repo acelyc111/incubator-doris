@@ -94,6 +94,9 @@ public:
     }
 
     virtual void SetUp() {
+        config::tablet_map_shard_size = 1;
+        config::txn_map_shard_size = 1;
+        config::txn_shard_size = 1;
         config::max_runnings_transactions_per_txn_map = 500;
         _txn_mgr.reset(new TxnManager(64, 1024));
         DorisMetrics::instance()->initialize("test", {}, false, {}, {});

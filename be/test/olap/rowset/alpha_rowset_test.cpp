@@ -191,6 +191,7 @@ TEST_F(AlphaRowsetTest, TestAlphaRowsetWriter) {
     rowset_id.init(10000);
     ASSERT_EQ(rowset_id, alpha_rowset->rowset_id());
     ASSERT_EQ(1, alpha_rowset->num_rows());
+    SAFE_DELETE(cache);
 }
 
 TEST_F(AlphaRowsetTest, TestAlphaRowsetReader) {
@@ -250,6 +251,7 @@ TEST_F(AlphaRowsetTest, TestAlphaRowsetReader) {
     res = rowset_reader->next_block(&row_block);
     ASSERT_EQ(OLAP_SUCCESS, res);
     ASSERT_EQ(1, row_block->remaining());
+    SAFE_DELETE(cache);
 }
 
 TEST_F(AlphaRowsetTest, TestRowCursorWithOrdinal) {
