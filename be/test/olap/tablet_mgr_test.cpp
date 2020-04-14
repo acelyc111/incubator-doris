@@ -91,6 +91,7 @@ public:
         if (boost::filesystem::exists(_engine_data_path)) {
             ASSERT_TRUE(boost::filesystem::remove_all(_engine_data_path));
         }
+        delete FileHandler::get_fd_cache();
     }
 
 private:
@@ -146,6 +147,7 @@ TEST_F(TabletMgrTest, CreateTablet) {
     create_tablet_req.__set_tablet_schema(tablet_schema);
     create_st = _tablet_mgr->create_tablet(create_tablet_req, data_dirs);
     ASSERT_TRUE(create_st == OLAP_ERR_CE_TABLET_ID_EXIST);
+    ASSERT_EQ(_tablet_mgr->drop_tablet(111, 3333), OLAP_SUCCESS);
 }
 
 

@@ -53,6 +53,9 @@ static StorageEngine* k_engine = nullptr;
 class OlapSnapshotConverterTest : public testing::Test {
 public:
     virtual void SetUp() {
+        config::tablet_map_shard_size = 1;
+        config::txn_map_shard_size = 1;
+        config::txn_shard_size = 1;
         DorisMetrics::instance()->initialize("test", {}, false, {}, {});
         std::vector<StorePath> paths;
         paths.emplace_back("_engine_data_path", -1);

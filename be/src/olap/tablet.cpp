@@ -76,8 +76,12 @@ Tablet::Tablet(TabletMetaSharedPtr tablet_meta, DataDir* data_dir) :
 }
 
 Tablet::~Tablet() {
-    _rs_version_map.clear();
-    _inc_rs_version_map.clear();
+    for (const auto& rs_version : _rs_version_map) {
+        _rs_graph.delete_version_from_graph(rs_version.first);
+    }
+    for (const auto& rs_version : _inc_rs_version_map) {
+        _rs_graph.delete_version_from_graph(rs_version.first);
+    }
 }
 
 OLAPStatus Tablet::_init_once_action() {
