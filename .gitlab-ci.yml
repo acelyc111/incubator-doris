@@ -6,21 +6,37 @@ before_script:
 
 stages:
   - test
+  - build  
   - package
 
-build_and_test_be_job:
+test_be_job:
   stage: test
   script:
     - ./run-ut.sh --run
 
-build_and_test_fe_job:
+test_fe_job:
   stage: test
   script:
     - ./run-fe-ut.sh
 
+build_job:
+  stage: build
+  script:
+    - ./make_distribution.sh
+
 package_job:
   only:
     - tags
+    - branch-0.12-mdh  
   stage: package
+  variables:
+    MINOS_CONFIG_FILE: '$CI_PROJECT_DIR/deployment-config/deploy.cfg'
+    MINOS2_CONFIG_FILE: '$CI_PROJECT_DIR/deployment/deploy.cfg'
   script:
-    - ./make_distribution.sh
+    - git clone git@git.n.xiaomi.com:teg-devops/minos.git
+    - git clone git@git.n.xiaomi.com:teg-devops/deployment-config.git
+    - git clone git@git.n.xiaomi.com:teg-devops/deployment.git
+    - cd minos && ./build.sh build
+    - cd ../ && ./make_distribution.sh  
+    - cd minos/client/ && ./package install doris --package_dir=$CI_PROJECT_DIR --version=0.11-branch-mdh  
+  when: on_success
