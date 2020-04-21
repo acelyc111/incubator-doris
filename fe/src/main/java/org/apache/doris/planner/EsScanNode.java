@@ -124,7 +124,6 @@ public class EsScanNode extends ScanNode {
             esScanNode.setDocvalue_context(table.docValueContext());
         }
         msg.es_scan_node = esScanNode;
-
     }
 
     // TODO(ygl) assign backend that belong to the same cluster
