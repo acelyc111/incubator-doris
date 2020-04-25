@@ -21,6 +21,7 @@ import org.apache.doris.catalog.Catalog;
 import org.apache.doris.common.CommandLineOptions;
 import org.apache.doris.common.Config;
 import org.apache.doris.common.Log4jConfig;
+import org.apache.doris.common.ThreadPoolManager;
 import org.apache.doris.common.Version;
 import org.apache.doris.common.util.JdkUtils;
 import org.apache.doris.http.HttpServer;
@@ -122,6 +123,8 @@ public class PaloFe {
             feServer.start();
             httpServer.start();
             qeService.start();
+
+            ThreadPoolManager.registerAllThreadPoolMetric();
 
             while (true) {
                 Thread.sleep(2000);
