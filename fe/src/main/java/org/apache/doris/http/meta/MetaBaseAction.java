@@ -71,7 +71,7 @@ public class MetaBaseAction extends WebBaseAction {
     }
 
     protected boolean needCheckClientIsFe() {
-        return true;
+        return false;
     }
 
     protected void writeFileResponse(BaseRequest request, BaseResponse response, File file) {
