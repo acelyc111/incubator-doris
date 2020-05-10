@@ -49,7 +49,6 @@ OLAPStatus AlphaRowsetReader::init(RowsetReaderContext* read_context) {
     }
 
     _is_segments_overlapping = _alpha_rowset_meta->is_segments_overlapping();
-    _ordinal = 0;
 
     RETURN_NOT_OK(_init_merge_ctxs(read_context));
 
@@ -156,7 +155,10 @@ OLAPStatus AlphaRowsetReader::_merge_block(RowBlock** block) {
 
         VLOG(10) << "get merged row: " << row_cursor->to_string();
 
+        // TODO(yingchun): wrap these code
         _read_block->get_row(_read_block->pos(), _dst_cursor);
+        // TODO(yingchun): optimize to avoid copy row, as long as this row is in memory
+        // (i.e. merge_ctx didn't switch to next block), we can use pointer and not copy.
         copy_row(_dst_cursor, *row_cursor, _read_block->mem_pool());
         _read_block->pos_inc();
         num_rows_in_block++;
@@ -318,6 +320,7 @@ OLAPStatus AlphaRowsetReader::_pull_first_block(AlphaMergeContext* merge_ctx) {
 }
 
 OLAPStatus AlphaRowsetReader::_init_merge_ctxs(RowsetReaderContext* read_context) {
+    // TODO(yingchun): do these check in upper layer
     if (read_context->reader_type == READER_QUERY) {
         if (read_context->lower_bound_keys->size() != read_context->is_lower_keys_included->size()
                 || read_context->lower_bound_keys->size() != read_context->upper_bound_keys->size()

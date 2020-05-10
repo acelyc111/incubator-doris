@@ -32,6 +32,7 @@ namespace doris {
 
 class ExecEnv;
 
+// TODO(yingchun): seems useless, can we remove it?
 class BrokerMgr {
 public:
     BrokerMgr(ExecEnv* exec_env);

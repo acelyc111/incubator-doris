@@ -37,6 +37,7 @@ namespace doris {
 class Tablet;
 class SegmentReader;
 
+// TODO(yingchun): why not rename it to ColumnDataReader?
 // This class is column data reader. this class will be used in two case.
 class ColumnData {
 public:
@@ -102,7 +103,6 @@ public:
     // 开放接口查询_eof，让外界知道数据读取是否正常终止
     // 因为这个函数被频繁访问, 从性能考虑, 放在基类而不是虚函数
     bool eof() { return _eof; }
-    void set_eof(bool eof) { _eof = eof; }
     bool* eof_ptr() { return &_eof; }
 
     bool empty() const { return _segment_group->empty(); }
@@ -112,6 +112,7 @@ public:
     int delete_pruning_filter();
     uint64_t get_filted_rows();
 
+    // TODO(yingchun): remove it
     SegmentGroup* segment_group() const { return _segment_group; }
     void set_segment_group(SegmentGroup* segment_group) { _segment_group = segment_group; }
     int64_t num_rows() const { return _segment_group->num_rows(); }
@@ -156,22 +157,22 @@ private:
         return &_cursor;
     }
 private:
-    SegmentGroup* _segment_group;
+    SegmentGroup* _segment_group = nullptr;
     std::shared_ptr<MemTracker> _parent_tracker;
     // 当到达文件末尾或者到达end key时设置此标志
-    bool _eof;
-    const Conditions* _conditions;
-    const std::vector<ColumnPredicate*>* _col_predicates;
+    bool _eof = false;
+    const Conditions* _conditions = nullptr;
+    const std::vector<ColumnPredicate*>* _col_predicates = nullptr;
     const DeleteHandler*_delete_handler = nullptr;
-    DelCondSatisfied _delete_status;
-    RuntimeState* _runtime_state;
-    OlapReaderStatistics* _stats;
+    DelCondSatisfied _delete_status = DEL_NOT_SATISFIED;
+    RuntimeState* _runtime_state = nullptr;
+    OlapReaderStatistics* _stats = nullptr;
 
     const TabletSchema& _schema;
     // whether in normal read, use return columns to load block
     bool _is_normal_read = false;
     bool _end_key_is_set = false;
-    bool _is_using_cache;
+    bool _is_using_cache = false;
     bool _segment_eof = false;
     bool _need_eval_predicates = false;
 
@@ -179,7 +180,7 @@ private:
     std::vector<uint32_t> _seek_columns;
     std::set<uint32_t> _load_bf_columns;
 
-    SegmentReader* _segment_reader;
+    SegmentReader* _segment_reader = nullptr;
 
     std::unique_ptr<VectorizedRowBatch> _seek_vector_batch;
     std::unique_ptr<VectorizedRowBatch> _read_vector_batch;
@@ -198,7 +199,7 @@ private:
     int64_t _end_row_index = 0;
 
     size_t _num_rows_per_block;
-    Cache* _lru_cache;
+    Cache* _lru_cache = nullptr;
 };
 
 class ColumnDataComparator {

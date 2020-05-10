@@ -121,10 +121,10 @@ Status FileUtils::remove_paths(const std::vector<std::string>& paths) {
 }
 
 Status FileUtils::list_files(Env* env, const std::string& dir,
-                             std::vector<std::string>* files) {
+                            std::vector<std::string>* files) {
     auto cb = [files](const char* name) -> bool {
         if (!is_dot_or_dotdot(name)) {
-            files->push_back(name);
+            files->emplace_back(name);
         }
         return true;
     };

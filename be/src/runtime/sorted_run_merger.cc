@@ -164,6 +164,7 @@ Status SortedRunMerger::get_next(RowBatch* output_batch, bool* eos) {
         return Status::OK();
     }
 
+    // TODO(yingchun): optimize to copy batch by batch, not row by row
     while (!output_batch->at_capacity()) {
         BatchedRowSupplier* min = _min_heap[0];
         int output_row_index = output_batch->add_row();
@@ -191,6 +192,7 @@ Status SortedRunMerger::get_next(RowBatch* output_batch, bool* eos) {
             if (_min_heap.empty()) break;
         }
 
+        // TODO(yingchun): need reorder when min is not swaped?
         heapify(0);
     }
 

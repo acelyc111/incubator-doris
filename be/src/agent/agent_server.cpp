@@ -39,6 +39,7 @@ AgentServer::AgentServer(ExecEnv* exec_env, const TMasterInfo& master_info) :
         _exec_env(exec_env),
         _master_info(master_info),
         _topic_subscriber(new TopicSubscriber()) {
+    // TODO(yingchun): move these code into a init() function
     for (auto& path : exec_env->store_paths()) {
         try {
             string dpp_download_path_str = path.path + DPP_PREFIX;
@@ -99,22 +100,23 @@ AgentServer::~AgentServer() { }
 
 // TODO(lingbin): each task in the batch may have it own status or FE must check and
 // resend request when something is wrong(BE may need some logic to guarantee idempotence.
+// TODO(yingchun): means extractly once?
 void AgentServer::submit_tasks(TAgentResult& agent_result, const vector<TAgentTaskRequest>& tasks) {
     Status ret_st;
 
     // TODO check master_info here if it is the same with that of heartbeat rpc
-    if (_master_info.network_address.hostname == "" || _master_info.network_address.port == 0) {
+    if (_master_info.network_address.hostname.empty() || _master_info.network_address.port == 0) {
         Status ret_st = Status::Cancelled("Have not get FE Master heartbeat yet");
         ret_st.to_thrift(&agent_result.status);
         return;
     }
 
-    for (auto task : tasks) {
+    for (const auto& task : tasks) {
         VLOG_RPC << "submit one task: " << apache::thrift::ThriftDebugString(task).c_str();
         TTaskType::type task_type = task.task_type;
         int64_t signature = task.signature;
 
-#define HANDLE_TYPE(t_task_type, work_pool, req_member)                         \
+#define HANDLE_TYPE(t_task_type, work_pool, req_member)                          \
     case t_task_type:                                                           \
         if (task.__isset.req_member) {                                          \
             work_pool->submit_task(task);                                       \
@@ -231,7 +233,7 @@ void AgentServer::release_snapshot(TAgentResult& t_agent_result, const std::stri
     Status ret_st;
     OLAPStatus err_code = SnapshotManager::instance()->release_snapshot(snapshot_path);
     if (err_code != OLAP_SUCCESS) {
-        LOG(WARNING) << "failt to release_snapshot. snapshot_path: " << snapshot_path
+        LOG(WARNING) << "failed to release_snapshot. snapshot_path: " << snapshot_path
                      << ", err_code: " << err_code;
         ret_st = Status::RuntimeError(strings::Substitute(
                     "fail to release_snapshot. err_code=$0", err_code));
@@ -266,6 +268,7 @@ void AgentServer::get_etl_status(TMiniLoadEtlStatusResult& t_agent_result,
     Status status = _exec_env->etl_job_mgr()->get_job_state(request.mini_load_id, &t_agent_result);
     if (!status.ok()) {
         LOG(WARNING) << "fail to get job state. [id=" << request.mini_load_id << "]";
+        return;
     }
 
     VLOG_RPC << "success to get job state. [id=" << request.mini_load_id << ", status="
@@ -289,4 +292,4 @@ void AgentServer::delete_etl_files(TAgentResult& t_agent_result,
     status.to_thrift(&t_agent_result.status);
 }
 
-}  // namesapce doris
+}  // namespace doris

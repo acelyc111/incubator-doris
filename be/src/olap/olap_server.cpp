@@ -207,31 +207,32 @@ void StorageEngine::_garbage_sweeper_thread_callback() {
         OLAP_LOG_WARNING("garbage sweep interval config is illegal: [max=%d min=%d].",
                          max_interval, min_interval);
         min_interval = 1;
-        max_interval = max_interval >= min_interval ? max_interval : min_interval;
+        max_interval = std::max(max_interval, min_interval);
         LOG(INFO) << "force reset garbage sweep interval. "
                   << "max_interval=" << max_interval
                   << ", min_interval=" << min_interval;
     }
 
     const double pi = 4 * std::atan(1);
-    double usage = 1.0;
+    double max_usage = 1.0;
     // 程序启动后经过min_interval后触发第一轮扫描
     uint32_t curr_interval = min_interval;
     while (!_stop_background_threads_latch.wait_for(MonoDelta::FromSeconds(curr_interval))) {
-        usage *= 100.0;
+        // TODO(yingchun): it's a big to '*= 100' in loop!!!
+        max_usage *= 100.0;
         // 该函数特性：当磁盘使用率<60%的时候，ratio接近于1；
         // 当使用率介于[60%, 75%]之间时，ratio急速从0.87降到0.27；
         // 当使用率大于75%时，ratio值开始缓慢下降
         // 当usage=90%时，ratio约为0.0057
-        double ratio = (1.1 * (pi / 2 - std::atan(usage / 5 - 14)) - 0.28) / pi;
-        ratio = ratio > 0 ? ratio : 0;
+        double ratio = (1.1 * (pi / 2 - std::atan(max_usage / 5 - 14)) - 0.28) / pi;
+        ratio = std::max(ratio, 0.0);
         uint32_t curr_interval = max_interval * ratio;
         // 此时的特性，当usage<60%时，curr_interval的时间接近max_interval，
         // 当usage > 80%时，curr_interval接近min_interval
-        curr_interval = curr_interval > min_interval ? curr_interval : min_interval;
+        curr_interval = std::max(curr_interval, min_interval);
 
         // 开始清理，并得到清理后的磁盘使用率
-        OLAPStatus res = _start_trash_sweep(&usage);
+        OLAPStatus res = _start_trash_sweep(&max_usage);
         if (res != OLAP_SUCCESS) {
             OLAP_LOG_WARNING("one or more errors occur when sweep trash."
                     "see previous message for detail. [err code=%d]", res);
@@ -384,6 +385,7 @@ void StorageEngine::_tablet_checkpoint_callback(DataDir* data_dir) {
         _tablet_manager->do_tablet_meta_checkpoint(data_dir);
         int64_t used_time = (UnixMillis() - start_time) / 1000;
         if (used_time < config::tablet_meta_checkpoint_min_interval_secs) {
+            // TODO(yingchun): is it necessary to use interval difference eith others?
             interval = config::tablet_meta_checkpoint_min_interval_secs - used_time;
         } else {
             interval = 1;

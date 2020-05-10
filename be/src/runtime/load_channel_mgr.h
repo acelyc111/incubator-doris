@@ -45,7 +45,7 @@ public:
     LoadChannelMgr();
     ~LoadChannelMgr();
 
-    Status init(int64_t process_mem_limit);
+    void init(int64_t process_mem_limit);
 
     // open a new load channel if not exist
     Status open(const PTabletWriterOpenRequest& request);
@@ -55,15 +55,16 @@ public:
                      int64_t* wait_lock_time_ns);
 
     // cancel all tablet stream for 'load_id' load
-    Status cancel(const PTabletWriterCancelRequest& request);
-
+    void cancel(const PTabletWriterCancelRequest& request);
 
 private:
     // check if the total load mem consumption exceeds limit.
     // If yes, it will pick a load channel to try to reduce memory consumption.
     void _handle_mem_exceed_limit();
 
-    Status _start_bg_worker();
+    void _start_bg_worker();
+
+    void _start_load_channels_clean();
 
 private:
     // lock protect the load channel map
@@ -78,7 +79,6 @@ private:
     CountDownLatch _stop_background_threads_latch;
     // thread to clean timeout load channels
     scoped_refptr<Thread> _load_channels_clean_thread;
-    Status _start_load_channels_clean();
 };
 
 }

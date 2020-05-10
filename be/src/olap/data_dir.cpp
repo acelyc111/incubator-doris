@@ -345,7 +345,7 @@ void DataDir::register_tablet(Tablet* tablet) {
     TabletInfo tablet_info(tablet->tablet_id(), tablet->schema_hash(), tablet->tablet_uid());
 
     std::lock_guard<std::mutex> l(_mutex);
-    _tablet_set.emplace(std::move(tablet_info));
+    _tablet_set.emplace(tablet_info);
 }
 
 void DataDir::deregister_tablet(Tablet* tablet) {
@@ -756,6 +756,7 @@ OLAPStatus DataDir::load() {
             }
         } else if (rowset_meta->rowset_state() == RowsetStatePB::VISIBLE &&
                    rowset_meta->tablet_uid() == tablet->tablet_uid()) {
+            // TODO(yingchun): Can we add rs by batch ?
             OLAPStatus publish_status = tablet->add_rowset(rowset, false);
             if (publish_status != OLAP_SUCCESS &&
                 publish_status != OLAP_ERR_PUSH_VERSION_ALREADY_EXIST) {
@@ -851,6 +852,8 @@ void DataDir::perform_path_gc_by_rowsetid() {
         if (config::path_gc_check_step > 0 && counter % config::path_gc_check_step == 0) {
             SleepFor(MonoDelta::FromMilliseconds(config::path_gc_check_step_interval_ms));
         }
+
+        // TODO(yingchun): get_tablet_id_and_schema_hash_from_path and get_rowset_id_from_path in one judgment
         TTabletId tablet_id = -1;
         TSchemaHash schema_hash = -1;
         bool is_valid = _tablet_manager->get_tablet_id_and_schema_hash_from_path(path, &tablet_id,

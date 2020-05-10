@@ -61,13 +61,18 @@ struct ReaderParams {
     //     if config::disable_storage_page_cache is false, we use page cache
     bool use_page_cache = false;
     Version version = Version(-1, 0);
+
+    // TODO(yingchun): why there is only 1 pair of range-end_range, but multi start_key-end_key pairs?
     // possible values are "gt", "ge", "eq"
     std::string range;
     // possible values are "lt", "le"
     std::string end_range;
+
+    // TODO(yingchun): these 3 vectors should equal?
     std::vector<OlapTuple> start_key;
     std::vector<OlapTuple> end_key;
     std::vector<TCondition> conditions;
+
     // The ColumnData will be set when using Merger, eg Cumulative, BE.
     std::vector<RowsetReaderSharedPtr> rs_readers;
     std::vector<uint32_t> return_columns;
@@ -162,7 +167,7 @@ private:
             return ss.str();
         }
 
-        std::string range;
+        std::string range;   // TODO(yingchun): rename to start_range
         std::string end_range;
         std::vector<RowCursor*> start_keys;
         std::vector<RowCursor*> end_keys;

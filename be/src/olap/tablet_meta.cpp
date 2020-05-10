@@ -307,6 +307,7 @@ OLAPStatus TabletMeta::serialize(string* meta_binary) {
     if (!serialize_success) {
         LOG(FATAL) << "failed to serialize meta " << full_name();
     }
+    // TODO(yingchun): not needed, or there must be a bug in protobuf
     // deserialize the meta to check the result is correct
     TabletMetaPB de_tablet_meta_pb;
     bool parsed = de_tablet_meta_pb.ParseFromString(*meta_binary);
@@ -404,7 +405,7 @@ void TabletMeta::init_from_pb(const TabletMetaPB& tablet_meta_pb) {
     }
 }
 
-void TabletMeta::to_meta_pb(TabletMetaPB* tablet_meta_pb) {
+void TabletMeta::to_meta_pb(TabletMetaPB* tablet_meta_pb) const {
     tablet_meta_pb->set_table_id(table_id());
     tablet_meta_pb->set_partition_id(partition_id());
     tablet_meta_pb->set_tablet_id(tablet_id());
@@ -454,14 +455,15 @@ void TabletMeta::to_meta_pb(TabletMetaPB* tablet_meta_pb) {
     }
 }
 
-void TabletMeta::to_json(string* json_string, json2pb::Pb2JsonOptions& options) {
+void TabletMeta::to_json(string* json_string, json2pb::Pb2JsonOptions& options) const {
     TabletMetaPB tablet_meta_pb;
     to_meta_pb(&tablet_meta_pb);
     json2pb::ProtoMessageToJson(tablet_meta_pb, json_string, options);
 }
 
 Version TabletMeta::max_version() const {
-    Version max_version = { -1, 0 };
+    // TODO(yingchun): define a const kInvalidVersion
+    Version max_version(-1, 0);
     for (auto& rs_meta : _rs_metas) {
         if (rs_meta->end_version() > max_version.second)  {
             max_version = rs_meta->version();
@@ -475,6 +477,7 @@ OLAPStatus TabletMeta::add_rs_meta(const RowsetMetaSharedPtr& rs_meta) {
     for (auto& rs : _rs_metas) {
         if (rs->version() == rs_meta->version()) {
             if (rs->rowset_id() != rs_meta->rowset_id()) {
+                // TODO(yingchun): should CHECK?
                 LOG(WARNING) << "version already exist. rowset_id=" << rs->rowset_id()
                             << " version=" << rs->version()
                             << ", tablet=" << full_name();
@@ -498,10 +501,12 @@ void TabletMeta::delete_rs_meta_by_version(const Version& version,
                                            vector<RowsetMetaSharedPtr>* deleted_rs_metas) {
     auto it = _rs_metas.begin();
     while (it != _rs_metas.end()) {
+        // TODO(yingchun): are versions ordered? or can we sort them?
         if ((*it)->version() == version) {
             if (deleted_rs_metas != nullptr) {
                 deleted_rs_metas->push_back(*it);
             }
+            // TODO(yingchun): no need to remove_delete_predicate_by_version like in modify_rs_metas
             _rs_metas.erase(it);
             return;
         } else {
@@ -596,6 +601,7 @@ void TabletMeta::delete_inc_rs_meta_by_version(const Version& version) {
 }
 
 RowsetMetaSharedPtr TabletMeta::acquire_inc_rs_meta_by_version(const Version& version) const {
+    // TODO(yingchun): too many loop and compare, can we use map?
     for (auto it : _inc_rs_metas) {
         if (it->version() == version) {
             return it;
@@ -622,6 +628,7 @@ void TabletMeta::remove_delete_predicate_by_version(const Version& version) {
     for (int ordinal = 0; ordinal < _del_pred_array.size(); ++ordinal) {
         const DeletePredicatePB& temp = _del_pred_array.Get(ordinal);
         if (temp.version() == version.first) {
+            // TODO(yingchun): just log in some log level
             // log delete condition
             string del_cond_str;
             for (const auto& it : temp.sub_predicates()) {
@@ -630,6 +637,7 @@ void TabletMeta::remove_delete_predicate_by_version(const Version& version) {
             LOG(INFO) << "remove one del_pred. version=" << temp.version()
                       << ", condition=" << del_cond_str;
 
+            // TODO(yingchun): Swap here to avoid move many elements?
             // remove delete condition from PB
             _del_pred_array.SwapElements(ordinal, _del_pred_array.size() - 1);
             _del_pred_array.RemoveLast();

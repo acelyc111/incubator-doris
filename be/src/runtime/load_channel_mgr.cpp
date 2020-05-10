@@ -44,7 +44,7 @@ static int64_t calc_process_max_load_memory(int64_t process_mem_limit) {
 static int64_t calc_job_max_load_memory(int64_t mem_limit_in_req, int64_t total_mem_limit) {
     // default mem limit is used to be compatible with old request.
     // new request should be set load_mem_limit.
-    const int64_t default_load_mem_limit = 2 * 1024 * 1024 * 1024L; // 2GB
+    static const int64_t default_load_mem_limit = 2 * 1024 * 1024 * 1024L; // 2GB
     int64_t load_mem_limit = default_load_mem_limit;
     if (mem_limit_in_req != -1) {
         // mem-limit of a certain load should between config::write_buffer_size
@@ -80,11 +80,10 @@ LoadChannelMgr::~LoadChannelMgr() {
     delete _lastest_success_channel;
 }
 
-Status LoadChannelMgr::init(int64_t process_mem_limit) {
+void LoadChannelMgr::init(int64_t process_mem_limit) {
     int64_t load_mem_limit = calc_process_max_load_memory(process_mem_limit);
     _mem_tracker = MemTracker::CreateTracker(load_mem_limit, "load channel mgr");
-    RETURN_IF_ERROR(_start_bg_worker());
-    return Status::OK();
+    _start_bg_worker();
 }
 
 Status LoadChannelMgr::open(const PTabletWriterOpenRequest& params) {
@@ -159,6 +158,7 @@ Status LoadChannelMgr::add_batch(
             _load_channels.erase(load_id);
             auto handle = _lastest_success_channel->insert(
                     load_id.to_string(), nullptr, 1, dummy_deleter);
+            // TODO(yingchun): why release after insert?
             _lastest_success_channel->release(handle);
         }
         VLOG(1) << "removed load channel " << load_id;
@@ -195,14 +195,15 @@ void LoadChannelMgr::_handle_mem_exceed_limit() {
     channel->handle_mem_exceed_limit(true);
 }
 
-Status LoadChannelMgr::cancel(const PTabletWriterCancelRequest& params) {
+void LoadChannelMgr::cancel(const PTabletWriterCancelRequest& params) {
     UniqueId load_id(params.id());
     std::shared_ptr<LoadChannel> cancelled_channel;
     {
         std::lock_guard<std::mutex> l(_lock);
-        if (_load_channels.find(load_id) != _load_channels.end()) {
-            cancelled_channel = _load_channels[load_id];
-            _load_channels.erase(load_id);
+        const auto& it = _load_channels.find(load_id);
+        if (it != _load_channels.end()) {
+            cancelled_channel = it->second;
+            _load_channels.erase(it);
         }
     }
 
@@ -210,12 +211,10 @@ Status LoadChannelMgr::cancel(const PTabletWriterCancelRequest& params) {
         cancelled_channel->cancel();
         LOG(INFO) << "load channel has been cancelled: " << load_id;
     }
-
-    return Status::OK();
 }
 
-Status LoadChannelMgr::_start_bg_worker() {
-    RETURN_IF_ERROR(
+void LoadChannelMgr::_start_bg_worker() {
+    CHECK(
         Thread::create("LoadChannelMgr", "cancel_timeout_load_channels",
                        [this]() {
 #ifdef GOOGLE_PROFILER
@@ -229,32 +228,27 @@ Status LoadChannelMgr::_start_bg_worker() {
                            while (!_stop_background_threads_latch.wait_for(MonoDelta::FromSeconds(interval))) {
                                _start_load_channels_clean();
                            }},
-                       &_load_channels_clean_thread));
-
-    return Status::OK();
+                       &_load_channels_clean_thread).ok());
 }
 
-Status LoadChannelMgr::_start_load_channels_clean() {
+void LoadChannelMgr::_start_load_channels_clean() {
     std::vector<std::shared_ptr<LoadChannel>> need_delete_channels;
     LOG(INFO) << "cleaning timed out load channels";
     time_t now = time(nullptr);
     {
-        std::vector<UniqueId> need_delete_channel_ids;
         std::lock_guard<std::mutex> l(_lock);
         VLOG(1) << "there are " << _load_channels.size() << " running load channels";
         int i = 0;
-        for (auto& kv : _load_channels) {
-            VLOG(1) << "load channel[" << i++ << "]: " << *(kv.second);
-            time_t last_updated_time = kv.second->last_updated_time();
-            if (difftime(now, last_updated_time) >= kv.second->timeout()) {
-                need_delete_channel_ids.emplace_back(kv.first);
-                need_delete_channels.emplace_back(kv.second);
+        for (auto it = _load_channels.begin(); it != _load_channels.end();) {
+            VLOG(1) << "load channel[" << i++ << "]: " << *(it->second);
+            time_t last_updated_time = it->second->last_updated_time();
+            if (difftime(now, last_updated_time) >= it->second->timeout()) {
+                need_delete_channels.push_back(it->second);
+                LOG(INFO) << "erase timeout load channel: " << it->first;
+                it = _load_channels.erase(it);
+            } else {
+                ++it;
             }
-        }
-
-        for(auto& key: need_delete_channel_ids) {
-            _load_channels.erase(key);
-            LOG(INFO) << "erase timeout load channel: " << key;
         }
     }
 
@@ -272,8 +266,6 @@ Status LoadChannelMgr::_start_load_channels_clean() {
     LOG(INFO) << "load mem consumption(bytes). limit: " << _mem_tracker->limit()
             << ", current: " << _mem_tracker->consumption()
             << ", peak: " << _mem_tracker->peak_consumption();
-
-    return Status::OK();
 }
 
 }

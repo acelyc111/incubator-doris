@@ -57,8 +57,6 @@ OLAPStatus EngineChecksumTask::_compute_checksum() {
         return OLAP_ERR_TABLE_NOT_FOUND;
     }
 
-
-    Reader reader;
     ReaderParams reader_params;
     reader_params.tablet = tablet;
     reader_params.reader_type = READER_CHECKSUM;
@@ -84,6 +82,7 @@ OLAPStatus EngineChecksumTask::_compute_checksum() {
         reader_params.return_columns.push_back(i);
     }
 
+    Reader reader;
     res = reader.init(reader_params);
     if (res != OLAP_SUCCESS) {
         OLAP_LOG_WARNING("initiate reader fail. [res=%d]", res);

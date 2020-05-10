@@ -262,7 +262,7 @@ private:
     const TypeInfo* _type_info;
     const KeyCoder* _key_coder;
     std::string _name;
-    uint16_t _index_size;
+    uint16_t _index_size;     // TODO(yingchun): does it means 'cell size'?
     bool _is_nullable;
 
 protected:
@@ -286,7 +286,7 @@ int Field::index_cmp(const LhsCellType& lhs, const RhsCellType& rhs) const {
     bool r_null = rhs.is_null();
     if (l_null != r_null) {
         return l_null ? -1 : 1;
-    } else if (l_null){
+    } else if (l_null) {
         return 0;
     }
 
@@ -339,8 +339,7 @@ void Field::to_index(DstCellType* dst, const SrcCellType& src) const {
         // 先清零，再拷贝
         memset(dst->mutable_cell_ptr(), 0, _index_size);
         const Slice* slice = reinterpret_cast<const Slice*>(src.cell_ptr());
-        size_t copy_size = slice->size < _index_size - OLAP_STRING_MAX_BYTES ?
-                           slice->size : _index_size - OLAP_STRING_MAX_BYTES;
+        size_t copy_size = std::min<size_t>(slice->size, _index_size - OLAP_STRING_MAX_BYTES);
         *reinterpret_cast<StringLengthType*>(dst->mutable_cell_ptr()) = copy_size;
         memory_copy((char*)dst->mutable_cell_ptr() + OLAP_STRING_MAX_BYTES, slice->data, copy_size);
     } else if (type() == OLAP_FIELD_TYPE_CHAR) {

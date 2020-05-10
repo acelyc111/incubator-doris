@@ -73,6 +73,7 @@ private:
         const std::string& remote_url_prefix,
         const std::string& local_path);
 
+    // TODO(yingchun): use 'const &' would be better than 'const *', like missed_versions
     Status _make_snapshot(
         const std::string& ip, int port,
         TTableId tablet_id,

@@ -26,30 +26,21 @@ namespace doris {
 
 ColumnData* ColumnData::create(SegmentGroup* segment_group,
                                const std::shared_ptr<MemTracker>& parent_tracker) {
-    ColumnData* data = new (std::nothrow) ColumnData(segment_group, parent_tracker);
-    return data;
+    return new (std::nothrow) ColumnData(segment_group, parent_tracker);
 }
 
 ColumnData::ColumnData(SegmentGroup* segment_group,
                        const std::shared_ptr<MemTracker>& parent_tracker)
         : _segment_group(segment_group),
           _parent_tracker(parent_tracker),
-          _eof(false),
-          _conditions(nullptr),
-          _col_predicates(nullptr),
-          _delete_status(DEL_NOT_SATISFIED),
-          _runtime_state(nullptr),
           _schema(segment_group->get_tablet_schema()),
-          _is_using_cache(false),
-          _segment_reader(nullptr),
-          _lru_cache(nullptr) {
+          _num_rows_per_block(segment_group->get_num_rows_per_row_block()) {
     if (StorageEngine::instance() != nullptr) {
         _lru_cache = StorageEngine::instance()->index_stream_lru_cache();
     } else {
         // for independent usage, eg: unit test/segment tool
         _lru_cache = FileHandler::get_fd_cache();
     }
-    _num_rows_per_block = _segment_group->get_num_rows_per_row_block();
 }
 
 ColumnData::~ColumnData() {
@@ -95,6 +86,7 @@ OLAPStatus ColumnData::_next_row(const RowCursor** row, bool without_filter) {
                 return OLAP_SUCCESS;
             }
 
+            // TODO(yingchun): what does DEL_NOT_SATISFIED mean？
             // when without_filter is true, _include_blocks is nullptr
             if (_read_block->block_status() == DEL_NOT_SATISFIED) {
                 *row = &_cursor;
@@ -133,8 +125,7 @@ OLAPStatus ColumnData::_seek_to_block(const RowBlockPosition& block_pos, bool wi
             return OLAP_ERR_DATA_EOF;
         }
         SAFE_DELETE(_segment_reader);
-        std::string file_name;
-        file_name = segment_group()->construct_data_file_path(block_pos.segment);
+        std::string file_name = segment_group()->construct_data_file_path(block_pos.segment);
         _segment_reader = new(std::nothrow) SegmentReader(
                 file_name, segment_group(),  block_pos.segment,
                 _seek_columns, _load_bf_columns, _conditions,
@@ -176,7 +167,8 @@ OLAPStatus ColumnData::_find_position_by_short_key(
         }
         return res;
     }
-    res = segment_group()->find_prev_point(tmp_pos, position);
+    // TODO(yingchun): why get prev?
+    res = _segment_group->find_prev_point(tmp_pos, position);
     if (res != OLAP_SUCCESS) {
         OLAP_LOG_WARNING("find prev row block failed. [res=%d]", res);
         return res;
@@ -197,7 +189,7 @@ OLAPStatus ColumnData::_find_position_by_full_key(
         return res;
     }
     RowBlockPosition start_position;
-    res = segment_group()->find_prev_point(tmp_pos, &start_position);
+    res = _segment_group->find_prev_point(tmp_pos, &start_position);
     if (res != OLAP_SUCCESS) {
         OLAP_LOG_WARNING("find prev row block failed. [res=%d]", res);
         return res;
@@ -223,7 +215,7 @@ OLAPStatus ColumnData::_find_position_by_full_key(
             OLAPIndexOffset index_offset;
             index_offset.segment = _end_segment;
             index_offset.offset = _end_block;
-            res = segment_group()->get_row_block_position(index_offset, &end_position);
+            res = _segment_group->get_row_block_position(index_offset, &end_position);
             if (res != OLAP_SUCCESS) {
                 OLAP_LOG_WARNING("fail to get row block position. [res=%d]", res);
                 return res;
@@ -279,6 +271,7 @@ OLAPStatus ColumnData::_find_position_by_full_key(
     return OLAP_SUCCESS;
 }
 
+// TODO(yingchun): find_last_key -> include_last_key?
 OLAPStatus ColumnData::_seek_to_row(const RowCursor& key, bool find_last_key, bool is_end_key) {
     RowBlockPosition position;
     OLAPStatus res = OLAP_SUCCESS;
@@ -327,7 +320,7 @@ OLAPStatus ColumnData::_seek_to_row(const RowCursor& key, bool find_last_key, bo
     } else {
         // 找last key。返回大于这个key的第一个。也就是
         // row_cursor > key
-        while (res == OLAP_SUCCESS && compare_row_key(*row_cursor,key) <= 0) {
+        while (res == OLAP_SUCCESS && compare_row_key(*row_cursor, key) <= 0) {
             res = _next_row(&row_cursor, without_filter);
         }
     }
@@ -356,7 +349,7 @@ OLAPStatus ColumnData::prepare_block_read(
         const RowCursor* end_key, bool find_end_key,
         RowBlock** first_block) {
     SCOPED_RAW_TIMER(&_stats->block_fetch_ns);
-    set_eof(false);
+    _eof = false;
     _end_key_is_set = false;
     _is_normal_read = false;
     // set end position
@@ -369,13 +362,13 @@ OLAPStatus ColumnData::prepare_block_read(
             _end_row_index = _read_block->pos();
             _end_key_is_set = true;
         } else if (res != OLAP_ERR_DATA_EOF) {
-            LOG(WARNING) << "Find end key failed.key=" << end_key->to_string();
+            LOG(WARNING) << "Find end key failed. key=" << end_key->to_string();
             return res;
         }
         // res == OLAP_ERR_DATA_EOF means there is no end key, then we read to
         // the end of this ColumnData
     }
-    set_eof(false);
+    _eof = false;
     if (start_key != nullptr) {
         auto res = _seek_to_row(*start_key, !find_start_key, false);
         if (res == OLAP_SUCCESS) {
@@ -385,7 +378,7 @@ OLAPStatus ColumnData::prepare_block_read(
             *first_block = nullptr;
             return res;
         } else {
-            LOG(WARNING) << "start_key can't be found.key=" << start_key->to_string();
+            LOG(WARNING) << "start_key can't be found. key=" << start_key->to_string();
             return res;
         }
     } else {

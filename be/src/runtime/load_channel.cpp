@@ -65,7 +65,6 @@ Status LoadChannel::open(const PTabletWriterOpenRequest& params) {
 Status LoadChannel::add_batch(
         const PTabletWriterAddBatchRequest& request,
         google::protobuf::RepeatedPtrField<PTabletInfo>* tablet_vec) {
-
     int64_t index_id = request.index_id();
     // 1. get tablets channel
     std::shared_ptr<TabletsChannel> channel;
@@ -93,7 +92,6 @@ Status LoadChannel::add_batch(
     }
 
     // 4. handle eos
-    Status st;
     if (request.has_eos() && request.eos()) {
         bool finished = false;
         RETURN_IF_ERROR(channel->close(request.sender_id(), &finished,
@@ -105,7 +103,7 @@ Status LoadChannel::add_batch(
         }
     }
     _last_updated_time.store(time(nullptr));
-    return st;
+    return Status::OK();
 }
 
 void LoadChannel::handle_mem_exceed_limit(bool force) {

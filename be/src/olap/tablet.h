@@ -57,6 +57,7 @@ public:
            const std::string& cumulative_compaction_type = config::cumulative_compaction_policy);
 
     OLAPStatus init();
+    // TODO(yingchun): inline is useless.
     inline bool init_succeeded();
 
     bool is_used();
@@ -98,6 +99,7 @@ public:
 
     // _rs_version_map and _inc_rs_version_map should be protected by _meta_lock
     // The caller must call hold _meta_lock when call this two function.
+    // TODO(yingchun): add '_unlock' posifix
     const RowsetSharedPtr get_rowset_by_version(const Version& version) const;
     const RowsetSharedPtr get_inc_rowset_by_version(const Version& version) const;
     const RowsetSharedPtr get_stale_rowset_by_version(const Version& version) const;
@@ -138,6 +140,7 @@ public:
     void delete_alter_task();
     OLAPStatus set_alter_state(AlterTabletState state);
 
+    // TODO(yingchun): we'd better use a RAII method for these locks.
     // meta lock
     inline void obtain_header_rdlock() { _meta_lock.rdlock(); }
     inline void obtain_header_wrlock() { _meta_lock.wrlock(); }
@@ -255,6 +258,8 @@ private:
     TimestampedVersionTracker _timestamped_version_tracker;
     
     DorisCallOnce<OLAPStatus> _init_once;
+
+    // TODO(yingchun): Can we reduce lock count?
     // meta store lock is used for prevent 2 threads do checkpoint concurrently
     // it will be used in econ-mode in the future
     RWMutex _meta_store_lock;
@@ -339,6 +344,7 @@ inline void Tablet::set_cumulative_layer_point(int64_t new_point) {
 
 // TODO(lingbin): Why other methods that need to get information from _tablet_meta
 // are not locked, here needs a comment to explain.
+// TODO(yingchun): +1
 inline size_t Tablet::tablet_footprint() {
     ReadLock rdlock(&_meta_lock);
     return _tablet_meta->tablet_footprint();
@@ -346,6 +352,7 @@ inline size_t Tablet::tablet_footprint() {
 
 // TODO(lingbin): Why other methods which need to get information from _tablet_meta
 // are not locked, here needs a comment to explain.
+// TODO(yingchun): +1
 inline size_t Tablet::num_rows() {
     ReadLock rdlock(&_meta_lock);
     return _tablet_meta->num_rows();

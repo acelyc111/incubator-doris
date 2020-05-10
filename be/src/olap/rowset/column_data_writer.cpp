@@ -42,8 +42,8 @@ ColumnDataWriter::ColumnDataWriter(SegmentGroup* segment_group,
       _bloom_filter_fpp(bloom_filter_fpp),
       _zone_maps(segment_group->get_num_zone_map_columns(), KeyRange(NULL, NULL)),
       _row_index(0),
-      _row_block(NULL),
-      _segment_writer(NULL),
+      _row_block(nullptr),
+      _segment_writer(nullptr),
       _num_rows(0),
       _block_id(0),
       _max_segment_size(OLAP_MAX_COLUMN_SEGMENT_FILE_SIZE),
@@ -63,7 +63,6 @@ ColumnDataWriter::~ColumnDataWriter() {
 
 OLAPStatus ColumnDataWriter::init() {
     OLAPStatus res = OLAP_SUCCESS;
-
     for (size_t i = 0; i < _zone_maps.size(); ++i) {
         _zone_maps[i].first = WrapperField::create(_segment_group->get_tablet_schema().column(i));
         DCHECK(_zone_maps[i].first != nullptr) << "fail to create column statistics field.";
@@ -80,8 +79,7 @@ OLAPStatus ColumnDataWriter::init() {
     _max_segment_size = static_cast<uint32_t>(lround(size));
 
     _row_block = new(std::nothrow) RowBlock(&(_segment_group->get_tablet_schema()));
-
-    if (NULL == _row_block) {
+    if (nullptr == _row_block) {
         LOG(WARNING) << "fail to new RowBlock.";
         return OLAP_ERR_MALLOC_ERROR;
     }
@@ -186,11 +184,7 @@ OLAPStatus ColumnDataWriter::finalize() {
         return res;
     }
 
-    res = _segment_group->add_zone_maps(_zone_maps);
-    if (res != OLAP_SUCCESS) {
-        LOG(WARNING) << "Fail to set zone_map! res=" << res;
-        return res;
-    }
+    _segment_group->add_zone_maps(_zone_maps);
 
     return OLAP_SUCCESS;
 }
@@ -232,18 +226,15 @@ OLAPStatus ColumnDataWriter::_flush_row_block(bool finalize) {
 }
 
 OLAPStatus ColumnDataWriter::_add_segment() {
-    std::string file_name;
-
-    if (NULL != _segment_writer) {
+    if (nullptr != _segment_writer) {
         OLAP_LOG_WARNING("previous segment is not finalized before add new segment.");
         return OLAP_ERR_WRITER_SEGMENT_NOT_FINALIZED;
     }
 
-    file_name = _segment_group->construct_data_file_path(_segment);
+    std::string file_name = _segment_group->construct_data_file_path(_segment);
     _segment_writer = new(std::nothrow) SegmentWriter(file_name, _segment_group,
             OLAP_DEFAULT_COLUMN_STREAM_BUFFER_SIZE, _compress_kind, _bloom_filter_fpp);
-
-    if (NULL == _segment_writer) {
+    if (nullptr == _segment_writer) {
         OLAP_LOG_WARNING("fail to allocate SegmentWriter");
         return OLAP_ERR_MALLOC_ERROR;
     }
@@ -252,8 +243,7 @@ OLAPStatus ColumnDataWriter::_add_segment() {
     if (_is_push_write) {
         res = _segment_writer->init(config::push_write_mbytes_per_sec);
     } else {
-        res = _segment_writer->init(
-                config::base_compaction_write_mbytes_per_sec);
+        res = _segment_writer->init(config::base_compaction_write_mbytes_per_sec);
     }
 
     if (OLAP_SUCCESS != res) {
@@ -302,8 +292,7 @@ OLAPStatus ColumnDataWriter::_finalize_segment() {
 }
 
 uint64_t ColumnDataWriter::written_bytes() {
-    uint64_t size = _segment * _max_segment_size + _segment_writer->estimate_segment_size();
-    return size;
+    return _segment * _max_segment_size + _segment_writer->estimate_segment_size();
 }
 
 MemPool* ColumnDataWriter::mem_pool() {

@@ -113,8 +113,6 @@ public:
 
     void release_schema_change_lock(TTabletId tablet_id);
 
-    // 获取所有tables的名字
-    //
     // Return OLAP_SUCCESS, if run ok
     //        OLAP_ERR_INPUT_PARAMETER_ERROR, if tables is null
     OLAPStatus report_tablet_info(TTabletInfo* tablet_info);

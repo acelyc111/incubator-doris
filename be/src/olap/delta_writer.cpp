@@ -27,15 +27,14 @@
 
 namespace doris {
 
-OLAPStatus DeltaWriter::open(WriteRequest* req, const std::shared_ptr<MemTracker>& parent,
+void DeltaWriter::open(const WriteRequest& req, const std::shared_ptr<MemTracker>& parent,
                              DeltaWriter** writer) {
     *writer = new DeltaWriter(req, parent, StorageEngine::instance());
-    return OLAP_SUCCESS;
 }
 
-DeltaWriter::DeltaWriter(WriteRequest* req, const std::shared_ptr<MemTracker>& parent,
+DeltaWriter::DeltaWriter(const WriteRequest& req, const std::shared_ptr<MemTracker>& parent,
                          StorageEngine* storage_engine)
-        : _req(*req),
+        : _req(req),
           _tablet(nullptr),
           _cur_rowset(nullptr),
           _new_rowset(nullptr),
@@ -216,7 +215,7 @@ OLAPStatus DeltaWriter::close() {
         // which means this tablet has no data loaded, but at least one tablet
         // in same partition has data loaded.
         // so we have to also init this DeltaWriter, so that it can create a empty rowset
-        // for this tablet when being closd.
+        // for this tablet when being closed.
         RETURN_NOT_OK(init());
     }
 
@@ -258,7 +257,6 @@ OLAPStatus DeltaWriter::close_wait(google::protobuf::RepeatedPtrField<PTabletInf
 
         res = _storage_engine->txn_manager()->commit_txn(_req.partition_id, _new_tablet, _req.txn_id,
             _req.load_id, _new_rowset, false);
-
         if (res != OLAP_SUCCESS && res != OLAP_ERR_PUSH_TRANSACTION_ALREADY_EXIST) {
             LOG(WARNING) << "Failed to save pending rowset. rowset_id:" << _new_rowset->rowset_id();
             return res;

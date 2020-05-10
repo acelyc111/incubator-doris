@@ -390,7 +390,7 @@ namespace config {
     // you can do it as root via "sysctl -w vm.max_map_count=262144" or
     // "echo 262144 > /proc/sys/vm/max_map_count"
     // NOTE: When this is set to true, you must set chunk_reserved_bytes_limit
-    // to a relative large number or the performace is very very bad.
+    // to a relative large number or the performance is very very bad.
     CONF_Bool(use_mmap_allocate_chunk, "false");
 
     // Chunk Allocator's reserved bytes limit,

@@ -133,13 +133,10 @@ OLAPStatus CumulativeCompaction::pick_rowsets_to_compact() {
             }
         } else {
             // init the compaction success time for first time
-            if (last_cumu == 0) {
-                _tablet->set_last_cumu_compaction_success_time(now);
-            }
-
-            if (last_base == 0) {
-                _tablet->set_last_base_compaction_success_time(now);
-            }
+            DCHECK_EQ(last_cumu, 0);
+            DCHECK_EQ(last_base, 0);
+            _tablet->set_last_cumu_compaction_success_time(now);
+            _tablet->set_last_base_compaction_success_time(now);
         }
 
         return OLAP_ERR_CUMULATIVE_NO_SUITABLE_VERSIONS;

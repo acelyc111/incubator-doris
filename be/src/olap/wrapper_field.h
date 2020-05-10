@@ -112,13 +112,13 @@ public:
 
 private:
     Field* _rep = nullptr;
-    bool _is_string_type;
+    bool _is_string_type = false;
     char* _field_buf = nullptr;
     char* _owned_buf = nullptr;
 
     //include fixed and variable length and null bytes
-    size_t _length;
-    size_t _var_length;
+    size_t _length = 0;
+    size_t _var_length = 0;
     // memory for string type field
     std::unique_ptr<char[]> _string_content;
 };

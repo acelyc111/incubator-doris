@@ -49,6 +49,7 @@ template<> inline void fixed_size_memory_copy<8>(void* dst, const void* src) {
     *(reinterpret_cast<uint64_t*>(dst)) = * (reinterpret_cast<const uint64_t*>(src));
 }
 
+// TODO(yingchun): do benckmark on it
 inline void memory_copy(void* dst, const void* src, size_t size) {
 // Function fixed_size_memory_copy will report a stack-use-after-scope error in ASAN mode.
 #if !defined(ADDRESS_SANITIZER)

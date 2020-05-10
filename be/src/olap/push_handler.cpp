@@ -139,6 +139,7 @@ OLAPStatus PushHandler::_do_streaming_ingestion(
       } else {
         ReadLock new_migration_rlock(related_tablet->get_migration_lock_ptr(), TRY_LOCK);
         if (!new_migration_rlock.own_lock()) {
+            // TODO(yingchun): tablet->release_push_lock();
             return OLAP_ERR_RWLOCK_ERROR;
         }
         PUniqueId load_id;

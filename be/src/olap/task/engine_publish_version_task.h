@@ -26,7 +26,7 @@ namespace doris {
 
 class EnginePublishVersionTask : public EngineTask {
 public:
-    EnginePublishVersionTask(TPublishVersionRequest& publish_version_req,
+    EnginePublishVersionTask(const TPublishVersionRequest& publish_version_req,
                              vector<TTabletId>* error_tablet_ids);
     ~EnginePublishVersionTask() {}
 

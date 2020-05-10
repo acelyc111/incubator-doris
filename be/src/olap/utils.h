@@ -159,6 +159,7 @@ uint32_t olap_adler32(uint32_t adler, const char* buf, size_t len);
 uint32_t olap_crc32(uint32_t crc32, const char* buf, size_t len);
 
 // 获取系统当前时间，并将时间转换为字符串
+// TODO(yingchun): add comments
 OLAPStatus gen_timestamp_string(std::string* out_string);
 
 // 将file移到回收站，回收站位于storage_root/trash, file可以是文件或目录

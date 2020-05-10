@@ -63,10 +63,9 @@ Status TabletsChannel::open(const PTabletWriterOpenRequest& params) {
     _txn_id = params.txn_id();
     _index_id = params.index_id();
     _schema = new OlapTableSchemaParam();
-    RETURN_IF_ERROR(_schema->init(params.schema()));
+    _schema->init(params.schema());
     _tuple_desc = _schema->tuple_desc();
     _row_desc = new RowDescriptor(_tuple_desc, false);
-
     _num_remaining_senders = params.num_senders();
     _next_seqs.resize(_num_remaining_senders, 0);
     _closed_senders.Reset(_num_remaining_senders);
@@ -86,6 +85,7 @@ Status TabletsChannel::add_batch(const PTabletWriterAddBatchRequest& params) {
                        : Status::InternalError(strings::Substitute("TabletsChannel $0 state: $1",
                                                                    _key.to_string(), _state));
     }
+    DCHECK_LT(params.sender_id(), _next_seqs.size());
     auto next_seq = _next_seqs[params.sender_id()];
     // check packet
     if (params.packet_seq() < next_seq) {
@@ -104,10 +104,11 @@ Status TabletsChannel::add_batch(const PTabletWriterAddBatchRequest& params) {
     for (int i = 0; i < params.tablet_ids_size(); ++i) {
         auto tablet_id = params.tablet_ids(i);
         auto it = _tablet_writers.find(tablet_id);
-        if (it == std::end(_tablet_writers)) {
+        if (it == _tablet_writers.end()) {
             return Status::InternalError(strings::Substitute(
                     "unknown tablet to append data, tablet=$0", tablet_id));
         }
+        // TODO(yingchun): now write in tablets are in sequential, we can optimize to write concurrently
         auto st = it->second->write(row_batch.get_row(i)->get_tuple(0));
         if (st != OLAP_SUCCESS) {
             const std::string& err_msg = strings::Substitute(
@@ -147,11 +148,13 @@ Status TabletsChannel::close(int sender_id, bool* finished,
         std::vector<DeltaWriter*> need_wait_writers;
         for (auto& it : _tablet_writers) {
             if (_partition_ids.count(it.second->partition_id()) > 0) {
+                // TODO(yingchun): rename it to async_flush?
                 auto st = it.second->close();
                 if (st != OLAP_SUCCESS) {
                     LOG(WARNING) << "close tablet writer failed, tablet_id=" << it.first
                         << ", transaction_id=" << _txn_id << ", err=" << st;
                     // just skip this tablet(writer) and continue to close others
+                    // TODO(yingchun): we need a deterministic result, should not continue simplely
                     continue;
                 }
                 need_wait_writers.push_back(it.second);
@@ -227,29 +230,21 @@ Status TabletsChannel::_open_all_writers(const PTabletWriterOpenRequest& params)
         ss << "unknown index id, key=" << _key;
         return Status::InternalError(ss.str());
     }
+
+    WriteRequest request;
+    request.schema_hash = schema_hash;
+    request.write_type = WriteType::LOAD;
+    request.txn_id = _txn_id;
+    request.load_id = params.id();
+    request.need_gen_rollup = params.need_gen_rollup();
+    request.tuple_desc = _tuple_desc;
+    request.slots = index_slots;
     for (auto& tablet : params.tablets()) {
-        WriteRequest request;
         request.tablet_id = tablet.tablet_id();
-        request.schema_hash = schema_hash;
-        request.write_type = WriteType::LOAD;
-        request.txn_id = _txn_id;
         request.partition_id = tablet.partition_id();
-        request.load_id = params.id();
-        request.need_gen_rollup = params.need_gen_rollup();
-        request.tuple_desc = _tuple_desc;
-        request.slots = index_slots;
 
         DeltaWriter* writer = nullptr;
-        auto st = DeltaWriter::open(&request, _mem_tracker,  &writer);
-        if (st != OLAP_SUCCESS) {
-            std::stringstream ss;
-            ss << "open delta writer failed, tablet_id=" << tablet.tablet_id()
-                << ", txn_id=" << _txn_id
-                << ", partition_id=" << tablet.partition_id()
-                << ", err=" << st;
-            LOG(WARNING) << ss.str();
-            return Status::InternalError(ss.str());
-        }
+        DeltaWriter::open(request, _mem_tracker, &writer);
         _tablet_writers.emplace(tablet.tablet_id(), writer);
     }
     _s_tablet_writer_count += _tablet_writers.size();

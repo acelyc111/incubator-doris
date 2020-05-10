@@ -107,7 +107,7 @@ public:
     void drain_and_shutdown() {
         {
             boost::unique_lock<boost::mutex> l(_lock);
-            while (_work_queue.get_size() != 0) {
+            while (!_work_queue.empty()) {
                 _empty_cv.wait(l);
             }
         }
@@ -143,7 +143,7 @@ private:
             if (!tasks.empty()) {
                 _work_func(tasks);
             }
-            if (_work_queue.get_size() == 0) {
+            if (_work_queue.empty()) {
                 _empty_cv.notify_all();
             }
         }

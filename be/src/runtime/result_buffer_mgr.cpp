@@ -52,51 +52,47 @@ ResultBufferMgr::~ResultBufferMgr() {
     }
 }
 
-Status ResultBufferMgr::init() {
-    RETURN_IF_ERROR(Thread::create("ResultBufferMgr", "cancel_timeout_result",
+void ResultBufferMgr::init() {
+    CHECK(Thread::create("ResultBufferMgr", "cancel_timeout_result",
                                    [this]() { this->cancel_thread(); },
-                                   &_clean_thread));
-    return Status::OK();
+                                   &_clean_thread).ok());
 }
 
-Status ResultBufferMgr::create_sender(
+void ResultBufferMgr::create_sender(
     const TUniqueId& query_id, int buffer_size,
     boost::shared_ptr<BufferControlBlock>* sender) {
     *sender = find_control_block(query_id);
     if (*sender != nullptr) {
         LOG(WARNING) << "already have buffer control block for this instance "
                      << query_id;
-        return Status::OK();
+        return;
     }
 
-    boost::shared_ptr<BufferControlBlock> control_block(
-        new BufferControlBlock(query_id, buffer_size));
+    boost::shared_ptr<BufferControlBlock> control_block(new BufferControlBlock(query_id, buffer_size));
     {
         boost::lock_guard<boost::mutex> l(_lock);
         _buffer_map.insert(std::make_pair(query_id, control_block));
     }
     *sender = control_block;
-    return Status::OK();
 }
 
 boost::shared_ptr<BufferControlBlock> ResultBufferMgr::find_control_block(
     const TUniqueId& query_id) {
     // TODO(zhaochun): this lock can be bottleneck?
+    // TODO(yingchun): maybe we can shard it
     boost::lock_guard<boost::mutex> l(_lock);
-    BufferMap::iterator iter = _buffer_map.find(query_id);
-
+    auto iter = _buffer_map.find(query_id);
     if (_buffer_map.end() != iter) {
         return iter->second;
     }
 
-    return boost::shared_ptr<BufferControlBlock>();
+    return nullptr;
 }
 
 Status ResultBufferMgr::fetch_data(
     const TUniqueId& query_id, TFetchDataResult* result) {
     boost::shared_ptr<BufferControlBlock> cb = find_control_block(query_id);
-
-    if (NULL == cb) {
+    if (nullptr == cb) {
         // the sender tear down its buffer block
         return Status::InternalError("no result for this query.");
     }
@@ -117,22 +113,18 @@ void ResultBufferMgr::fetch_data(const PUniqueId& finst_id, GetResultBatchCtx* c
     cb->get_batch(ctx);
 }
 
-Status ResultBufferMgr::cancel(const TUniqueId& query_id) {
+void ResultBufferMgr::cancel(const TUniqueId& query_id) {
     boost::lock_guard<boost::mutex> l(_lock);
     BufferMap::iterator iter = _buffer_map.find(query_id);
-
     if (_buffer_map.end() != iter) {
         iter->second->cancel();
         _buffer_map.erase(iter);
     }
-
-    return Status::OK();
 }
 
-Status ResultBufferMgr::cancel_at_time(time_t cancel_time, const TUniqueId& query_id) {
+void ResultBufferMgr::cancel_at_time(time_t cancel_time, const TUniqueId& query_id) {
     boost::lock_guard<boost::mutex> l(_timeout_lock);
     TimeoutMap::iterator iter = _timeout_map.find(cancel_time);
-
     if (_timeout_map.end() == iter) {
         _timeout_map.insert(std::pair<time_t, std::vector<TUniqueId>>(
                                  cancel_time, std::vector<TUniqueId>()));
@@ -140,7 +132,6 @@ Status ResultBufferMgr::cancel_at_time(time_t cancel_time, const TUniqueId& quer
     }
 
     iter->second.push_back(query_id);
-    return Status::OK();
 }
 
 void ResultBufferMgr::cancel_thread() {
@@ -153,19 +144,15 @@ void ResultBufferMgr::cancel_thread() {
         {
             boost::lock_guard<boost::mutex> l(_timeout_lock);
             TimeoutMap::iterator end = _timeout_map.upper_bound(now_time + 1);
-
             for (TimeoutMap::iterator iter = _timeout_map.begin(); iter != end; ++iter) {
-                for (int i = 0; i < iter->second.size(); ++i) {
-                    query_to_cancel.push_back(iter->second[i]);
-                }
+                query_to_cancel.insert(query_to_cancel.end(), iter->second.begin(), iter->second.end());
             }
-
             _timeout_map.erase(_timeout_map.begin(), end);
         }
 
         // cancel query
-        for (int i = 0; i < query_to_cancel.size(); ++i) {
-            cancel(query_to_cancel[i]);
+        for (const auto& it : query_to_cancel) {
+            cancel(it);
         }
     } while (!_stop_background_threads_latch.wait_for(MonoDelta::FromSeconds(1)));
 

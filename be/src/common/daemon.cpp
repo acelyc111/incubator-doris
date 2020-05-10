@@ -98,7 +98,7 @@ void Daemon::memory_maintenance_thread() {
             // if the system is idle, we need to refresh the tracker occasionally since
             // untracked memory may be allocated or freed, e.g. by background threads.
             if (env->process_mem_tracker() != nullptr &&
-                     !env->process_mem_tracker()->is_consumption_metric_null()) {
+              !env->process_mem_tracker()->is_consumption_metric_null()) {
                 env->process_mem_tracker()->RefreshConsumptionFromMetric();
             }
         }

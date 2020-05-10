@@ -87,6 +87,7 @@ public:
 
         while (true) {
             if (!_queue.empty()) {
+                // TODO(yingchun): the 2 blocks are the same
                 // 定期提高队列中残留的任务优先级
                 // 保证优先级较低的大查询不至于完全饿死
                 if (_upgrade_counter > config::priority_queue_remaining_tasks_increased_frequency) {
@@ -107,9 +108,6 @@ public:
                 unique_lock.unlock();
                 _put_cv.notify_one();
                 return true;
-            }
-            if (_shutdown) {
-                return false;
             }
             return false;
         }
@@ -154,12 +152,19 @@ public:
         return _queue.size();
     }
 
+    bool empty() const {
+        boost::unique_lock<boost::mutex> l(_lock);
+        return _queue.empty();
+    }
+
+    // TODO(yingchun): should lock free
     // Returns the total amount of time threads have blocked in blocking_get.
     uint64_t total_get_wait_time() const {
         boost::lock_guard<boost::mutex> guard(_lock);
         return _total_get_wait_time;
     }
 
+    // TODO(yingchun): should lock free
     // Returns the total amount of time threads have blocked in blocking_put.
     uint64_t total_put_wait_time() const {
         boost::lock_guard<boost::mutex> guard(_lock);

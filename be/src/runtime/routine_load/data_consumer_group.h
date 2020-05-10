@@ -48,8 +48,8 @@ public:
 
     void add_consumer(std::shared_ptr<DataConsumer> consumer) {
         consumer->set_grp(_grp_id);
-        _consumers.push_back(consumer);
         ++_counter;
+        _consumers.push_back(consumer);
     }
 
     // start all consumers
@@ -60,12 +60,10 @@ protected:
     std::vector<std::shared_ptr<DataConsumer>> _consumers;
     // thread pool to run each consumer in multi thread
     PriorityThreadPool _thread_pool;
-    // mutex to protect counter.
     // the counter is init as the number of consumers.
     // once a consumer is done, decrease the counter.
     // when the counter becomes zero, shutdown the queue to finish
-    std::mutex _mutex;
-    int _counter;
+    std::atomic<int> _counter;
 };
 
 // for kafka

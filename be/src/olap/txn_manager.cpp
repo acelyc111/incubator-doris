@@ -129,7 +129,7 @@ OLAPStatus TxnManager::prepare_txn(
         if (load_itr != it->second.end()) {
             // found load for txn,tablet
             // case 1: user commit rowset, then the load id must be equal
-            TabletTxnInfo& load_info = load_itr->second;
+            const TabletTxnInfo& load_info = load_itr->second;
             // check if load id is equal
             if (load_info.load_id.hi() == load_id.hi()
                 && load_info.load_id.lo() == load_id.lo()
@@ -169,6 +169,7 @@ OLAPStatus TxnManager::commit_txn(
     OlapMeta* meta, TPartitionId partition_id, TTransactionId transaction_id,
     TTabletId tablet_id, SchemaHash schema_hash, TabletUid tablet_uid,
     const PUniqueId& load_id, const RowsetSharedPtr& rowset_ptr, bool is_recovery) {
+    // TODO(yingchun): Why not check in prepare phase?
     if (partition_id < 1 || transaction_id < 1 || tablet_id < 1) {
         LOG(FATAL) << "invalid commit req "
                    << " partition_id=" << partition_id
@@ -196,31 +197,30 @@ OLAPStatus TxnManager::commit_txn(
             if (load_itr != it->second.end()) {
                 // found load for txn,tablet
                 // case 1: user commit rowset, then the load id must be equal
-                TabletTxnInfo& load_info = load_itr->second;
+                const TabletTxnInfo& load_info = load_itr->second;
                 // check if load id is equal
                 if (load_info.load_id.hi() == load_id.hi()
                     && load_info.load_id.lo() == load_id.lo()
-                    && load_info.rowset != nullptr
-                    && load_info.rowset->rowset_id() == rowset_ptr->rowset_id()) {
-                    // find a rowset with same rowset id, then it means a duplicate call
-                    LOG(INFO) << "find transaction exists when add to engine."
-                              << "partition_id: " << key.first
-                              << ", transaction_id: " << key.second
-                              << ", tablet: " << tablet_info.to_string()
-                              << ", rowset_id: " << load_info.rowset->rowset_id();
-                    return OLAP_SUCCESS;
-                } else if (load_info.load_id.hi() == load_id.hi()
-                    && load_info.load_id.lo() == load_id.lo()
-                    && load_info.rowset != nullptr
-                    && load_info.rowset->rowset_id() != rowset_ptr->rowset_id()) {
-                    // find a rowset with different rowset id, then it should not happen, just return errors
-                    LOG(WARNING) << "find transaction exists when add to engine. but rowset ids are not same."
-                                 << "partition_id: " << key.first
-                                 << ", transaction_id: " << key.second
-                                 << ", tablet: " << tablet_info.to_string()
-                                 << ", exist rowset_id: " << load_info.rowset->rowset_id()
-                                 << ", new rowset_id: " << rowset_ptr->rowset_id();
-                    return OLAP_ERR_PUSH_TRANSACTION_ALREADY_EXIST;
+                    && load_info.rowset != nullptr) {
+                    if (load_info.rowset->rowset_id() == rowset_ptr->rowset_id()) {
+                        // find a rowset with same rowset id, then it means a duplicate call
+                        LOG(INFO) << "find transaction exists when add to engine."
+                                  << "partition_id: " << key.first
+                                  << ", transaction_id: " << key.second
+                                  << ", tablet: " << tablet_info.to_string()
+                                  << ", rowset_id: " << load_info.rowset->rowset_id();
+                        return OLAP_SUCCESS;
+                    } else {
+                        DCHECK(load_info.rowset->rowset_id() != rowset_ptr->rowset_id());
+                        // find a rowset with different rowset id, then it should not happen, just return errors
+                        LOG(WARNING) << "find transaction exists when add to engine. but rowset ids are not same."
+                                     << "partition_id: " << key.first
+                                     << ", transaction_id: " << key.second
+                                     << ", tablet: " << tablet_info.to_string()
+                                     << ", exist rowset_id: " << load_info.rowset->rowset_id()
+                                     << ", new rowset_id: " << rowset_ptr->rowset_id();
+                        return OLAP_ERR_PUSH_TRANSACTION_ALREADY_EXIST;
+                    }
                 }
             }
         }
@@ -275,8 +275,7 @@ OLAPStatus TxnManager::publish_txn(OlapMeta* meta, TPartitionId partition_id, TT
             if (load_itr != it->second.end()) {
                 // found load for txn,tablet
                 // case 1: user commit rowset, then the load id must be equal
-                TabletTxnInfo& load_info = load_itr->second;
-                rowset_ptr = load_info.rowset;
+                rowset_ptr = load_itr->second.rowset;
             }
         }
     }
@@ -336,14 +335,14 @@ OLAPStatus TxnManager::rollback_txn(TPartitionId partition_id, TTransactionId tr
         if (load_itr != it->second.end()) {
             // found load for txn,tablet
             // case 1: user commit rowset, then the load id must be equal
-            TabletTxnInfo& load_info = load_itr->second;
+            const TabletTxnInfo& load_info = load_itr->second;
             if (load_info.rowset != nullptr) {
                 // if rowset is not null, it means other thread may commit the rowset
                 // should not delete txn any more
                 return OLAP_ERR_TRANSACTION_ALREADY_COMMITTED;
             }
+            it->second.erase(tablet_info);
         }
-        it->second.erase(tablet_info);
         LOG(INFO) << "rollback transaction from engine successfully."
                   << " partition_id: " << key.first
                   << ", transaction_id: " << key.second
@@ -372,8 +371,9 @@ OLAPStatus TxnManager::delete_txn(OlapMeta* meta, TPartitionId partition_id, TTr
     if (load_itr != it->second.end()) {
         // found load for txn,tablet
         // case 1: user commit rowset, then the load id must be equal
-        TabletTxnInfo& load_info = load_itr->second;
-        if (load_info.rowset != nullptr && meta != nullptr) {
+        const TabletTxnInfo& load_info = load_itr->second;
+        if (load_info.rowset != nullptr) {
+            DCHECK(meta);
             if (load_info.rowset->version().first > 0) { 
                 LOG(WARNING) << "could not delete transaction from engine, "
                                 << "just remove it from memory not delete from disk" 
@@ -396,8 +396,8 @@ OLAPStatus TxnManager::delete_txn(OlapMeta* meta, TPartitionId partition_id, TTr
                         << ", rowset: " << (load_info.rowset != nullptr ?  load_info.rowset->rowset_id().to_string(): "0");
             }
         }
+        it->second.erase(tablet_info);
     }
-    it->second.erase(tablet_info);
     if (it->second.empty()) {
         txn_tablet_map.erase(it);
         _clear_txn_partition_map_unlocked(transaction_id, partition_id);
@@ -424,6 +424,7 @@ void TxnManager::get_tablet_related_txns(TTabletId tablet_id, SchemaHash schema_
                         << "partition_id: " << it.first.first
                         << ", transaction_id: " << it.first.second
                         << ", tablet: " << tablet_info.to_string();
+                break;
             }
         }
     }
@@ -436,11 +437,13 @@ void TxnManager::force_rollback_tablet_related_txns(OlapMeta* meta, TTabletId ta
     for (int32_t i = 0; i < _txn_map_shard_size; i++) {
         WriteLock txn_wrlock(&_txn_map_locks[i]);
         txn_tablet_map_t& txn_tablet_map = _txn_tablet_maps[i];
+        // TODO(yingchun): unify iterator names
         for (auto it = txn_tablet_map.begin(); it != txn_tablet_map.end();) {
             auto load_itr = it->second.find(tablet_info);
             if (load_itr != it->second.end()) {
                 TabletTxnInfo& load_info = load_itr->second;
-                if (load_info.rowset != nullptr && meta != nullptr) {
+                if (load_info.rowset != nullptr) {
+                    DCHECK(meta != nullptr);  // TODO(yingchun): check all usage
                     LOG(INFO) << " delete transaction from engine "
                               << ", tablet: " << tablet_info.to_string()
                               << ", rowset id: " << load_info.rowset->rowset_id();
@@ -467,7 +470,7 @@ void TxnManager::force_rollback_tablet_related_txns(OlapMeta* meta, TTabletId ta
     }
 }
 
-void TxnManager::get_txn_related_tablets(const TTransactionId transaction_id,
+void TxnManager::get_txn_related_tablets(TTransactionId transaction_id,
                                          TPartitionId partition_id,
                                          std::map<TabletInfo, RowsetSharedPtr>* tablet_infos) {
     // get tablets in this transaction
@@ -481,14 +484,11 @@ void TxnManager::get_txn_related_tablets(const TTransactionId transaction_id,
                 << ", transaction_id=" << transaction_id;
         return;
     }
-    std::map<TabletInfo, TabletTxnInfo>& load_info_map = it->second;
 
-    // each tablet
-    for (auto& load_info : load_info_map) {
-        const TabletInfo& tablet_info = load_info.first;
+    for (const auto& load_info : it->second) {
         // must not check rowset == null here, because if rowset == null
         // publish version should failed
-	    tablet_infos->emplace(tablet_info, load_info.second.rowset);
+        tablet_infos->emplace(load_info.first, load_info.second.rowset);
     }
 }
 
@@ -510,10 +510,8 @@ bool TxnManager::has_txn(TPartitionId partition_id, TTransactionId transaction_i
     ReadLock txn_rdlock(&_get_txn_map_lock(transaction_id));
     txn_tablet_map_t& txn_tablet_map = _get_txn_tablet_map(transaction_id);
     auto it = txn_tablet_map.find(key);
-    bool found = it != txn_tablet_map.end()
-                 && it->second.find(tablet_info) != it->second.end();
-
-    return found;
+    return it != txn_tablet_map.end()
+           && it->second.find(tablet_info) != it->second.end();
 }
 
 void TxnManager::build_expire_txn_map(std::map<TabletInfo, std::vector<int64_t>>* expire_txn_map) {
@@ -526,6 +524,7 @@ void TxnManager::build_expire_txn_map(std::map<TabletInfo, std::vector<int64_t>>
             for (auto& t_map : it.second) {
                 double diff = difftime(now, t_map.second.creation_time);
                 if (diff >= config::pending_data_expire_time_sec) {
+                    // TODO(yingchun): optimize find and insert
                     (*expire_txn_map)[t_map.first].push_back(txn_id);
                     if (VLOG_IS_ON(3)) {
                         VLOG(3) << "find expired txn."
@@ -544,13 +543,12 @@ void TxnManager::get_partition_ids(const TTransactionId transaction_id, std::vec
     txn_partition_map_t& txn_partition_map = _get_txn_partition_map(transaction_id);
     auto it = txn_partition_map.find(transaction_id);
     if (it != txn_partition_map.end()) {
-        for (int64_t partition_id : it->second) {
-            partition_ids->push_back(partition_id);
-        }
+        partition_ids->insert(partition_ids->end(), it->second.begin(), it->second.end());
     }
 }
 
 void TxnManager::_insert_txn_partition_map_unlocked(int64_t transaction_id, int64_t partition_id) {
+    // TODO(yingchun): optimize find and insert
     txn_partition_map_t& txn_partition_map = _get_txn_partition_map(transaction_id);
     auto find = txn_partition_map.find(transaction_id);
     if (find == txn_partition_map.end()) {
