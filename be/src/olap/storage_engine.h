@@ -251,7 +251,7 @@ private:
     void _perform_cumulative_compaction(DataDir* data_dir);
     void _perform_base_compaction(DataDir* data_dir);
     // 清理trash和snapshot文件，返回清理后的磁盘使用量
-    OLAPStatus _start_trash_sweep(double *usage);
+    OLAPStatus _start_trash_sweep(double *max_usage);
     // 磁盘状态监测。监测unused_flag路劲新的对应root_path unused标识位，
     // 当检测到有unused标识时，从内存中删除对应表信息，磁盘数据不动。
     // 当磁盘状态为不可用，但未检测到unused标识时，需要从root_path上
@@ -293,7 +293,7 @@ private:
     int32_t _effective_cluster_id;
     bool _is_all_cluster_id_exist;
 
-    Cache* _file_descriptor_lru_cache;
+    Cache* _file_descriptor_lru_cache;  // TODO(yingchun): add cache
     Cache* _index_stream_lru_cache;
 
     static StorageEngine* _s_instance;
@@ -336,7 +336,7 @@ private:
 
     std::unique_ptr<fs::BlockManager> _block_manager;
 
-    // Used to control the migration from segment_v1 to segment_v2, can be deleted in futrue.
+    // Used to control the migration from segment_v1 to segment_v2, can be deleted in the future.
     // Type of new loaded data
     RowsetTypePB _default_rowset_type;
 

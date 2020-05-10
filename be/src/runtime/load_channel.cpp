@@ -65,7 +65,6 @@ Status LoadChannel::open(const PTabletWriterOpenRequest& params) {
 Status LoadChannel::add_batch(
         const PTabletWriterAddBatchRequest& request,
         google::protobuf::RepeatedPtrField<PTabletInfo>* tablet_vec) {
-
     int64_t index_id = request.index_id();
     // 1. get tablets channel
     std::shared_ptr<TabletsChannel> channel;
@@ -93,7 +92,6 @@ Status LoadChannel::add_batch(
     }
 
     // 4. handle eos
-    Status st;
     if (request.has_eos() && request.eos()) {
         bool finished = false;
         RETURN_IF_ERROR(channel->close(request.sender_id(), &finished,
@@ -105,7 +103,7 @@ Status LoadChannel::add_batch(
         }
     }
     _last_updated_time.store(time(nullptr));
-    return st;
+    return Status::OK();
 }
 
 void LoadChannel::handle_mem_exceed_limit(bool force) {
@@ -134,10 +132,13 @@ void LoadChannel::handle_mem_exceed_limit(bool force) {
 // lock should be held when calling this method
 bool LoadChannel::_find_largest_consumption_channel(std::shared_ptr<TabletsChannel>* channel) {
     int64_t max_consume = 0;
-    for (auto& it : _tablets_channels) {
-        if (it.second->mem_consumption() > max_consume) {
-            max_consume = it.second->mem_consumption();
-            *channel = it.second;
+    {
+        std::lock_guard<std::mutex> l(_lock);
+        for (auto& it : _tablets_channels) {
+            if (it.second->mem_consumption() > max_consume) {
+                max_consume = it.second->mem_consumption();
+                *channel = it.second;
+            }
         }
     }
     return max_consume > 0;

@@ -26,7 +26,7 @@
 
 namespace doris {
 
-class ContiguousRow;
+struct ContiguousRow;
 class RowCursor;
 
 class RowsetWriter {

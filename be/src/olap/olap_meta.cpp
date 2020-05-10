@@ -52,10 +52,13 @@ OlapMeta::OlapMeta(const std::string& root_path)
 
 OlapMeta::~OlapMeta() {
     for (auto handle : _handles) {
+        // TODO(yingchun): should use
+        //  _db->DestroyColumnFamilyHandle(handle);
+        // handle = nullptr;
         delete handle;
     }
     if (_db != nullptr) {
-        _db->Close();
+        _db->Close(); // TODO(yingchun): not needed
         delete _db;
         _db= nullptr;
     }
@@ -85,7 +88,7 @@ OLAPStatus OlapMeta::init() {
     return OLAP_SUCCESS;
 }
 
-OLAPStatus OlapMeta::get(const int column_family_index, const std::string& key, std::string* value) {
+OLAPStatus OlapMeta::get(int column_family_index, const std::string& key, std::string* value) {
     DorisMetrics::instance()->meta_read_request_total.increment(1);
     rocksdb::ColumnFamilyHandle* handle = _handles[column_family_index];
     int64_t duration_ns = 0;
@@ -104,7 +107,7 @@ OLAPStatus OlapMeta::get(const int column_family_index, const std::string& key, 
     return OLAP_SUCCESS;
 }
 
-OLAPStatus OlapMeta::put(const int column_family_index, const std::string& key, const std::string& value) {
+OLAPStatus OlapMeta::put(int column_family_index, const std::string& key, const std::string& value) {
     DorisMetrics::instance()->meta_write_request_total.increment(1);
     rocksdb::ColumnFamilyHandle* handle = _handles[column_family_index];
     int64_t duration_ns = 0;
@@ -123,7 +126,7 @@ OLAPStatus OlapMeta::put(const int column_family_index, const std::string& key, 
     return OLAP_SUCCESS;
 }
 
-OLAPStatus OlapMeta::remove(const int column_family_index, const std::string& key) {
+OLAPStatus OlapMeta::remove(int column_family_index, const std::string& key) {
     DorisMetrics::instance()->meta_write_request_total.increment(1);
     rocksdb::ColumnFamilyHandle* handle = _handles[column_family_index];
     rocksdb::Status s;
@@ -142,11 +145,11 @@ OLAPStatus OlapMeta::remove(const int column_family_index, const std::string& ke
     return OLAP_SUCCESS;
 }
 
-OLAPStatus OlapMeta::iterate(const int column_family_index, const std::string& prefix,
+OLAPStatus OlapMeta::iterate(int column_family_index, const std::string& prefix,
         std::function<bool(const std::string&, const std::string&)> const& func) {
     rocksdb::ColumnFamilyHandle* handle = _handles[column_family_index];
     std::unique_ptr<Iterator> it(_db->NewIterator(ReadOptions(), handle));
-    if (prefix == "") {
+    if (prefix.empty()) {
         it->SeekToFirst();
     } else {
         it->Seek(prefix);
@@ -157,7 +160,7 @@ OLAPStatus OlapMeta::iterate(const int column_family_index, const std::string& p
         return OLAP_ERR_META_ITERATOR;
     }
     for (; it->Valid(); it->Next()) {
-        if (prefix != "") {
+        if (!prefix.empty()) {
             if (!it->key().starts_with(prefix)) {
                 return OLAP_SUCCESS;
             }

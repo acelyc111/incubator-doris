@@ -34,6 +34,7 @@ namespace doris {
 
 const std::string ROWSET_PREFIX = "rst_";
 
+// TODO(yingchun): key的生成和解析封装成函数
 bool RowsetMetaManager::check_rowset_meta(OlapMeta* meta, TabletUid tablet_uid, const RowsetId& rowset_id) {
     std::string key = ROWSET_PREFIX + tablet_uid.to_string() + "_" + rowset_id.to_string();
     std::string value;
@@ -127,7 +128,7 @@ OLAPStatus RowsetMetaManager::load_json_rowset_meta(OlapMeta* meta, const std::s
     std::string json_rowset_meta;
     while (!infile.eof()) {
         infile.getline(buffer, 1024);
-        json_rowset_meta = json_rowset_meta + buffer;
+        json_rowset_meta.append(buffer);
     }
     boost::algorithm::trim(json_rowset_meta);
     RowsetMeta rowset_meta;

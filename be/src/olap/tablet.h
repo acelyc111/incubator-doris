@@ -54,6 +54,7 @@ public:
     Tablet(TabletMetaSharedPtr tablet_meta, DataDir* data_dir);
 
     OLAPStatus init();
+    // TODO(yingchun): inline is useless.
     inline bool init_succeeded();
 
     bool is_used();
@@ -61,6 +62,14 @@ public:
     void register_tablet_into_dir();
     void deregister_tablet_from_dir();
 
+    std::string tablet_path() const;
+
+    // TODO(yingchun): 直接使用_tablet_meta的state?
+    TabletState tablet_state() const { return _state; }
+    OLAPStatus set_tablet_state(TabletState state);
+
+    // Property encapsulated in TabletMeta
+    inline const TabletMetaSharedPtr tablet_meta();
     void save_meta();
     // Used in clone task, to update local meta when finishing a clone job
     OLAPStatus revise_tablet_meta(const std::vector<RowsetMetaSharedPtr>& rowsets_to_clone,
@@ -94,6 +103,7 @@ public:
 
     // _rs_version_map and _inc_rs_version_map should be protected by _meta_lock
     // The caller must call hold _meta_lock when call this two function.
+    // TODO(yingchun): add '_unlock' posifix
     const RowsetSharedPtr get_rowset_by_version(const Version& version) const;
     const RowsetSharedPtr get_inc_rowset_by_version(const Version& version) const;
 
@@ -128,6 +138,7 @@ public:
     void delete_alter_task();
     OLAPStatus set_alter_state(AlterTabletState state);
 
+    // TODO(yingchun): we'd better use a RAII method for these locks.
     // meta lock
     inline void obtain_header_rdlock() { _meta_lock.rdlock(); }
     inline void obtain_header_wrlock() { _meta_lock.wrlock(); }
@@ -241,10 +252,16 @@ private:
 
 private:
     static const int64_t kInvalidCumulativePoint = -1;
+    TabletState _state;
+    TabletMetaSharedPtr _tablet_meta;
+    // TODO(yingchun): Can we use a pointer for it?
+    TabletSchema _schema;
 
     RowsetGraph _rs_graph;
 
     DorisCallOnce<OLAPStatus> _init_once;
+
+    // TODO(yingchun): Can we reduce lock count?
     // meta store lock is used for prevent 2 threads do checkpoint concurrently
     // it will be used in econ-mode in the future
     RWMutex _meta_store_lock;
@@ -314,6 +331,7 @@ inline void Tablet::set_cumulative_layer_point(int64_t new_point) {
 
 // TODO(lingbin): Why other methods that need to get information from _tablet_meta
 // are not locked, here needs a comment to explain.
+// TODO(yingchun): +1
 inline size_t Tablet::tablet_footprint() {
     ReadLock rdlock(&_meta_lock);
     return _tablet_meta->tablet_footprint();
@@ -321,6 +339,7 @@ inline size_t Tablet::tablet_footprint() {
 
 // TODO(lingbin): Why other methods which need to get information from _tablet_meta
 // are not locked, here needs a comment to explain.
+// TODO(yingchun): +1
 inline size_t Tablet::num_rows() {
     ReadLock rdlock(&_meta_lock);
     return _tablet_meta->num_rows();

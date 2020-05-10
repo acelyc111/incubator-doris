@@ -44,6 +44,7 @@ public:
     ScanContext(const TUniqueId& fragment_id, int64_t offset) : fragment_instance_id(fragment_id), offset(offset) {}
 };
 
+// TODO(yingchun): we can move this class object to BackendService, that's the only one place use it.
 class ExternalScanContextMgr {
 
 public:
@@ -55,12 +56,11 @@ public:
         _keep_alive_reaper->join();
     }
 
-    Status create_scan_context(std::shared_ptr<ScanContext>* p_context);
+    void create_scan_context(std::shared_ptr<ScanContext>* p_context);
 
     Status get_scan_context(const std::string& context_id, std::shared_ptr<ScanContext>* p_context);
 
-    Status clear_scan_context(const std::string& context_id);
-
+    void clear_scan_context(const std::string& context_id);
 
 private:
 

@@ -45,15 +45,14 @@ namespace doris {
 class SnapshotManager {
 
 public:
-    ~SnapshotManager() {}
     // @brief 创建snapshot
-    // @param tablet_id [in] 原表的id
-    // @param schema_hash [in] 原表的schema，与tablet_id参数合起来唯一确定一张表
+    // @param TSnapshotRequest [in] 包含原表的id, schema等信息,用来唯一确定一张表
     // @param snapshot_path [out] 新生成的snapshot的路径
     OLAPStatus make_snapshot(
             const TSnapshotRequest& request,
             std::string* snapshot_path);
 
+    // TODO(yingchun): these functions are not owned by SnapshotManager, should move to Tablet
     std::string get_schema_hash_full_path(
             const TabletSharedPtr& ref_tablet,
             const std::string& location) const;
@@ -68,10 +67,10 @@ public:
             const int32_t& schema_hash);
 
 private:
-    SnapshotManager()
-        : _snapshot_base_id(0) {}
+    SnapshotManager() : _snapshot_base_id(1) {}
+    ~SnapshotManager() {}
 
-    OLAPStatus _calc_snapshot_id_path(
+    OLAPStatus _gen_snapshot_id_path(
             const TabletSharedPtr& tablet,
             int64_t timeout_s,
             std::string* out_path);
@@ -102,13 +101,9 @@ private:
             bool is_incremental);
 
 private:
-    static SnapshotManager* _s_instance;
-    static std::mutex _mlock;
+    std::atomic<uint64_t> _snapshot_base_id;
 
-
-    // snapshot
-    Mutex _snapshot_mutex;
-    uint64_t _snapshot_base_id;
+    DISALLOW_COPY_AND_ASSIGN(SnapshotManager);
 }; // SnapshotManager
 
 } // doris

@@ -27,13 +27,12 @@
 
 namespace doris {
 
-OLAPStatus DeltaWriter::open(WriteRequest* req, MemTracker* mem_tracker, DeltaWriter** writer) {
+void DeltaWriter::open(const WriteRequest& req, MemTracker* mem_tracker, DeltaWriter** writer) {
     *writer = new DeltaWriter(req, mem_tracker, StorageEngine::instance());
-    return OLAP_SUCCESS;
 }
 
-DeltaWriter::DeltaWriter(WriteRequest* req, MemTracker* parent, StorageEngine* storage_engine) :
-        _req(*req), _tablet(nullptr), _cur_rowset(nullptr), _new_rowset(nullptr),
+DeltaWriter::DeltaWriter(const WriteRequest& req, MemTracker* parent, StorageEngine* storage_engine) :
+        _req(req), _tablet(nullptr), _cur_rowset(nullptr), _new_rowset(nullptr),
         _new_tablet(nullptr), _rowset_writer(nullptr), _tablet_schema(nullptr),
         _delta_written_success(false), _storage_engine(storage_engine) {
     _mem_tracker.reset(new MemTracker(-1, "delta writer", parent));
@@ -204,7 +203,7 @@ OLAPStatus DeltaWriter::close() {
         // which means this tablet has no data loaded, but at least one tablet
         // in same partition has data loaded.
         // so we have to also init this DeltaWriter, so that it can create a empty rowset
-        // for this tablet when being closd.
+        // for this tablet when being closed.
         RETURN_NOT_OK(init());
     }
 
@@ -246,7 +245,6 @@ OLAPStatus DeltaWriter::close_wait(google::protobuf::RepeatedPtrField<PTabletInf
 
         res = _storage_engine->txn_manager()->commit_txn(_req.partition_id, _new_tablet, _req.txn_id,
             _req.load_id, _new_rowset, false);
-
         if (res != OLAP_SUCCESS && res != OLAP_ERR_PUSH_TRANSACTION_ALREADY_EXIST) {
             LOG(WARNING) << "Failed to save pending rowset. rowset_id:" << _new_rowset->rowset_id();
             return res;

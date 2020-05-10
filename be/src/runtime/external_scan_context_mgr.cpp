@@ -39,7 +39,8 @@ ExternalScanContextMgr::ExternalScanContextMgr(ExecEnv* exec_env) : _exec_env(ex
     });
 }
 
-Status ExternalScanContextMgr::create_scan_context(std::shared_ptr<ScanContext>* p_context) {
+void ExternalScanContextMgr::create_scan_context(std::shared_ptr<ScanContext>* p_context) {
+    // TODO(yingchun): use int may be faster than string
     std::string context_id = generate_uuid_string();
     std::shared_ptr<ScanContext> context(new ScanContext(context_id));
     // context->last_access_time  = time(NULL);
@@ -48,26 +49,26 @@ Status ExternalScanContextMgr::create_scan_context(std::shared_ptr<ScanContext>*
         _active_contexts.insert(std::make_pair(context_id, context));
     }
     *p_context = context;
-    return Status::OK();
 }
 
 Status ExternalScanContextMgr::get_scan_context(const std::string& context_id, std::shared_ptr<ScanContext>* p_context) {
     {
-        std::lock_guard<std::mutex> l(_lock);        
+        std::lock_guard<std::mutex> l(_lock);
         auto iter = _active_contexts.find(context_id);
         if (iter != _active_contexts.end()) {
             *p_context = iter->second;
-        } else {
-            LOG(WARNING) << "get_scan_context error: context id [ " << context_id << " ] not found";
-            std::stringstream msg;
-            msg << "context_id: " << context_id << " not found"; 
-            return  Status::NotFound(msg.str());
+            return Status::OK();
         }
     }
-    return Status::OK();
+
+    // TODO(yingchun): use substitude
+    LOG(WARNING) << "get_scan_context error: context id [ " << context_id << " ] not found";
+    std::stringstream msg;
+    msg << "context_id: " << context_id << " not found";
+    return Status::NotFound(msg.str());
 }
 
-Status ExternalScanContextMgr::clear_scan_context(const std::string& context_id) {
+void ExternalScanContextMgr::clear_scan_context(const std::string& context_id) {
     std::shared_ptr<ScanContext> context;
     {
         std::lock_guard<std::mutex> l(_lock);
@@ -76,9 +77,9 @@ Status ExternalScanContextMgr::clear_scan_context(const std::string& context_id)
             context = iter->second;
             if (context == nullptr) {
                 _active_contexts.erase(context_id);
-                Status::OK();
+                return;
             }
-            iter = _active_contexts.erase(iter);
+            _active_contexts.erase(iter);
         }
     }
     if (context != nullptr) {
@@ -88,18 +89,18 @@ Status ExternalScanContextMgr::clear_scan_context(const std::string& context_id)
         _exec_env->result_queue_mgr()->cancel(context->fragment_instance_id);
         LOG(INFO) << "close scan context: context id [ " << context_id << " ]";
     }
-    return Status::OK();
 }
 
 void ExternalScanContextMgr::gc_expired_context() {
 #ifndef BE_TEST
     while (!_is_stop) {
+        // TODO(yingchun): graceful exit
         std::this_thread::sleep_for(std::chrono::seconds(doris::config::scan_context_gc_interval_min * 60));
         time_t current_time = time(NULL);
         std::vector<std::shared_ptr<ScanContext>> expired_contexts;
         {
             std::lock_guard<std::mutex> l(_lock);
-            for(auto iter = _active_contexts.begin(); iter != _active_contexts.end(); ) {
+            for (auto iter = _active_contexts.begin(); iter != _active_contexts.end();) {
                 auto context = iter->second;
                 if (context == nullptr) {
                     iter = _active_contexts.erase(iter);
@@ -121,6 +122,7 @@ void ExternalScanContextMgr::gc_expired_context() {
             }
         }
         for (auto expired_context : expired_contexts) {
+            // TODO(yingchun): can e cancel it gracefully, like use ref count, cancle in ScanContext's destructor?
             // must cancel the fragment instance, otherwise return thrift transport TTransportException
             _exec_env->fragment_mgr()->cancel(expired_context->fragment_instance_id);
             _exec_env->result_queue_mgr()->cancel(expired_context->fragment_instance_id);
@@ -129,3 +131,4 @@ void ExternalScanContextMgr::gc_expired_context() {
 #endif
 }
 }
+

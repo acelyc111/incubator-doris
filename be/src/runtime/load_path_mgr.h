@@ -46,7 +46,7 @@ public:
 
     Status get_load_error_file_name(
             const std::string& db,
-            const std::string&label,
+            const std::string& label,
             const TUniqueId& fragment_instance_id,
             std::string* error_path);
     std::string get_load_error_absolute_path(const std::string& file_path);

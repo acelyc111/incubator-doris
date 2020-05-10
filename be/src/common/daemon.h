@@ -22,7 +22,7 @@
 
 namespace doris {
 
-class StorePath;
+struct StorePath;
 
 // Initialises logging, flags etc. Callers that want to override default gflags
 // variables should do so before calling this method; no logging should be

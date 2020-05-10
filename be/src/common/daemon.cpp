@@ -71,19 +71,15 @@ void* tcmalloc_gc_thread(void* dummy) {
         size_t used_size = 0;
         size_t free_size = 0;
 
-#if !defined(ADDRESS_SANITIZER) && !defined(LEAK_SANITIZER) && !defined(THREAD_SANITIZER)
         MallocExtension::instance()->GetNumericProperty("generic.current_allocated_bytes", &used_size);
         MallocExtension::instance()->GetNumericProperty("tcmalloc.pageheap_free_bytes", &free_size);
-#endif
         size_t alloc_size = used_size + free_size;
 
         if (alloc_size > config::tc_use_memory_min) {
-#if !defined(ADDRESS_SANITIZER) && !defined(LEAK_SANITIZER) && !defined(THREAD_SANITIZER)
             size_t max_free_size = alloc_size * config::tc_free_memory_rate / 100;
             if (free_size > max_free_size) {
                 MallocExtension::instance()->ReleaseToSystem(free_size - max_free_size);
             }
-#endif
         }
     }
 
@@ -107,7 +103,7 @@ void* memory_maintenance_thread(void* dummy) {
             // if the system is idle, we need to refresh the tracker occasionally since
             // untracked memory may be allocated or freed, e.g. by background threads.
             if (env->process_mem_tracker() != nullptr &&
-                     !env->process_mem_tracker()->is_consumption_metric_null()) {
+              !env->process_mem_tracker()->is_consumption_metric_null()) {
                 env->process_mem_tracker()->RefreshConsumptionFromMetric();
             }
         }
@@ -280,8 +276,10 @@ void init_daemon(int argc, char** argv, const std::vector<StorePath>& paths) {
     HllFunctions::init();
     HashFunctions::init();
 
+#if !defined(ADDRESS_SANITIZER) && !defined(LEAK_SANITIZER) && !defined(THREAD_SANITIZER)
     pthread_t tc_malloc_pid;
     pthread_create(&tc_malloc_pid, NULL, tcmalloc_gc_thread, NULL);
+#endif
 
     pthread_t buffer_pool_pid;
     pthread_create(&buffer_pool_pid, NULL, memory_maintenance_thread, NULL);

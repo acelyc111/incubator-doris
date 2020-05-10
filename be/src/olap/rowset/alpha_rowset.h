@@ -38,8 +38,6 @@ class RowsetFactory;
 
 class AlphaRowset : public Rowset {
 public:
-    virtual ~AlphaRowset() {}
-
     OLAPStatus create_reader(std::shared_ptr<RowsetReader>* result) override;
 
     OLAPStatus split_range(const RowCursor& start_key,
@@ -49,15 +47,15 @@ public:
 
     OLAPStatus remove() override;
 
-    OLAPStatus link_files_to(const std::string& dir, RowsetId new_rowset_id) override;
+    OLAPStatus link_files_to(const std::string& dir, const RowsetId& new_rowset_id) override;
 
-    OLAPStatus copy_files_to(const std::string& dir) override;
+    OLAPStatus copy_files_to(const std::string& dir) const override;
 
     OLAPStatus convert_from_old_files(const std::string& snapshot_path,
-                                 std::vector<std::string>* success_files);
+                                     std::vector<std::string>* success_files);
 
     OLAPStatus convert_to_old_files(const std::string& snapshot_path, 
-                                 std::vector<std::string>* success_files);
+                                   std::vector<std::string>* success_files);
 
     OLAPStatus remove_old_files(std::vector<std::string>* files_to_remove) override;
     

@@ -37,9 +37,6 @@ ResultSink::ResultSink(const RowDescriptor& row_desc, const std::vector<TExpr>& 
       _buf_size(buffer_size) {
 }
 
-ResultSink::~ResultSink() {
-}
-
 Status ResultSink::prepare_exprs(RuntimeState* state) {
     // From the thrift expressions create the real exprs.
     RETURN_IF_ERROR(Expr::create_expr_trees(
@@ -59,8 +56,8 @@ Status ResultSink::prepare(RuntimeState* state) {
     // prepare output_expr
     RETURN_IF_ERROR(prepare_exprs(state));
     // create sender
-    RETURN_IF_ERROR(state->exec_env()->result_mgr()->create_sender(
-                        state->fragment_instance_id(), _buf_size, &_sender));
+    state->exec_env()->result_mgr()->create_sender(
+                        state->fragment_instance_id(), _buf_size, &_sender);
     // create writer
     _writer.reset(new(std::nothrow) ResultWriter(_sender.get(), _output_expr_ctxs));
     RETURN_IF_ERROR(_writer->init(state));

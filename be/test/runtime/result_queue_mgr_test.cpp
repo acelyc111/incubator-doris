@@ -120,7 +120,7 @@ TEST_F(ResultQueueMgrTest, normal_cancel) {
     BlockQueueSharedPtr block_queue_t;    
     queue_mgr.create_queue(query_id, &block_queue_t);
     ASSERT_TRUE(block_queue_t != nullptr);
-    ASSERT_TRUE(queue_mgr.cancel(query_id).ok());
+    queue_mgr.cancel(query_id);
 }
 
 TEST_F(ResultQueueMgrTest, cancel_no_block) {
@@ -131,7 +131,7 @@ TEST_F(ResultQueueMgrTest, cancel_no_block) {
     BlockQueueSharedPtr block_queue_t;    
     queue_mgr.create_queue(query_id, &block_queue_t);
     ASSERT_TRUE(block_queue_t != nullptr);
-    ASSERT_TRUE(queue_mgr.cancel(query_id).ok());
+    queue_mgr.cancel(query_id);
 }
 }
 

@@ -23,14 +23,11 @@ namespace doris {
 class WrapperField;
 
 struct ColumnMapping {
-    ColumnMapping() : ref_column(-1), default_value(nullptr) {}
-    virtual ~ColumnMapping() {}
-
     // <0: use default value
     // >=0: use origin column
-    int32_t ref_column;
+    int32_t ref_column = -1;
     // normally for default value. stores values for filters
-    WrapperField* default_value;
+    WrapperField* default_value = nullptr;
 };
 
 typedef std::vector<ColumnMapping> SchemaMapping;

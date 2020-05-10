@@ -353,6 +353,7 @@ OLAPStatus EngineBatchLoadTask::_delete_data(
 
     OLAPStatus res = OLAP_SUCCESS;
 
+    // TODO(yingchun): use CHECK?
     if (tablet_info_vec == nullptr) {
         LOG(WARNING) << "invalid tablet info parameter which is nullptr pointer.";
         return OLAP_ERR_CE_CMD_PARAMS_ERROR;

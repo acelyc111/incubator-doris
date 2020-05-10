@@ -76,8 +76,8 @@ Status RoutineLoadTaskExecutor::submit_task(const TRoutineLoadTask& task) {
         return Status::OK();
     }
 
-    // thread pool's queue size > 0 means there are tasks waiting to be executed, so no more tasks should be submitted.
-    if (_thread_pool.get_queue_size() > 0) {
+    // thread pool's queue not empty means there are tasks waiting to be executed, so no more tasks should be submitted.
+    if (!_thread_pool.empty()) {
         LOG(INFO) << "too many tasks in thread pool. reject task: " << UniqueId(task.id);
         return Status::TooManyTasks(UniqueId(task.id).to_string());
     }
@@ -107,7 +107,7 @@ Status RoutineLoadTaskExecutor::submit_task(const TRoutineLoadTask& task) {
     put_result.__isset.params = true;
     ctx->put_result = std::move(put_result);
 
-    // the routine load task'txn has alreay began in FE.
+    // the routine load task's txn has alreay began in FE.
     // so it need to rollback if encounter error.
     ctx->need_rollback = true;
     ctx->max_filter_ratio = 1.0;
@@ -124,6 +124,7 @@ Status RoutineLoadTaskExecutor::submit_task(const TRoutineLoadTask& task) {
     }
 
     VLOG(1) << "receive a new routine load task: " << ctx->brief();
+    // TODO(yingchun): use shared_ptr would be better?
     // register the task
     ctx->ref();
     _task_map[ctx->id] = ctx;
@@ -228,6 +229,7 @@ void RoutineLoadTaskExecutor::exec_task(
     // commit txn
     HANDLE_ERROR(_exec_env->stream_load_executor()->commit_txn(ctx), "commit failed");
 
+    // TODO(yingchun): _data_consumer_pool and consumer_pool are the same
     // commit kafka offset
     switch (ctx->load_src_type) {
         case TLoadSourceType::KAFKA: {
@@ -261,8 +263,8 @@ void RoutineLoadTaskExecutor::exec_task(
                     [](RdKafka::TopicPartition* tp1) { delete tp1; });
             };
             DeferOp delete_tp(std::bind<void>(tp_deleter));
-        }
             break;
+        }
         default:
             return;
     }
@@ -273,7 +275,6 @@ void RoutineLoadTaskExecutor::err_handler(
         StreamLoadContext* ctx,
         const Status& st,
         const std::string& err_msg) {
-
     LOG(WARNING) << err_msg;
     ctx->status = st;
     if (ctx->need_rollback) {

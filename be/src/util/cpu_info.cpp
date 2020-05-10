@@ -123,7 +123,7 @@ int64_t ParseCPUFlags(const string& values) {
 }
 
 void CpuInfo::init() {
-    if (initialized_) return;
+  if (initialized_) return;
   string line;
   string name;
   string value;

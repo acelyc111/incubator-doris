@@ -57,9 +57,9 @@ OLAPStatus BaseCompaction::compact() {
 }
 
 OLAPStatus BaseCompaction::pick_rowsets_to_compact() {
-    _input_rowsets.clear();
+    DCHECK(_input_rowsets.empty());
     _tablet->pick_candicate_rowsets_to_base_compaction(&_input_rowsets);
-    if (_input_rowsets.size() <= 1) {
+    if (_input_rowsets.empty()) {
         return OLAP_ERR_BE_NO_SUITABLE_VERSION;
     }
 
@@ -70,12 +70,13 @@ OLAPStatus BaseCompaction::pick_rowsets_to_compact() {
     if (_input_rowsets.size() == 2 && _input_rowsets[0]->end_version() == 1) {
         // the tablet is with rowset: [0-1], [2-y]
         // and [0-1] has no data. in this situation, no need to do base compaction.
+        // TODO(yingchun): why not needed? version [0-1] means have no data.
         return OLAP_ERR_BE_NO_SUITABLE_VERSION;
     }
 
     // 1. cumulative rowset must reach base_compaction_num_cumulative_deltas threshold
     if (_input_rowsets.size() > config::base_compaction_num_cumulative_deltas) {
-        LOG(INFO) << "satisfy the base compaction policy. tablet="<< _tablet->full_name()
+        LOG(INFO) << "satisfy the base compaction policy. tablet=" << _tablet->full_name()
                   << ", num_cumulative_rowsets=" << _input_rowsets.size() - 1
                   << ", base_compaction_num_cumulative_rowsets=" << config::base_compaction_num_cumulative_deltas;
         return OLAP_SUCCESS;
@@ -99,7 +100,6 @@ OLAPStatus BaseCompaction::pick_rowsets_to_compact() {
         base_size = 1;
     }
     double cumulative_base_ratio = static_cast<double>(cumulative_total_size) / base_size;
-
     if (cumulative_base_ratio > base_cumulative_delta_ratio) {
         LOG(INFO) << "satisfy the base compaction policy. tablet=" << _tablet->full_name()
                   << ", cumualtive_total_size=" << cumulative_total_size
@@ -112,7 +112,7 @@ OLAPStatus BaseCompaction::pick_rowsets_to_compact() {
     // 3. the interval since last base compaction reachs the threshold
     int64_t base_creation_time = _input_rowsets[0]->creation_time();
     int64_t interval_threshold = config::base_compaction_interval_seconds_since_last_operation;
-    int64_t interval_since_last_base_compaction = time(NULL) - base_creation_time;
+    int64_t interval_since_last_base_compaction = time(nullptr) - base_creation_time;
     if (interval_since_last_base_compaction > interval_threshold) {
         LOG(INFO) << "satisfy the base compaction policy. tablet=" << _tablet->full_name()
                   << ", interval_since_last_base_compaction=" << interval_since_last_base_compaction 

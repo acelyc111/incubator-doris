@@ -562,20 +562,14 @@ OLAPStatus RowBlockAllocator::allocate(RowBlock** row_block,
 
     RowBlockInfo row_block_info(0U, num_rows);
     row_block_info.null_supported = null_supported;
-    OLAPStatus res = OLAP_SUCCESS;
-
-    if ((res = (*row_block)->init(row_block_info)) != OLAP_SUCCESS) {
-        LOG(WARNING) << "failed to init row block.";
-        SAFE_DELETE(*row_block);
-        return res;
-    }
+    (*row_block)->init(row_block_info);
 
     _memory_allocated += row_block_size;
     VLOG(3) << "RowBlockAllocator::allocate() this=" << this
             << ", num_rows=" << num_rows
             << ", m_memory_allocated=" << _memory_allocated
             << ", row_block_addr=" << *row_block;
-    return res;
+    return OLAP_SUCCESS;
 }
 
 void RowBlockAllocator::release(RowBlock* row_block) {
@@ -1554,9 +1548,7 @@ OLAPStatus SchemaChangeHandler::_get_versions_to_be_changed(
 
     vector<Version> span_versions;
     RETURN_NOT_OK(base_tablet->capture_consistent_versions(Version(0, rowset->version().second), &span_versions));
-    for (uint32_t i = 0; i < span_versions.size(); i++) {
-        versions_to_be_changed->push_back(span_versions[i]);
-    }
+    versions_to_be_changed->insert(versions_to_be_changed->end(), span_versions.begin(), span_versions.end());
 
     return OLAP_SUCCESS;
 }
@@ -1587,6 +1579,7 @@ OLAPStatus SchemaChangeHandler::_add_alter_task(
                                vector<Version>(),  // empty versions
                                alter_tablet_type);
     new_tablet->save_meta();
+
     LOG(INFO) << "successfully add alter task to both base and new";
     return OLAP_SUCCESS;
 }
@@ -1610,6 +1603,7 @@ OLAPStatus SchemaChangeHandler::_save_alter_state(
         return res;
     }
     base_tablet->save_meta();
+
     AlterTabletTaskSharedPtr new_alter_task = new_tablet->alter_task();
     if (new_alter_task == nullptr) {
         LOG(INFO) << "could not find alter task info from new tablet " << new_tablet->full_name();
@@ -1733,6 +1727,7 @@ OLAPStatus SchemaChangeHandler::_convert_historical_rowsets(const SchemaChangePa
             sc_params.new_tablet->release_push_lock();
             goto PROCESS_ALTER_EXIT;
         }
+        // TODO(yingchun): Can we add rs by batch ?
         res = sc_params.new_tablet->add_rowset(new_rowset, false);
         if (res == OLAP_ERR_PUSH_VERSION_ALREADY_EXIST) {
             LOG(WARNING) << "version already exist, version revert occured. "

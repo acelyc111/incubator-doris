@@ -29,14 +29,14 @@ Status DataConsumerPool::get_consumer(
 
     // check if there is an available consumer.
     // if has, return it, also remove it from the pool
-    auto iter = std::begin(_pool);
-    while (iter != std::end(_pool)) {
+    auto iter = _pool.begin();
+    while (iter != _pool.end()) {
         if ((*iter)->match(ctx)) {
             VLOG(3) << "get an available data consumer from pool: " << (*iter)->id();
             (*iter)->reset();
             *ret = *iter;
-            iter = _pool.erase(iter);
-            return Status::OK(); 
+            _pool.erase(iter);
+            return Status::OK();
         } else {
             ++iter;
         }
@@ -105,12 +105,12 @@ void DataConsumerPool::return_consumer(std::shared_ptr<DataConsumer> consumer) {
 }
 
 void DataConsumerPool::return_consumers(DataConsumerGroup* grp) {
-    for (std::shared_ptr<DataConsumer> consumer : grp->consumers()) {
+    for (auto& consumer : grp->consumers()) {
         return_consumer(consumer);
     }
 }
 
-Status DataConsumerPool::start_bg_worker() {
+void DataConsumerPool::start_bg_worker() {
     _clean_idle_consumer_thread = std::thread(
         [this] {
             #ifdef GOOGLE_PROFILER
@@ -118,13 +118,13 @@ Status DataConsumerPool::start_bg_worker() {
             #endif
 
             uint32_t interval = 60;
+            // TODO(yingchun): graceful exit needed
             while (true) {
                 _clean_idle_consumer_bg();
                 sleep(interval);
             }
         });
     _clean_idle_consumer_thread.detach();
-    return Status::OK();
 }
 
 void DataConsumerPool::_clean_idle_consumer_bg() {
@@ -133,8 +133,8 @@ void DataConsumerPool::_clean_idle_consumer_bg() {
     std::unique_lock<std::mutex> l(_lock);
     time_t now = time(nullptr);    
 
-    auto iter = std::begin(_pool);
-    while (iter != std::end(_pool)) {
+    auto iter = _pool.begin();
+    while (iter != _pool.end()) {
         if (difftime(now, (*iter)->last_visit_time()) >= max_idle_time_second) {
             LOG(INFO) << "remove data consumer " << (*iter)->id()
                     << ", since it last visit: " << (*iter)->last_visit_time()

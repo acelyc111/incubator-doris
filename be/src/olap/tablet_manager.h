@@ -97,7 +97,7 @@ public:
 
     // parse tablet header msg to generate tablet object
     OLAPStatus load_tablet_from_meta(DataDir* data_dir, TTabletId tablet_id,
-                                     TSchemaHash schema_hash, const std::string& header,
+                                     TSchemaHash schema_hash, const std::string& meta_binary,
                                      bool update_meta, bool force = false);
 
     OLAPStatus load_tablet_from_dir(DataDir* data_dir,
@@ -108,8 +108,6 @@ public:
 
     void release_schema_change_lock(TTabletId tablet_id);
 
-    // 获取所有tables的名字
-    //
     // Return OLAP_SUCCESS, if run ok
     //        OLAP_ERR_INPUT_PARAMETER_ERROR, if tables is null
     OLAPStatus report_tablet_info(TTabletInfo* tablet_info);

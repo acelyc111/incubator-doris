@@ -36,7 +36,7 @@ const uint32_t MAX_RETRY = 3;
 const uint32_t DEFAULT_DOWNLOAD_TIMEOUT = 3600;
 class StorageEngine;
 
-class EngineBatchLoadTask : public EngineTask{
+class EngineBatchLoadTask : public EngineTask {
 public:
     EngineBatchLoadTask(TPushReq& push_req, std::vector<TTabletInfo>* tablet_infos,
                         int64_t signature, AgentStatus* res_status);
@@ -59,7 +59,7 @@ private:
     // but not actually deleted util delay_delete_time run out.
     //
     // @param [in] request specify tablet and delete conditions
-    // @param [out] tablet_info_vec return tablet lastest status, which
+    // @param [out] tablet_info_vec return tablet latest status, which
     //              include version info, row count, data size, etc
     // @return OLAP_SUCCESS if submit delete_data success
     virtual OLAPStatus _delete_data(const TPushReq& request,

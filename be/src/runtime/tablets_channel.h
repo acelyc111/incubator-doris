@@ -116,6 +116,7 @@ private:
     Bitmap _closed_senders;
     // status to return when operate on an already closed/cancelled channel
     // currently it's OK.
+    // TODO(yingchun): always OK, should remove it
     Status _close_status;
 
     // tablet_id -> TabletChannel

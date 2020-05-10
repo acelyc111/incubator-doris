@@ -26,6 +26,7 @@ FieldType TabletColumn::get_field_type_by_string(const std::string& type_str) {
     std::transform(type_str.begin(), type_str.end(), upper_type_str.begin(), toupper);
     FieldType type;
 
+    // TODO(yingchun): maybe it's less effective than strcmp?
     if (0 == upper_type_str.compare("TINYINT")) {
         type = OLAP_FIELD_TYPE_TINYINT;
     } else if (0 == upper_type_str.compare("SMALLINT")) {
@@ -310,7 +311,7 @@ void TabletColumn::init_from_pb(const ColumnPB& column) {
     }
 }
 
-void TabletColumn::to_schema_pb(ColumnPB* column) {
+void TabletColumn::to_schema_pb(ColumnPB* column) const {
     column->set_unique_id(_unique_id);
     column->set_name(_col_name);
     column->set_type(get_string_by_field_type(_type));
@@ -371,7 +372,7 @@ void TabletSchema::init_from_pb(const TabletSchemaPB& schema) {
     _is_in_memory = schema.is_in_memory();
 }
 
-void TabletSchema::to_schema_pb(TabletSchemaPB* tablet_meta_pb) {
+void TabletSchema::to_schema_pb(TabletSchemaPB* tablet_meta_pb) const {
     tablet_meta_pb->set_keys_type(_keys_type);
     for (auto& col : _cols) {
         ColumnPB* column = tablet_meta_pb->add_column();

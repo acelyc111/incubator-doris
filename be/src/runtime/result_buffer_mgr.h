@@ -42,22 +42,21 @@ public:
     ResultBufferMgr();
     ~ResultBufferMgr();
     // init Result Buffer Mgr, start cancel thread
-    Status init();
+    void init();
     // create one result sender for this query_id
     // the returned sender do not need release
     // sender is not used when call cancel or unregister
-    Status create_sender(const TUniqueId& query_id, int buffer_size,
-                        boost::shared_ptr<BufferControlBlock>* sender);
+    void create_sender(const TUniqueId& query_id, int buffer_size,
+                       boost::shared_ptr<BufferControlBlock>* sender);
     // fetch data, used by RPC
     Status fetch_data(const TUniqueId& fragment_id, TFetchDataResult* result);
 
     void fetch_data(const PUniqueId& finst_id, GetResultBatchCtx* ctx);
 
-    // cancel
-    Status cancel(const TUniqueId& fragment_id);
+    void cancel(const TUniqueId& fragment_id);
 
     // cancel one query at a future time.
-    Status cancel_at_time(time_t cancel_time, const TUniqueId& query_id);
+    void cancel_at_time(time_t cancel_time, const TUniqueId& query_id);
 
 private:
     typedef boost::unordered_map<TUniqueId, boost::shared_ptr<BufferControlBlock>> BufferMap;
@@ -82,6 +81,7 @@ private:
     // cancel time maybe equal, so use one list
     TimeoutMap _timeout_map;
 
+    // TODO(yingchun): many boost, can we use std instead?
     boost::scoped_ptr<boost::thread> _cancel_thread;
 };
 

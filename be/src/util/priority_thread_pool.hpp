@@ -110,8 +110,8 @@ public:
         _threads.join_all();
     }
 
-    uint32_t get_queue_size() const {
-        return _work_queue.get_size();
+    bool empty() const {
+        return _work_queue.empty();
     }
 
     // Blocks until the work queue is empty, and then calls shutdown to stop the worker
@@ -120,7 +120,7 @@ public:
     void drain_and_shutdown() {
         {
             boost::unique_lock<boost::mutex> l(_lock);
-            while (_work_queue.get_size() != 0) {
+            while (!_work_queue.empty()) {
                 _empty_cv.wait(l);
             }
         }
@@ -137,7 +137,7 @@ private:
             if (_work_queue.blocking_get(&task)) {
                 task.work_function();
             }
-            if (_work_queue.get_size() == 0) {
+            if (_work_queue.empty()) {
                 _empty_cv.notify_all();
             }
         }

@@ -425,6 +425,7 @@ Status EngineCloneTask::_make_snapshot(
         return Status(result.status);
     }
 
+    // TODO(yingchun): why not init outside? snapshot_path, allow_incremental_clone, snapshot_version
     if (result.__isset.snapshot_path) {
         *snapshot_path = result.snapshot_path;
         if (snapshot_path->at(snapshot_path->length() - 1) != '/') {
@@ -460,7 +461,7 @@ Status EngineCloneTask::_download_files(
         const std::string& remote_url_prefix,
         const std::string& local_path) {
     // Check local path exist, if exist, remove it, then create the dir
-    // local_file_full_path = tabletid/clone， for a specific tablet, there should be only one folder
+    // local_file_full_path = tabletid/clone, for a specific tablet, there should be only one folder
     // if this folder exists, then should remove it
     // for example, BE clone from BE 1 to download file 1 with version (2,2), but clone from BE 1 failed
     // then it will try to clone from BE 2, but it will find the file 1 already exist, but file 1 with same
@@ -468,7 +469,7 @@ Status EngineCloneTask::_download_files(
     RETURN_IF_ERROR(FileUtils::remove_all(local_path));
     RETURN_IF_ERROR(FileUtils::create_dir(local_path));
 
-    // Get remove dir file list
+    // Get remote dir file list
     string file_list_str;
     auto list_files_cb = [&remote_url_prefix, &file_list_str] (HttpClient* client) {
         RETURN_IF_ERROR(client->init(remote_url_prefix));
@@ -479,7 +480,7 @@ Status EngineCloneTask::_download_files(
     RETURN_IF_ERROR(HttpClient::execute_with_retry(DOWNLOAD_FILE_MAX_RETRY, 1, list_files_cb));
     vector<string> file_name_list = strings::Split(file_list_str, "\n", strings::SkipWhitespace());
 
-    // If the header file is not exist, the table could't loaded by olap engine.
+    // If the header file is not exist, the table couldn't loaded by olap engine.
     // Avoid of data is not complete, we copy the header file at last.
     // The header file's name is end of .hdr.
     for (int i = 0; i < file_name_list.size() - 1; ++i) {
@@ -574,7 +575,6 @@ OLAPStatus EngineCloneTask::_convert_to_new_snapshot(const string& clone_dir, in
     string cloned_meta_file = clone_dir + "/" + std::to_string(tablet_id) + ".hdr";
     FileHeader<OLAPHeaderMessage> file_header;
     FileHandler file_handler;
-    OLAPHeaderMessage olap_header_msg;
     if (file_handler.open(cloned_meta_file.c_str(), O_RDONLY) != OLAP_SUCCESS) {
         LOG(WARNING) << "fail to open ordinal file. file=" << cloned_meta_file;
         return OLAP_ERR_IO_ERROR;
@@ -587,12 +587,12 @@ OLAPStatus EngineCloneTask::_convert_to_new_snapshot(const string& clone_dir, in
     }
 
     set<string> clone_files;
-
     RETURN_WITH_WARN_IF_ERROR(
             FileUtils::list_dirs_files(clone_dir, NULL, &clone_files, Env::Default()),
             OLAP_ERR_DISK_FAILURE,
             "failed to dir walk when clone. clone_dir=" + clone_dir);
 
+    OLAPHeaderMessage olap_header_msg;
     try {
        olap_header_msg.CopyFrom(file_header.message());
     } catch (...) {
@@ -744,20 +744,18 @@ OLAPStatus EngineCloneTask::_clone_incremental_data(Tablet* tablet, const Tablet
     vector<Version> missed_versions;
     tablet->calc_missed_versions_unlocked(committed_version, &missed_versions);
 
-    vector<Version> versions_to_delete;
-    vector<RowsetMetaSharedPtr> rowsets_to_clone;
-
     VLOG(3) << "get missed versions again when finish incremental clone. "
             << "tablet=" << tablet->full_name()
             << ", committed_version=" << committed_version
             << ", missed_versions_size=" << missed_versions.size();
 
     // check missing versions exist in clone src
+    vector<RowsetMetaSharedPtr> rowsets_to_clone;
     for (Version version : missed_versions) {
         RowsetMetaSharedPtr inc_rs_meta = cloned_tablet_meta.acquire_inc_rs_meta_by_version(version);
         if (inc_rs_meta == nullptr) {
             LOG(WARNING) << "missed version is not found in cloned tablet meta."
-                         << ", missed_version=" << version.first << "-" << version.second;
+                         << " missed_version=" << version.first << "-" << version.second;
             return OLAP_ERR_VERSION_NOT_EXIST;
         }
 
@@ -765,6 +763,7 @@ OLAPStatus EngineCloneTask::_clone_incremental_data(Tablet* tablet, const Tablet
     }
 
     // clone_data to tablet
+    vector<Version> versions_to_delete;
     OLAPStatus clone_res = tablet->revise_tablet_meta(rowsets_to_clone, versions_to_delete);
     LOG(INFO) << "finish to incremental clone. [tablet=" << tablet->full_name() << " res=" << clone_res << "]";
     return clone_res;
@@ -773,8 +772,7 @@ OLAPStatus EngineCloneTask::_clone_incremental_data(Tablet* tablet, const Tablet
 OLAPStatus EngineCloneTask::_clone_full_data(Tablet* tablet, TabletMeta* cloned_tablet_meta) {
     Version cloned_max_version = cloned_tablet_meta->max_version();
     LOG(INFO) << "begin to full clone. tablet=" << tablet->full_name()
-              << ", cloned_max_version=" << cloned_max_version.first
-              << "-" << cloned_max_version.second;
+              << ", cloned_max_version=" << cloned_max_version;
     vector<Version> versions_to_delete;
     vector<RowsetMetaSharedPtr> rs_metas_found_in_src;
     // check local versions
@@ -782,7 +780,7 @@ OLAPStatus EngineCloneTask::_clone_full_data(Tablet* tablet, TabletMeta* cloned_
         Version local_version(rs_meta->start_version(), rs_meta->end_version());
         LOG(INFO) << "check local delta when full clone."
             << "tablet=" << tablet->full_name()
-            << ", local_version=" << local_version.first << "-" << local_version.second;
+            << ", local_version=" << local_version;
 
         // if local version cross src latest, clone failed
         // if local version is : 0-0, 1-1, 2-10, 12-14, 15-15,16-16
@@ -794,7 +792,7 @@ OLAPStatus EngineCloneTask::_clone_full_data(Tablet* tablet, TabletMeta* cloned_
             && local_version.second > cloned_max_version.second) {
             LOG(WARNING) << "stop to full clone, version cross src latest."
                     << "tablet=" << tablet->full_name()
-                    << ", local_version=" << local_version.first << "-" << local_version.second;
+                    << ", local_version=" << local_version;
             return OLAP_ERR_TABLE_VERSION_DUPLICATE_ERROR;
 
         } else if (local_version.second <= cloned_max_version.second) {
@@ -803,9 +801,9 @@ OLAPStatus EngineCloneTask::_clone_full_data(Tablet* tablet, TabletMeta* cloned_
 
             // if delta labeled with local_version is same with the specified version in clone header,
             // there is no necessity to clone it.
+            // TODO(yingchun): if '_rs_metas' is sorted by rs meta version, we can use binary search.
             for (auto& rs_meta : cloned_tablet_meta->all_rs_metas()) {
-                if (rs_meta->version().first == local_version.first
-                    && rs_meta->version().second == local_version.second) {
+                if (rs_meta->version() == local_version) {
                     existed_in_src = true;
                     break;
                 }
@@ -815,7 +813,7 @@ OLAPStatus EngineCloneTask::_clone_full_data(Tablet* tablet, TabletMeta* cloned_
                 cloned_tablet_meta->delete_rs_meta_by_version(local_version, &rs_metas_found_in_src);
                 LOG(INFO) << "Delta has already existed in local header, no need to clone."
                     << "tablet=" << tablet->full_name()
-                    << ", version='" << local_version.first<< "-" << local_version.second;
+                    << ", version='" << local_version;
             } else {
                 // Delta labeled in local_version is not existed in clone header,
                 // some overlapping delta will be cloned to replace it.
@@ -823,17 +821,15 @@ OLAPStatus EngineCloneTask::_clone_full_data(Tablet* tablet, TabletMeta* cloned_
                 versions_to_delete.push_back(local_version);
                 LOG(INFO) << "Delete delta not included by the clone header, should delete it from local header."
                           << "tablet=" << tablet->full_name() << ","
-                          << ", version=" << local_version.first<< "-" << local_version.second;
+                          << ", version=" << local_version;
             }
         }
     }
-    vector<RowsetMetaSharedPtr> rowsets_to_clone;
-    for (auto& rs_meta : cloned_tablet_meta->all_rs_metas()) {
-        rowsets_to_clone.push_back(rs_meta);
+    vector<RowsetMetaSharedPtr> rowsets_to_clone(cloned_tablet_meta->all_rs_metas());
+    for (const auto& rs_meta : rowsets_to_clone) {
         LOG(INFO) << "Delta to clone."
                   << "tablet=" << tablet->full_name()
-                  << ", version=" << rs_meta->version().first << "-"
-                  << rs_meta->version().second;
+                  << ", version=" << rs_meta->version();
     }
 
     // clone_data to tablet

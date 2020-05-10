@@ -130,12 +130,7 @@ void PInternalServiceImpl<T>::tablet_writer_cancel(google::protobuf::RpcControll
         << ", index_id=" << request->index_id()
         << ", sender_id=" << request->sender_id();
     brpc::ClosureGuard closure_guard(done);
-    auto st = _exec_env->load_channel_mgr()->cancel(*request);
-    if (!st.ok()) {
-        LOG(WARNING) << "tablet writer cancel failed, id=" << request->id()
-        << ", index_id=" << request->index_id()
-        << ", sender_id=" << request->sender_id();
-    }
+    _exec_env->load_channel_mgr()->cancel(*request);
 }
 
 template<typename T>
@@ -195,8 +190,8 @@ void PInternalServiceImpl<T>::trigger_profile_report(
         PTriggerProfileReportResult* result,
         google::protobuf::Closure* done) {
     brpc::ClosureGuard closure_guard(done);
-    auto st = _exec_env->fragment_mgr()->trigger_profile_report(request);
-    st.to_protobuf(result->mutable_status());
+    _exec_env->fragment_mgr()->trigger_profile_report(request);
+    result->mutable_status()->set_status_code(0);  // TODO(yingchun): should remove it
 }
 
 template<typename T>

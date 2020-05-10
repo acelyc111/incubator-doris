@@ -35,13 +35,13 @@ public:
 
     OLAPStatus init();
 
-    OLAPStatus get(const int column_family_index, const std::string& key, std::string* value);
+    OLAPStatus get(int column_family_index, const std::string& key, std::string* value);
 
-    OLAPStatus put(const int column_family_index, const std::string& key, const std::string& value);
+    OLAPStatus put(int column_family_index, const std::string& key, const std::string& valuOlapMetae);
 
-    OLAPStatus remove(const int column_family_index, const std::string& key);
+    OLAPStatus remove(int column_family_index, const std::string& key);
 
-    OLAPStatus iterate(const int column_family_index, const std::string& prefix,
+    OLAPStatus iterate(int column_family_index, const std::string& prefix,
             std::function<bool(const std::string&, const std::string&)> const& func);
 
     std::string get_root_path();

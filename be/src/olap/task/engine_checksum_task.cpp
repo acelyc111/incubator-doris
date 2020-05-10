@@ -57,8 +57,6 @@ OLAPStatus EngineChecksumTask::_compute_checksum() {
         return OLAP_ERR_TABLE_NOT_FOUND;
     }
 
-
-    Reader reader;
     ReaderParams reader_params;
     reader_params.tablet = tablet;
     reader_params.reader_type = READER_CHECKSUM;
@@ -90,6 +88,7 @@ OLAPStatus EngineChecksumTask::_compute_checksum() {
         reader_params.return_columns.push_back(i);
     }
 
+    Reader reader;
     res = reader.init(reader_params);
     if (res != OLAP_SUCCESS) {
         OLAP_LOG_WARNING("initiate reader fail. [res=%d]", res);
@@ -97,9 +96,6 @@ OLAPStatus EngineChecksumTask::_compute_checksum() {
     }
 
     RowCursor row;
-    std::unique_ptr<MemTracker> tracker(new MemTracker(-1));
-    std::unique_ptr<MemPool> mem_pool(new MemPool(tracker.get()));
-    std::unique_ptr<ObjectPool> agg_object_pool(new ObjectPool());
     res = row.init(tablet->tablet_schema(), reader_params.return_columns);
     if (res != OLAP_SUCCESS) {
         OLAP_LOG_WARNING("failed to init row cursor. [res=%d]", res);
@@ -109,6 +105,9 @@ OLAPStatus EngineChecksumTask::_compute_checksum() {
 
     bool eof = false;
     uint32_t row_checksum = 0;
+    std::unique_ptr<MemTracker> tracker(new MemTracker(-1));
+    std::unique_ptr<MemPool> mem_pool(new MemPool(tracker.get()));
+    std::unique_ptr<ObjectPool> agg_object_pool(new ObjectPool());
     while (true) {
         OLAPStatus res = reader.next_row_with_aggregation(&row, mem_pool.get(), agg_object_pool.get(), &eof);
         if (res == OLAP_SUCCESS && eof) {

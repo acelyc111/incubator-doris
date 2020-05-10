@@ -49,6 +49,7 @@ template<> inline void fixed_size_memory_copy<8>(void* dst, const void* src) {
     *(reinterpret_cast<uint64_t*>(dst)) = * (reinterpret_cast<const uint64_t*>(src));
 }
 
+// TODO(yingchun): do benckmark on it
 inline void memory_copy(void* dst, const void* src, size_t size) {
     static const void* addrs[] = {
         &&B0, &&B1, &&B2, &&B3, &&B4, &&B5, &&B6, 

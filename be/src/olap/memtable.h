@@ -40,7 +40,6 @@ public:
     MemTable(int64_t tablet_id, Schema* schema, const TabletSchema* tablet_schema,
              const std::vector<SlotDescriptor*>* slot_descs, TupleDescriptor* tuple_desc,
              KeysType keys_type, RowsetWriter* rowset_writer, MemTracker* mem_tracker);
-    ~MemTable();
 
     int64_t tablet_id() const { return _tablet_id; }
     size_t memory_usage() const { return _mem_tracker->consumption(); }
@@ -83,7 +82,7 @@ private:
     ObjectPool _agg_object_pool;
 
     size_t _schema_size;
-    Table* _skip_list;
+    std::unique_ptr<Table> _skip_list;
     Table::Hint _hint;
 
     RowsetWriter* _rowset_writer;

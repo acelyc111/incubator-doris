@@ -311,7 +311,7 @@ uint32_t TaskWorkerPool::_get_next_task_index(int32_t thread_count,
 }
 
 void* TaskWorkerPool::_create_tablet_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
@@ -325,10 +325,10 @@ void* TaskWorkerPool::_create_tablet_worker_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            create_tablet_req = agent_task_req.create_tablet_req;
             worker_pool_this->_tasks.pop_front();
         }
 
+        create_tablet_req = agent_task_req.create_tablet_req;
         TStatusCode::type status_code = TStatusCode::OK;
         vector<string> error_msgs;
         TStatus task_status;
@@ -355,7 +355,7 @@ void* TaskWorkerPool::_create_tablet_worker_thread_callback(void* arg_this) {
             tablet_info.row_count = 0;
             tablet_info.data_size = 0;
             tablet_info.__set_path_hash(tablet->data_dir()->path_hash());
-            finish_tablet_infos.push_back(tablet_info);
+            finish_tablet_infos.emplace_back(tablet_info);
         }
 
         task_status.__set_status_code(status_code);
@@ -378,7 +378,7 @@ void* TaskWorkerPool::_create_tablet_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_drop_tablet_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
@@ -386,19 +386,21 @@ void* TaskWorkerPool::_drop_tablet_worker_thread_callback(void* arg_this) {
         TAgentTaskRequest agent_task_req;
         TDropTabletReq drop_tablet_req;
         {
+            // TODO(yingchun): use template
             lock_guard<Mutex> worker_thread_lock(worker_pool_this->_worker_thread_lock);
             while (worker_pool_this->_tasks.empty()) {
                 worker_pool_this->_worker_thread_condition_variable.wait();
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            drop_tablet_req = agent_task_req.drop_tablet_req;
             worker_pool_this->_tasks.pop_front();
         }
 
+        drop_tablet_req = agent_task_req.drop_tablet_req;
         TStatusCode::type status_code = TStatusCode::OK;
         vector<string> error_msgs;
         TStatus task_status;
+        // TODO(yingchun): Why not drop_tablet directly?
         TabletSharedPtr dropped_tablet = StorageEngine::instance()->tablet_manager()->get_tablet(
                 drop_tablet_req.tablet_id, drop_tablet_req.schema_hash);
         if (dropped_tablet != nullptr) {
@@ -406,7 +408,7 @@ void* TaskWorkerPool::_drop_tablet_worker_thread_callback(void* arg_this) {
                     drop_tablet_req.tablet_id, drop_tablet_req.schema_hash);
             if (drop_status != OLAP_SUCCESS) {
                 LOG(WARNING) << "drop table failed! signature: " << agent_task_req.signature;
-                error_msgs.push_back("drop table failed!");
+                error_msgs.emplace_back("drop table failed!");
                 status_code = TStatusCode::RUNTIME_ERROR;
             }
             // if tablet is dropped by fe, then the related txn should also be removed
@@ -432,7 +434,7 @@ void* TaskWorkerPool::_drop_tablet_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_alter_tablet_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
@@ -447,6 +449,7 @@ void* TaskWorkerPool::_alter_tablet_worker_thread_callback(void* arg_this) {
             agent_task_req = worker_pool_this->_tasks.front();
             worker_pool_this->_tasks.pop_front();
         }
+
         int64_t signatrue = agent_task_req.signature;
         LOG(INFO) << "get alter table task, signature: " << agent_task_req.signature;
         bool is_task_timeout = false;
@@ -552,7 +555,7 @@ void TaskWorkerPool::_alter_tablet(TaskWorkerPool* worker_pool_this,
     } else if (status == DORIS_TASK_REQUEST_ERROR) {
         LOG(WARNING) << "alter table request task type invalid. "
                      << "signature:" << signature;
-        error_msgs.push_back("alter table request new tablet id or schema count invalid.");
+        error_msgs.emplace_back("alter table request new tablet id or schema count invalid.");
         task_status.__set_status_code(TStatusCode::ANALYSIS_ERROR);
     } else {
         LOG(WARNING) << process_name << " failed. signature: " << signature;
@@ -566,7 +569,7 @@ void TaskWorkerPool::_alter_tablet(TaskWorkerPool* worker_pool_this,
 }
 
 void* TaskWorkerPool::_push_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
     // gen high priority worker thread
     TPriority::type priority = TPriority::NORMAL;
@@ -601,11 +604,11 @@ void* TaskWorkerPool::_push_worker_thread_callback(void* arg_this) {
             if (index < 0) {
                 // there is no high priority task. notify other thread to handle normal task
                 worker_pool_this->_worker_thread_condition_variable.notify_one();
+                // TODO(yingchun): should continue?
                 break;
             }
 
             agent_task_req = worker_pool_this->_tasks[index];
-            push_req = agent_task_req.push_req;
             worker_pool_this->_tasks.erase(worker_pool_this->_tasks.begin() + index);
         } while (0);
 
@@ -617,6 +620,8 @@ void* TaskWorkerPool::_push_worker_thread_callback(void* arg_this) {
         }
 #endif
 
+        push_req = agent_task_req.push_req;
+        // TODO(yingchun): if index < 0 and breaked in while, push_req and agent_task_req are invalid.
         LOG(INFO) << "get push task. signature: " << agent_task_req.signature
                   << " priority: " << priority;
         vector<TTabletInfo> tablet_infos;
@@ -646,7 +651,7 @@ void* TaskWorkerPool::_push_worker_thread_callback(void* arg_this) {
 
         if (status == DORIS_SUCCESS) {
             VLOG(3) << "push ok.signature: " << agent_task_req.signature;
-            error_msgs.push_back("push success");
+            error_msgs.emplace_back("push success");
 
             ++_s_report_version;
 
@@ -655,12 +660,12 @@ void* TaskWorkerPool::_push_worker_thread_callback(void* arg_this) {
         } else if (status == DORIS_TASK_REQUEST_ERROR) {
             LOG(WARNING) << "push request push_type invalid. type: " << push_req.push_type
                          << ", signature: " << agent_task_req.signature;
-            error_msgs.push_back("push request push_type invalid.");
+            error_msgs.emplace_back("push request push_type invalid.");
             task_status.__set_status_code(TStatusCode::ANALYSIS_ERROR);
         } else {
             LOG(WARNING) << "push failed, error_code: " << status
                          << ", signature: " << agent_task_req.signature;
-            error_msgs.push_back("push failed");
+            error_msgs.emplace_back("push failed");
             task_status.__set_status_code(TStatusCode::RUNTIME_ERROR);
         }
         task_status.__set_error_msgs(error_msgs);
@@ -677,12 +682,11 @@ void* TaskWorkerPool::_push_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_publish_version_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 #ifndef BE_TEST
     while (true) {
 #endif
         TAgentTaskRequest agent_task_req;
-        TPublishVersionRequest publish_version_req;
         {
             lock_guard<Mutex> worker_thread_lock(worker_pool_this->_worker_thread_lock);
             while (worker_pool_this->_tasks.empty()) {
@@ -690,10 +694,10 @@ void* TaskWorkerPool::_publish_version_worker_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            publish_version_req = agent_task_req.publish_version_req;
             worker_pool_this->_tasks.pop_front();
         }
 
+        TPublishVersionRequest publish_version_req = agent_task_req.publish_version_req;
         DorisMetrics::instance()->publish_task_request_total.increment(1);
         LOG(INFO) << "get publish version task, signature:" << agent_task_req.signature;
 
@@ -745,7 +749,7 @@ void* TaskWorkerPool::_publish_version_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_clear_transaction_task_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 #ifndef BE_TEST
     while (true) {
 #endif
@@ -758,9 +762,10 @@ void* TaskWorkerPool::_clear_transaction_task_worker_thread_callback(void* arg_t
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            clear_transaction_task_req = agent_task_req.clear_transaction_task_req;
             worker_pool_this->_tasks.pop_front();
         }
+
+        clear_transaction_task_req = agent_task_req.clear_transaction_task_req;
         LOG(INFO) << "get clear transaction task task, signature:" << agent_task_req.signature
                   << ", transaction_id: " << clear_transaction_task_req.transaction_id
                   << ", partition id size: " << clear_transaction_task_req.partition_id.size();
@@ -806,10 +811,9 @@ void* TaskWorkerPool::_clear_transaction_task_worker_thread_callback(void* arg_t
 }
 
 void* TaskWorkerPool::_update_tablet_meta_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
     while (true) {
         TAgentTaskRequest agent_task_req;
-        TUpdateTabletMetaInfoReq update_tablet_meta_req;
         {
             lock_guard<Mutex> worker_thread_lock(worker_pool_this->_worker_thread_lock);
             while (worker_pool_this->_tasks.empty()) {
@@ -817,11 +821,11 @@ void* TaskWorkerPool::_update_tablet_meta_worker_thread_callback(void* arg_this)
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            update_tablet_meta_req = agent_task_req.update_tablet_meta_info_req;
             worker_pool_this->_tasks.pop_front();
         }
         LOG(INFO) << "get update tablet meta task, signature:" << agent_task_req.signature;
 
+        TUpdateTabletMetaInfoReq update_tablet_meta_req = agent_task_req.update_tablet_meta_info_req;
         TStatusCode::type status_code = TStatusCode::OK;
         vector<string> error_msgs;
         TStatus task_status;
@@ -871,14 +875,13 @@ void* TaskWorkerPool::_update_tablet_meta_worker_thread_callback(void* arg_this)
 }
 
 void* TaskWorkerPool::_clone_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
 #endif
         AgentStatus status = DORIS_SUCCESS;
         TAgentTaskRequest agent_task_req;
-        TCloneReq clone_req;
 
         {
             lock_guard<Mutex> worker_thread_lock(worker_pool_this->_worker_thread_lock);
@@ -887,10 +890,10 @@ void* TaskWorkerPool::_clone_worker_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            clone_req = agent_task_req.clone_req;
             worker_pool_this->_tasks.pop_front();
         }
 
+        TCloneReq clone_req = agent_task_req.clone_req;
         DorisMetrics::instance()->clone_requests_total.increment(1);
         LOG(INFO) << "get clone task. signature:" << agent_task_req.signature;
 
@@ -911,7 +914,7 @@ void* TaskWorkerPool::_clone_worker_thread_callback(void* arg_this) {
             DorisMetrics::instance()->clone_requests_failed.increment(1);
             status_code = TStatusCode::RUNTIME_ERROR;
             LOG(WARNING) << "clone failed. signature: " << agent_task_req.signature;
-            error_msgs.push_back("clone failed.");
+            error_msgs.emplace_back("clone failed.");
         } else {
             LOG(INFO) << "clone success, set tablet infos."
                       << "signature:" << agent_task_req.signature;
@@ -931,7 +934,7 @@ void* TaskWorkerPool::_clone_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_storage_medium_migrate_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
@@ -945,10 +948,10 @@ void* TaskWorkerPool::_storage_medium_migrate_worker_thread_callback(void* arg_t
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            storage_medium_migrate_req = agent_task_req.storage_medium_migrate_req;
             worker_pool_this->_tasks.pop_front();
         }
 
+        storage_medium_migrate_req = agent_task_req.storage_medium_migrate_req;
         TStatusCode::type status_code = TStatusCode::OK;
         vector<string> error_msgs;
         TStatus task_status;
@@ -981,7 +984,7 @@ void* TaskWorkerPool::_storage_medium_migrate_worker_thread_callback(void* arg_t
 }
 
 void* TaskWorkerPool::_check_consistency_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
@@ -995,10 +998,10 @@ void* TaskWorkerPool::_check_consistency_worker_thread_callback(void* arg_this) 
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            check_consistency_req = agent_task_req.check_consistency_req;
             worker_pool_this->_tasks.pop_front();
         }
 
+        check_consistency_req = agent_task_req.check_consistency_req;
         TStatusCode::type status_code = TStatusCode::OK;
         vector<string> error_msgs;
         TStatus task_status;
@@ -1038,7 +1041,7 @@ void* TaskWorkerPool::_check_consistency_worker_thread_callback(void* arg_this) 
 }
 
 void* TaskWorkerPool::_report_task_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
     TReportRequest request;
     request.__set_force_recovery(config::force_recovery);
@@ -1047,8 +1050,10 @@ void* TaskWorkerPool::_report_task_worker_thread_callback(void* arg_this) {
 #ifndef BE_TEST
     while (true) {
 #endif
+        // TODO(yingchun): 在master port = 0时，也应该sleep
         {
             lock_guard<Mutex> task_signatures_lock(_s_task_signatures_lock);
+            // TODO(yingchun): 上报task_signatures的意义是什么？
             request.__set_tasks(_s_task_signatures);
         }
 
@@ -1072,7 +1077,7 @@ void* TaskWorkerPool::_report_task_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_report_disk_state_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
     TReportRequest request;
     request.__set_force_recovery(config::force_recovery);
@@ -1084,7 +1089,7 @@ void* TaskWorkerPool::_report_disk_state_worker_thread_callback(void* arg_this) 
             // port == 0 means not received heartbeat yet
             // sleep a short time and try again
             LOG(INFO) << "waiting to receive first heartbeat from frontend";
-            sleep(config::sleep_one_second);
+            sleep(config::sleep_one_second);  // TODO(yingchun): should rename
             continue;
         }
 #endif
@@ -1137,7 +1142,7 @@ void* TaskWorkerPool::_report_disk_state_worker_thread_callback(void* arg_this) 
 }
 
 void* TaskWorkerPool::_report_tablet_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
     TReportRequest request;
     request.__set_force_recovery(config::force_recovery);
@@ -1200,7 +1205,7 @@ void* TaskWorkerPool::_report_tablet_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_upload_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*) arg_this;
 
 #ifndef BE_TEST
     while (true) {
@@ -1214,10 +1219,10 @@ void* TaskWorkerPool::_upload_worker_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            upload_request = agent_task_req.upload_req;
             worker_pool_this->_tasks.pop_front();
         }
 
+        upload_request = agent_task_req.upload_req;
         LOG(INFO) << "get upload task, signature:" << agent_task_req.signature
                   << ", job id:" << upload_request.job_id;
 
@@ -1259,7 +1264,7 @@ void* TaskWorkerPool::_upload_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_download_worker_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
@@ -1273,9 +1278,10 @@ void* TaskWorkerPool::_download_worker_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            download_request = agent_task_req.download_req;
             worker_pool_this->_tasks.pop_front();
         }
+
+        download_request = agent_task_req.download_req;
         LOG(INFO) << "get download task, signature: " << agent_task_req.signature
                   << ", job id:" << download_request.job_id;
 
@@ -1319,13 +1325,12 @@ void* TaskWorkerPool::_download_worker_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_make_snapshot_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
 #endif
         TAgentTaskRequest agent_task_req;
-        TSnapshotRequest snapshot_request;
         {
             lock_guard<Mutex> worker_thread_lock(worker_pool_this->_worker_thread_lock);
             while (worker_pool_this->_tasks.empty()) {
@@ -1333,10 +1338,10 @@ void* TaskWorkerPool::_make_snapshot_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            snapshot_request = agent_task_req.snapshot_req;
             worker_pool_this->_tasks.pop_front();
         }
         LOG(INFO) << "get snapshot task, signature:" << agent_task_req.signature;
+        TSnapshotRequest snapshot_request = agent_task_req.snapshot_req;
 
         TStatusCode::type status_code = TStatusCode::OK;
         vector<string> error_msgs;
@@ -1356,7 +1361,7 @@ void* TaskWorkerPool::_make_snapshot_thread_callback(void* arg_this) {
                          << ", version_hash:" << snapshot_request.version_hash
                          << ", status: " << make_snapshot_status;
             error_msgs.push_back("make_snapshot failed. status: " +
-                                 boost::lexical_cast<string>(make_snapshot_status));
+                                 std::to_string(make_snapshot_status));
         } else {
             LOG(INFO) << "make_snapshot success. tablet_id:" << snapshot_request.tablet_id
                       << ", schema_hash:" << snapshot_request.schema_hash
@@ -1404,13 +1409,12 @@ void* TaskWorkerPool::_make_snapshot_thread_callback(void* arg_this) {
 }
 
 void* TaskWorkerPool::_release_snapshot_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
 #endif
         TAgentTaskRequest agent_task_req;
-        TReleaseSnapshotRequest release_snapshot_request;
         {
             lock_guard<Mutex> worker_thread_lock(worker_pool_this->_worker_thread_lock);
             while (worker_pool_this->_tasks.empty()) {
@@ -1418,11 +1422,12 @@ void* TaskWorkerPool::_release_snapshot_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            release_snapshot_request = agent_task_req.release_snapshot_req;
             worker_pool_this->_tasks.pop_front();
         }
+
         LOG(INFO) << "get release snapshot task, signature:" << agent_task_req.signature;
 
+        TReleaseSnapshotRequest release_snapshot_request = agent_task_req.release_snapshot_req;
         TStatusCode::type status_code = TStatusCode::OK;
         vector<string> error_msgs;
         TStatus task_status;
@@ -1435,7 +1440,7 @@ void* TaskWorkerPool::_release_snapshot_thread_callback(void* arg_this) {
             LOG(WARNING) << "release_snapshot failed. snapshot_path: " << snapshot_path
                          << ". status: " << release_snapshot_status;
             error_msgs.push_back("release_snapshot failed. status: " +
-                                 boost::lexical_cast<string>(release_snapshot_status));
+                                 std::to_string(release_snapshot_status));
         } else {
             LOG(INFO) << "release_snapshot success. snapshot_path: " << snapshot_path
                       << ". status: " << release_snapshot_status;
@@ -1476,13 +1481,12 @@ AgentStatus TaskWorkerPool::_get_tablet_info(const TTabletId tablet_id,
 }
 
 void* TaskWorkerPool::_move_dir_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
 #ifndef BE_TEST
     while (true) {
 #endif
         TAgentTaskRequest agent_task_req;
-        TMoveDirReq move_dir_req;
         {
             MutexLock worker_thread_lock(&(worker_pool_this->_worker_thread_lock));
             while (worker_pool_this->_tasks.empty()) {
@@ -1490,9 +1494,9 @@ void* TaskWorkerPool::_move_dir_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            move_dir_req = agent_task_req.move_dir_req;
             worker_pool_this->_tasks.pop_front();
         }
+        const auto& move_dir_req =  agent_task_req.move_dir_req;
         LOG(INFO) << "get move dir task, signature:" << agent_task_req.signature
                   << ", job id:" << move_dir_req.job_id;
 
@@ -1562,11 +1566,10 @@ AgentStatus TaskWorkerPool::_move_dir(const TTabletId tablet_id, const TSchemaHa
 }
 
 void* TaskWorkerPool::_recover_tablet_thread_callback(void* arg_this) {
-    TaskWorkerPool* worker_pool_this = (TaskWorkerPool*)arg_this;
+    auto worker_pool_this = (TaskWorkerPool*)arg_this;
 
     while (true) {
         TAgentTaskRequest agent_task_req;
-        TRecoverTabletReq recover_tablet_req;
         {
             MutexLock worker_thread_lock(&(worker_pool_this->_worker_thread_lock));
             while (worker_pool_this->_tasks.empty()) {
@@ -1574,10 +1577,10 @@ void* TaskWorkerPool::_recover_tablet_thread_callback(void* arg_this) {
             }
 
             agent_task_req = worker_pool_this->_tasks.front();
-            recover_tablet_req = agent_task_req.recover_tablet_req;
             worker_pool_this->_tasks.pop_front();
         }
 
+        TRecoverTabletReq recover_tablet_req = agent_task_req.recover_tablet_req;
         TStatusCode::type status_code = TStatusCode::OK;
         vector<string> error_msgs;
         TStatus task_status;

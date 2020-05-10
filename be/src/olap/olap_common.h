@@ -183,6 +183,8 @@ enum ReaderType {
 //using Version = std::pair<TupleVersion, TupleVersion>;
 
 struct Version {
+    // TODO(yingchun): rename to 'start', 'end'?
+    // TODO(yingchun): first <= second?
     int64_t first;
     int64_t second;
 
@@ -201,6 +203,10 @@ struct Version {
 
     bool contains(const Version& other) const {
         return first <= other.first && second >= other.second;
+    }
+
+    bool single_version() const {
+        return first == second;
     }
 };
 
@@ -300,7 +306,7 @@ struct RowsetId {
         }
     }
 
-    // to compatiable with old version
+    // to compatible with old version
     void init(int64_t rowset_id) {
         init(1, rowset_id, 0, 0);
     }

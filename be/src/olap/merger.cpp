@@ -51,10 +51,10 @@ OLAPStatus Merger::merge_rowsets(TabletSharedPtr tablet,
     // The following procedure would last for long time, half of one day, etc.
     int64_t output_rows = 0;
     while (true) {
-        ObjectPool objectPool;
+        ObjectPool object_pool;
         bool eof = false;
         // Read one row into row_cursor
-        RETURN_NOT_OK_LOG(reader.next_row_with_aggregation(&row_cursor, mem_pool.get(), &objectPool, &eof),
+        RETURN_NOT_OK_LOG(reader.next_row_with_aggregation(&row_cursor, mem_pool.get(), &object_pool, &eof),
                           "failed to read next row when merging rowsets of tablet " + tablet->full_name());
         if (eof) {
             break;

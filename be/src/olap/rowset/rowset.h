@@ -173,11 +173,11 @@ public:
         OLAPStatus st = OLAP_SUCCESS;
         {
             std::lock_guard<std::mutex> close_lock(_lock);
-            uint64_t current_refs = _refs_by_reader;
             old_state = _rowset_state_machine.rowset_state();
             if (old_state != ROWSET_LOADED) {
                 return;
             }
+            uint64_t current_refs = _refs_by_reader;
             if (current_refs == 0) {
                 do_close();
             }
@@ -193,11 +193,11 @@ public:
             << ", tabletid:" << _rowset_meta->tablet_id();
     }
 
-    // hard link all files in this rowset to `dir` to form a new rowset with id `new_rowset_id`.
-    virtual OLAPStatus link_files_to(const std::string& dir, RowsetId new_rowset_id) = 0;
+    // hard link all files in this rowset with id `new_rowset_id` to `dir` to form a new rowset.
+    virtual OLAPStatus link_files_to(const std::string& dir, const RowsetId& new_rowset_id) = 0;
 
     // copy all files to `dir`
-    virtual OLAPStatus copy_files_to(const std::string& dir) = 0;
+    virtual OLAPStatus copy_files_to(const std::string& dir) const = 0;
 
     virtual OLAPStatus remove_old_files(std::vector<std::string>* files_to_remove) = 0;
 
@@ -231,7 +231,7 @@ public:
     }
 
     void release() {
-        // if the refs by reader is 0 and the rowset is closed, should release the resouce
+        // if the refs by reader is 0 and the rowset is closed, should release the resource
         uint64_t current_refs = --_refs_by_reader;
         if (current_refs == 0 && _rowset_state_machine.rowset_state() == ROWSET_UNLOADING) {
             {

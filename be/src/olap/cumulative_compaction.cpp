@@ -39,7 +39,8 @@ OLAPStatus CumulativeCompaction::compact() {
         return OLAP_ERR_CE_TRY_CE_LOCK_ERROR;
     }
 
-    // 1.calculate cumulative point 
+    // 1.calculate cumulative point
+    // TODO(yingchun): _cumulative_point has been updated in 5._tablet->set_cumulative_layer_point, so not needed to calculate every time?
     _tablet->calculate_cumulative_point();
 
     // 2. pick rowsets to compact
@@ -81,8 +82,7 @@ OLAPStatus CumulativeCompaction::pick_rowsets_to_compact() {
     // the last delete version we meet when traversing candidate_rowsets
     Version last_delete_version { -1, -1 };
 
-    for (size_t i = 0; i < candidate_rowsets.size(); ++i) {
-        RowsetSharedPtr rowset = candidate_rowsets[i];
+    for (auto& rowset : candidate_rowsets) {
         if (_tablet->version_for_delete_predicate(rowset->version())) {
             last_delete_version = rowset->version();
             if (!transient_rowsets.empty()) {
@@ -93,8 +93,8 @@ OLAPStatus CumulativeCompaction::pick_rowsets_to_compact() {
             }
 
             // we meet a delete version, and no other versions before, skip it and continue
-            transient_rowsets.clear();
-            compaction_score = 0;
+            DCHECK(transient_rowsets.empty());
+            DCHECK_EQ(compaction_score, 0);
             continue;
         }
 
@@ -111,6 +111,7 @@ OLAPStatus CumulativeCompaction::pick_rowsets_to_compact() {
     // or have other versions before encountering the delete version, we should process the compaction.
     if (compaction_score >= config::min_cumulative_compaction_num_singleton_deltas
         || (last_delete_version.first != -1 && !transient_rowsets.empty())) {
+        // TODO(yingchun): is case 2 duplicate with L90?
         _input_rowsets = transient_rowsets;
     }
 
@@ -155,13 +156,10 @@ OLAPStatus CumulativeCompaction::pick_rowsets_to_compact() {
             }
         } else {
             // init the compaction success time for first time
-            if (last_cumu == 0) {
-                _tablet->set_last_cumu_compaction_success_time(now);
-            }
-
-            if (last_base == 0) {
-                _tablet->set_last_base_compaction_success_time(now);
-            }
+            DCHECK_EQ(last_cumu, 0);
+            DCHECK_EQ(last_base, 0);
+            _tablet->set_last_cumu_compaction_success_time(now);
+            _tablet->set_last_base_compaction_success_time(now);
         }
 
         return OLAP_ERR_CUMULATIVE_NO_SUITABLE_VERSIONS;

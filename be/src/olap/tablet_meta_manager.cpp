@@ -106,6 +106,7 @@ OLAPStatus TabletMetaManager::save(DataDir* store,
     VLOG(3) << "save tablet meta to meta store: key = " << key;
     OlapMeta* meta = store->get_meta();
 
+    // TODO(yingchun): make sure outside
     TabletMetaPB de_tablet_meta_pb;
     bool parsed = de_tablet_meta_pb.ParseFromString(meta_binary);
     if (!parsed) {

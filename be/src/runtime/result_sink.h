@@ -43,7 +43,7 @@ public:
     // buffer_size is the buffer size allocated to each query
     ResultSink(const RowDescriptor& row_desc, const std::vector<TExpr>& select_exprs,
                const TResultSink& sink, int buffer_size);
-    virtual ~ResultSink();
+    ~ResultSink() override {}
     virtual Status prepare(RuntimeState* state);
     virtual Status open(RuntimeState* state);
     // send data in 'batch' to this backend stream mgr

@@ -310,7 +310,7 @@ TEST_F(TestDeltaWriter, open) {
     WriteRequest write_req = {10003, 270068375, WriteType::LOAD,
                               20001, 30001, load_id, false, tuple_desc};
     DeltaWriter* delta_writer = nullptr;
-    DeltaWriter::open(&write_req, k_mem_tracker, &delta_writer);
+    DeltaWriter::open(write_req, k_mem_tracker, &delta_writer);
     ASSERT_NE(delta_writer, nullptr);
     res = delta_writer->close();
     ASSERT_EQ(OLAP_SUCCESS, res);
@@ -345,7 +345,7 @@ TEST_F(TestDeltaWriter, write) {
                               20002, 30002, load_id, false, tuple_desc,
                               &(tuple_desc->slots())};
     DeltaWriter* delta_writer = nullptr;
-    DeltaWriter::open(&write_req, k_mem_tracker, &delta_writer);
+    DeltaWriter::open(write_req, k_mem_tracker, &delta_writer);
     ASSERT_NE(delta_writer, nullptr);
 
     MemTracker tracker;

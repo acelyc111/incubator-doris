@@ -41,6 +41,7 @@ Status PlanFragmentExecutor::prepare(const TExecPlanFragmentParams& request) {
 }
 
 Status PlanFragmentExecutor::open() {
+    // TODO(yingchun): what does it means?
     SleepFor(MonoDelta::FromMilliseconds(50));
     return s_open_status;
 }

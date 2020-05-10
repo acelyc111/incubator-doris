@@ -70,6 +70,7 @@ using apache::thrift::concurrency::PosixThreadFactory;
 BackendService::BackendService(ExecEnv* exec_env) :
         _exec_env(exec_env),
         _agent_server(new AgentServer(exec_env, *exec_env->master_info())) {
+    // TODO(yingchun): waht does this used for?
     char buf[64];
     DateTimeValue value = DateTimeValue::local_time();
     value.to_string(buf);
@@ -312,11 +313,8 @@ void BackendService::get_next(TScanBatchResult& result_, const TScanNextBatchPar
 }
 
 void BackendService::close_scanner(TScanCloseResult& result_, const TScanCloseParams& params) {
-    std::string context_id = params.context_id;
-    TStatus t_status;
-    Status st = _exec_env->external_scan_context_mgr()->clear_scan_context(context_id);
-    st.to_thrift(&t_status);
-    result_.status = t_status;
+    _exec_env->external_scan_context_mgr()->clear_scan_context(params.context_id);
+    result_.status.__set_status_code(TStatusCode::type::OK);
 }
 
 } // namespace doris

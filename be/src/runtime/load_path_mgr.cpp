@@ -40,6 +40,7 @@ LoadPathMgr::LoadPathMgr(ExecEnv* exec_env) : _exec_env(exec_env),
         _idx(0), _next_shard(0), _error_path_next_shard(0) { }
 
 Status LoadPathMgr::init() {
+    // TODO(yingchun): can only init once? we can remove _lock?
     _path_vec.clear();
     for (auto& path : _exec_env->store_paths()) {
         _path_vec.push_back(path.path + MINI_PREFIX);
@@ -61,6 +62,7 @@ void* LoadPathMgr::cleaner(void* param) {
     // TODO(zc): add this thread to cgroup for control resource it use
     LoadPathMgr* mgr = (LoadPathMgr*)param;
     while (true) {
+        // TODO(yingchun): sleep to long, use interval sleep instead
         sleep(3600); // clean every one hour
         mgr->clean();
     }
@@ -117,18 +119,17 @@ bool LoadPathMgr::is_too_old(time_t cur_time, const std::string& label_dir, int6
 
 void LoadPathMgr::get_load_data_path(std::vector<std::string>* data_paths) {
     data_paths->insert(data_paths->end(), _path_vec.begin(), _path_vec.end());
-    return;
 }
 
 const std::string ERROR_FILE_NAME = "error_log";
 
 Status LoadPathMgr::get_load_error_file_name(
         const std::string& db,
-        const std::string&label,
+        const std::string& label,
         const TUniqueId& fragment_instance_id,
         std::string* error_path) {
     std::stringstream ss;
-    std::string shard = "";
+    std::string shard;
     {
         std::lock_guard<std::mutex> l(_lock);
         shard = SHARD_PREFIX + std::to_string(_error_path_next_shard++ % MAX_SHARD_NUM);
@@ -148,14 +149,11 @@ Status LoadPathMgr::get_load_error_file_name(
 }
 
 std::string LoadPathMgr::get_load_error_absolute_path(const std::string& file_path) {
-    std::string path;
-    path.append(_error_log_dir);
-    path.append("/");
-    path.append(file_path);
-    return path;
+    return _error_log_dir + "/" + file_path;
 }
 
 void LoadPathMgr::process_path(time_t now, const std::string& path, int64_t reserve_hours) {
+    // TODO(yingchun): 只用时间判断，但如果有一个文件一直在使用呢？
     if (!is_too_old(now, path, reserve_hours)) {
         return;
     }

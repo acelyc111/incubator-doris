@@ -80,7 +80,7 @@ public:
             int num_senders, int buffer_size, RuntimeProfile* profile,
             bool is_merging, std::shared_ptr<QueryStatisticsRecvr> sub_plan_query_statistics_recvr);
 
-    Status transmit_data(const PTransmitDataParams* request, ::google::protobuf::Closure** done);
+    void transmit_data(const PTransmitDataParams* request, ::google::protobuf::Closure** done);
 
     // Closes all receivers registered for fragment_instance_id immediately.
     void cancel(const TUniqueId& fragment_instance_id);
@@ -104,14 +104,11 @@ private:
     struct ComparisonOp {
         bool operator()(const std::pair<doris::TUniqueId, PlanNodeId>& a,
                 const std::pair<doris::TUniqueId, PlanNodeId>& b) {
-            if (a.first.hi < b.first.hi) {
-                return true;
-            } else if (a.first.hi > b.first.hi) {
-                return false;
-            } else if (a.first.lo < b.first.lo) {
-                return true;
-            } else if (a.first.lo > b.first.lo) {
-                return false;
+            if (a.first.hi != b.first.hi) {
+                return a.first.hi < b.first.hi;
+            }
+            if (a.first.lo != b.first.lo) {
+                return a.first.lo < b.first.lo;
             }
             return a.second < b.second;
         }
@@ -131,7 +128,7 @@ private:
     // Remove receiver block for fragment_instance_id/node_id from the map.
     Status deregister_recvr(const TUniqueId& fragment_instance_id, PlanNodeId node_id);
 
-    inline uint32_t get_hash_value(const TUniqueId& fragment_instance_id, PlanNodeId node_id);
+    static inline uint32_t get_hash_value(const TUniqueId& fragment_instance_id, PlanNodeId node_id);
 };
 
 }

@@ -117,6 +117,7 @@ OLAPStatus EngineStorageMigrationTask::_storage_medium_migrate(
         }
 
         // check disk capacity
+        // TODO(yingchun): should try another store?
         int64_t tablet_size = tablet->tablet_footprint();
         if (stores[0]->reach_capacity_limit(tablet_size)) {
             res = OLAP_ERR_DISK_REACH_CAPACITY_LIMIT;
@@ -133,7 +134,8 @@ OLAPStatus EngineStorageMigrationTask::_storage_medium_migrate(
 
         stringstream root_path_stream;
         root_path_stream << stores[0]->path() << DATA_PREFIX << "/" << shard;
-        string schema_hash_path = SnapshotManager::instance()->get_schema_hash_full_path(tablet, root_path_stream.str());
+        string schema_hash_path = SnapshotManager::instance()->get_schema_hash_full_path(
+                tablet, root_path_stream.str());
         // if dir already exist then return err, it should not happen
         // should not remove the dir directly
         if (FileUtils::check_exist(schema_hash_path)) {
@@ -166,6 +168,7 @@ OLAPStatus EngineStorageMigrationTask::_storage_medium_migrate(
             LOG(WARNING) << "fail to copy index and data files when migrate. res=" << res;
             break;
         }
+        // TODO(yingchun): Should be 'obtain_header_wdlock' ?
         tablet->obtain_header_rdlock();
         _generate_new_header(stores[0], shard, tablet, consistent_rowsets, new_tablet_meta);
         tablet->release_header_lock();

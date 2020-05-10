@@ -53,19 +53,12 @@ MemIndex::~MemIndex() {
     }
 }
 
-OLAPStatus MemIndex::load_segment(const char* file, size_t *current_num_rows_per_row_block, bool use_cache) {
+OLAPStatus MemIndex::load_segment(const std::string& file, size_t *current_num_rows_per_row_block, bool use_cache) {
     OLAPStatus res = OLAP_SUCCESS;
 
     SegmentMetaInfo meta;
     uint32_t adler_checksum = 0;
     uint32_t num_entries = 0;
-
-    if (file == NULL) {
-        res = OLAP_ERR_INPUT_PARAMETER_ERROR;
-        LOG(WARNING) << "load index error. file=" << file << ", res=" << res;
-        return res;
-    }
-
     FileHandler file_handler;
     if (use_cache) {
         if ((res = file_handler.open_with_cache(file, O_RDONLY)) != OLAP_SUCCESS) {
@@ -274,19 +267,14 @@ OLAPStatus MemIndex::load_segment(const char* file, size_t *current_num_rows_per
     return OLAP_SUCCESS;
 }
 
-OLAPStatus MemIndex::init(size_t short_key_len, size_t new_short_key_len,
-                          size_t short_key_num, std::vector<TabletColumn>* short_key_columns) {
-    if (short_key_columns == nullptr) {
-        LOG(WARNING) << "fail to init MemIndex, NULL short key columns.";
-        return OLAP_ERR_INDEX_LOAD_ERROR;
-    }
+void MemIndex::init(size_t short_key_len, size_t new_short_key_len,
+                    size_t short_key_num, std::vector<TabletColumn>* short_key_columns) {
+    DCHECK(short_key_columns == nullptr);
 
     _key_length = short_key_len;
     _new_key_length = new_short_key_len;
     _key_num = short_key_num;
     _short_key_columns = short_key_columns;
-
-    return OLAP_SUCCESS;
 }
 
 // Find and return the IndexOffset of the element prior to the first element which

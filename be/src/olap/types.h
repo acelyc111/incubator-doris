@@ -68,7 +68,7 @@ public:
     }
 
     //convert and deep copy value from other type's source
-    OLAPStatus convert_from(void* dest, const void* src, const TypeInfo* src_type, MemPool* mem_pool) const{
+    OLAPStatus convert_from(void* dest, const void* src, const TypeInfo* src_type, MemPool* mem_pool) const {
         return _convert_from(dest, src, src_type, mem_pool);
     }
 
@@ -244,6 +244,7 @@ struct BaseFieldtypeTraits : public CppTypeTraits<field_type> {
     }
 
     static std::string to_string(const void* src) {
+        // TODO(yingchun): use std::to_string(xxx);
         std::stringstream stream;
         stream << *reinterpret_cast<const CppType*>(src);
         return stream.str();
@@ -251,7 +252,8 @@ struct BaseFieldtypeTraits : public CppTypeTraits<field_type> {
 
     static OLAPStatus from_string(void* buf, const std::string& scan_key) {
         CppType value = 0;
-        if (scan_key.length() > 0) {
+        if (!scan_key.empty()) {
+            // TODO(yingchun): should be strtoll? and overflow judge?
             value = static_cast<CppType>(strtol(scan_key.c_str(), NULL, 10));
         }
         *reinterpret_cast<CppType*>(buf) = value;
@@ -365,6 +367,7 @@ struct FieldTypeTraits<OLAP_FIELD_TYPE_BIGINT> : public BaseFieldtypeTraits<OLAP
 
 template<>
 struct FieldTypeTraits<OLAP_FIELD_TYPE_LARGEINT> : public BaseFieldtypeTraits<OLAP_FIELD_TYPE_LARGEINT> {
+    // TODO(yingchun): improve performance
     static OLAPStatus from_string(void* buf, const std::string& scan_key) {
         int128_t value = 0;
 
@@ -475,7 +478,7 @@ template<>
 struct FieldTypeTraits<OLAP_FIELD_TYPE_FLOAT> : public BaseFieldtypeTraits<OLAP_FIELD_TYPE_FLOAT> {
     static OLAPStatus from_string(void* buf, const std::string& scan_key) {
         CppType value = 0.0f;
-        if (scan_key.length() > 0) {
+        if (!scan_key.empty()) {
             value = static_cast<CppType>(atof(scan_key.c_str()));
         }
         *reinterpret_cast<CppType*>(buf) = value;
@@ -499,7 +502,7 @@ template<>
 struct FieldTypeTraits<OLAP_FIELD_TYPE_DOUBLE> : public BaseFieldtypeTraits<OLAP_FIELD_TYPE_DOUBLE> {
     static OLAPStatus from_string(void* buf, const std::string& scan_key) {
         CppType value = 0.0;
-        if (scan_key.length() > 0) {
+        if (!scan_key.empty()) {
             value = atof(scan_key.c_str());
         }
         *reinterpret_cast<CppType*>(buf) = value;

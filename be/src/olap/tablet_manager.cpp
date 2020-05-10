@@ -166,8 +166,7 @@ OLAPStatus TabletManager::_add_tablet_to_map_unlocked(TTabletId tablet_id, Schem
                                                       const TabletSharedPtr& tablet,
                                                       bool update_meta, bool keep_files,
                                                       bool drop_old) {
-     // check if new tablet's meta is in store and add new tablet's meta to meta store
-    OLAPStatus res = OLAP_SUCCESS;
+    // check if new tablet's meta is in store and add new tablet's meta to meta store
     if (update_meta) {
         // call tablet save meta in order to valid the meta
         tablet->save_meta();
@@ -190,7 +189,7 @@ OLAPStatus TabletManager::_add_tablet_to_map_unlocked(TTabletId tablet_id, Schem
 
     VLOG(3) << "add tablet to map successfully."
             << " tablet_id=" << tablet_id << ", schema_hash=" << schema_hash;
-    return res;
+    return OLAP_SUCCESS;
 }
 
 bool TabletManager::check_tablet_id_exist(TTabletId tablet_id) {
@@ -200,8 +199,9 @@ bool TabletManager::check_tablet_id_exist(TTabletId tablet_id) {
 }
 
 bool TabletManager::_check_tablet_id_exist_unlocked(TTabletId tablet_id) {
+    // TODO(yingchun): uint64_t or int64_t
     tablet_map_t& tablet_map = _get_tablet_map(tablet_id);
-    tablet_map_t::iterator it = tablet_map.find(tablet_id);
+    const auto&  it = tablet_map.find(tablet_id);
     return it != tablet_map.end() && !it->second.table_arr.empty();
 }
 
@@ -309,13 +309,14 @@ TabletSharedPtr TabletManager::_internal_create_tablet_unlocked(
             break;
         }
         // TODO(lingbin): is it needed? because all type of create_tablet will be true.
+        // TODO(yingchun): use DCHECK?
         // 1. !is_schema_change: not in schema-change state;
         // 2. request.base_tablet_id > 0: in schema-change state;
         if (!is_schema_change || (request.__isset.base_tablet_id && request.base_tablet_id > 0)) {
             // Create init version if this is not a restore mode replica and request.version is set
             // bool in_restore_mode = request.__isset.in_restore_mode && request.in_restore_mode;
             // if (!in_restore_mode && request.__isset.version) {
-            // create inital rowset before add it to storage engine could omit many locks
+            // create initial rowset before add it to storage engine could omit many locks
             res = _create_inital_rowset_unlocked(request, tablet.get());
             if (res != OLAP_SUCCESS) {
                 LOG(WARNING) << "fail to create initial version for tablet. res=" << res;
@@ -326,7 +327,7 @@ TabletSharedPtr TabletManager::_internal_create_tablet_unlocked(
             if (request.__isset.base_tablet_id && request.base_tablet_id > 0) {
                 LOG(INFO) << "request for alter-tablet v2, do not add alter task to tablet";
                 // if this is a new alter tablet, has to set its state to not ready
-                // because schema change hanlder depends on it to check whether history data
+                // because schema change handler depends on it to check whether history data
                 // convert finished
                 tablet->set_tablet_state(TabletState::TABLET_NOTREADY);
             } else {
@@ -349,7 +350,7 @@ TabletSharedPtr TabletManager::_internal_create_tablet_unlocked(
                 tablet->set_creation_time(new_creation_time);
             }
         }
-        // Add tablet to StorageEngine will make it visiable to user
+        // Add tablet to StorageEngine will make it visible to user
         res = _add_tablet_unlocked(new_tablet_id, new_schema_hash, tablet, true, false);
         if (res != OLAP_SUCCESS) {
             LOG(WARNING) << "fail to add tablet to StorageEngine. res=" << res;
@@ -405,7 +406,7 @@ TabletSharedPtr TabletManager::_create_tablet_meta_and_dir_unlocked(
         last_dir = data_dir;
 
         TabletMetaSharedPtr tablet_meta;
-        // if create meta faild, do not need to clean dir, because it is only in memory
+        // if create meta failed, do not need to clean dir, because it is only in memory
         OLAPStatus res = _create_tablet_meta_unlocked(
                 request, data_dir, is_schema_change, base_tablet, &tablet_meta);
         if (res != OLAP_SUCCESS) {
@@ -414,6 +415,7 @@ TabletSharedPtr TabletManager::_create_tablet_meta_and_dir_unlocked(
             continue;
         }
 
+        // TODO(yingchun): combine the 2 lines
         string tablet_dir = _gen_tablet_dir(
                 data_dir->path(), tablet_meta->shard_id(), request.tablet_id);
         string schema_hash_dir = path_util::join_path_segments(
@@ -461,7 +463,7 @@ OLAPStatus TabletManager::_drop_tablet_unlocked(
     LOG(INFO) << "begin drop tablet. tablet_id=" << tablet_id << ", schema_hash=" << schema_hash;
     DorisMetrics::instance()->drop_tablet_requests_total.increment(1);
 
-    // Fetch tablet which need to be droped
+    // Fetch tablet which need to be dropped
     TabletSharedPtr to_drop_tablet = _get_tablet_unlocked(tablet_id, schema_hash);
     if (to_drop_tablet == nullptr) {
         LOG(WARNING) << "fail to drop tablet because it does not exist. "
@@ -678,7 +680,7 @@ void TabletManager::get_tablet_stat(TTabletStatResult* result) {
 }
 
 TabletSharedPtr TabletManager::find_best_tablet_to_compaction(CompactionType compaction_type,
-                                                              DataDir* data_dir) {
+                                                             DataDir* data_dir) {
     int64_t now_ms = UnixMillis();
     const string& compaction_type_str = compaction_type == CompactionType::BASE_COMPACTION ? "base" : "cumulative";
     uint32_t highest_score = 0;
@@ -859,7 +861,7 @@ OLAPStatus TabletManager::load_tablet_from_dir(DataDir* store, TTabletId tablet_
         LOG(WARNING) << "fail to load tablet_meta. file_path=" << header_path;
         return OLAP_ERR_ENGINE_LOAD_INDEX_TABLE_ERROR;
     }
-    // has to change shard id here, because meta file maybe copyed from other source
+    // has to change shard id here, because meta file maybe copyid from other source
     // its shard is different from local shard
     tablet_meta->set_shard_id(shard);
     string meta_binary;
@@ -877,7 +879,7 @@ void TabletManager::release_schema_change_lock(TTabletId tablet_id) {
     ReadLock rlock(&tablet_map_lock);
 
     tablet_map_t& tablet_map = _get_tablet_map(tablet_id);
-    tablet_map_t::iterator it = tablet_map.find(tablet_id);
+    auto it = tablet_map.find(tablet_id);
     if (it == tablet_map.end()) {
         LOG(WARNING) << "tablet does not exists. tablet=" << tablet_id;
     } else {
@@ -921,7 +923,7 @@ OLAPStatus TabletManager::report_all_tablets_info(std::map<TTabletId, TTablet>* 
         ReadLock rlock(&_tablet_map_lock_array[i]);
         tablet_map_t& tablet_map = _tablet_map_array[i];
         for (const auto& item : tablet_map) {
-            if (item.second.table_arr.size() == 0) {
+            if (item.second.table_arr.empty()) {
                 continue;
             }
 
@@ -951,6 +953,7 @@ OLAPStatus TabletManager::report_all_tablets_info(std::map<TTabletId, TTablet>* 
 }
 
 OLAPStatus TabletManager::start_trash_sweep() {
+    std::vector<int64_t> tablets_to_clean;
     {
         std::vector<int64_t> tablets_to_clean;
         std::vector<TabletSharedPtr> all_tablets; // we use this vector to save all tablet ptr for saving lock time.
@@ -1029,9 +1032,10 @@ OLAPStatus TabletManager::start_trash_sweep() {
                 if (Env::Default()->path_exists(tablet_path).ok()) {
                     // take snapshot of tablet meta
                     string meta_file_path = path_util::join_path_segments(
-                            (*it)->tablet_path(), std::to_string((*it)->tablet_id()) + ".hdr");
+                            tablet_path, std::to_string((*it)->tablet_id()) + ".hdr");
                     (*it)->tablet_meta()->save(meta_file_path);
                     LOG(INFO) << "start to move tablet to trash. tablet_path = " << tablet_path;
+                    // TODO(yingchun): this operation is time costy, should move outside of lock!
                     OLAPStatus rm_st = move_to_trash(tablet_path, tablet_path);
                     if (rm_st != OLAP_SUCCESS) {
                         LOG(WARNING) << "fail to move dir to trash. dir=" << tablet_path;
@@ -1040,8 +1044,7 @@ OLAPStatus TabletManager::start_trash_sweep() {
                     }
                 }
                 // remove tablet meta
-                TabletMetaManager::remove(
-                        (*it)->data_dir(), (*it)->tablet_id(), (*it)->schema_hash());
+                TabletMetaManager::remove((*it)->data_dir(), (*it)->tablet_id(), (*it)->schema_hash());
                 LOG(INFO) << "successfully move tablet to trash. "
                           << "tablet_id=" << (*it)->tablet_id()
                           << ", schema_hash=" << (*it)->schema_hash()
@@ -1092,7 +1095,7 @@ bool TabletManager::try_schema_change_lock(TTabletId tablet_id) {
 
 void TabletManager::update_root_path_info(std::map<string, DataDirInfo>* path_map,
                                           size_t* tablet_count) {
-    DCHECK(tablet_count != 0);
+    DCHECK(tablet_count);
     *tablet_count = 0;
     for (int32 i = 0; i < _tablet_map_lock_shard_size; i++) {
         ReadLock rlock(&_tablet_map_lock_array[i]);
@@ -1102,10 +1105,7 @@ void TabletManager::update_root_path_info(std::map<string, DataDirInfo>* path_ma
                 ++(*tablet_count);
                 int64_t data_size = tablet->tablet_footprint();
                 auto iter = path_map->find(tablet->data_dir()->path());
-                if (iter == path_map->end()) {
-                    continue;
-                }
-                if (iter->second.is_used) {
+                if (iter != path_map->end() && iter->second.is_used) {
                     iter->second.data_used_capacity += data_size;
                 }
             }
@@ -1116,8 +1116,9 @@ void TabletManager::update_root_path_info(std::map<string, DataDirInfo>* path_ma
 void TabletManager::get_partition_related_tablets(int64_t partition_id,
                                                   std::set<TabletInfo>* tablet_infos) {
     ReadLock rlock(&_partition_tablet_map_lock);
-    if (_partition_tablet_map.find(partition_id) != _partition_tablet_map.end()) {
-        *tablet_infos = _partition_tablet_map[partition_id];
+    auto it = _partition_tablet_map.find(partition_id);
+    if (it != _partition_tablet_map.end()) {
+        *tablet_infos = it->second;
     }
 }
 
@@ -1145,7 +1146,6 @@ void TabletManager::do_tablet_meta_checkpoint(DataDir* data_dir) {
     for (TabletSharedPtr tablet : related_tablets) {
         tablet->do_tablet_meta_checkpoint();
     }
-    return;
 }
 
 void TabletManager::_build_tablet_stat() {
@@ -1203,6 +1203,7 @@ OLAPStatus TabletManager::_create_inital_rowset_unlocked(const TCreateTabletReq&
             } else {
                 LOG(ERROR) << "invalid TStorageFormat: " << request.storage_format;
                 DCHECK(false);
+                // TODO(yingchun): why not assert?
                 context.rowset_type = StorageEngine::instance()->default_rowset_type();
             }
             context.rowset_path_prefix = tablet->tablet_path();
@@ -1311,7 +1312,7 @@ OLAPStatus TabletManager::_drop_tablet_directly_unlocked(
     }
     tablet_map_t& tablet_map = _get_tablet_map(tablet_id);
     list<TabletSharedPtr>& candidate_tablets = tablet_map[tablet_id].table_arr;
-    list<TabletSharedPtr>::iterator it = candidate_tablets.begin();
+    auto it = candidate_tablets.begin();
     while (it != candidate_tablets.end()) {
         if (!(*it)->equal(tablet_id, schema_hash)) {
             ++it;
@@ -1349,7 +1350,7 @@ OLAPStatus TabletManager::_drop_tablet_directly_unlocked(
 TabletSharedPtr TabletManager::_get_tablet_unlocked(TTabletId tablet_id, SchemaHash schema_hash) {
     VLOG(3) << "begin to get tablet. tablet_id=" << tablet_id << ", schema_hash=" << schema_hash;
     tablet_map_t& tablet_map = _get_tablet_map(tablet_id);
-    tablet_map_t::iterator it = tablet_map.find(tablet_id);
+    const auto& it = tablet_map.find(tablet_id);
     if (it != tablet_map.end()) {
         for (TabletSharedPtr tablet : it->second.table_arr) {
             CHECK(tablet != nullptr) << "tablet is nullptr. tablet_id=" << tablet_id;

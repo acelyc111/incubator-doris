@@ -58,16 +58,17 @@ public:
     // return the consumers in consumer group to the pool
     void return_consumers(DataConsumerGroup* grp);
 
-    Status start_bg_worker();
+    void start_bg_worker();
 
 private:
     void _clean_idle_consumer_bg();
 
 private:
+    // Protect _pool.
     std::mutex _lock;
     std::list<std::shared_ptr<DataConsumer>> _pool;
-    int64_t _max_pool_size;
 
+    int64_t _max_pool_size;
     std::thread _clean_idle_consumer_thread;
 };
 

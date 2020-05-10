@@ -104,7 +104,7 @@ void BetaRowset::do_close() {
     _segments.clear();
 }
 
-OLAPStatus BetaRowset::link_files_to(const std::string& dir, RowsetId new_rowset_id) {
+OLAPStatus BetaRowset::link_files_to(const std::string& dir, const RowsetId& new_rowset_id) {
     for (int i = 0; i < num_segments(); ++i) {
         std::string dst_link_path = segment_file_path(dir, new_rowset_id, i);
         // TODO(lingbin): use Env API? or EnvUtil?
@@ -124,7 +124,7 @@ OLAPStatus BetaRowset::link_files_to(const std::string& dir, RowsetId new_rowset
     return OLAP_SUCCESS;
 }
 
-OLAPStatus BetaRowset::copy_files_to(const std::string& dir) {
+OLAPStatus BetaRowset::copy_files_to(const std::string& dir) const {
     for (int i = 0; i < num_segments(); ++i) {
         std::string dst_path = segment_file_path(dir, rowset_id(), i);
         if (FileUtils::check_exist(dst_path)) {
