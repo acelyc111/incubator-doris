@@ -151,6 +151,9 @@ public class CatalogRecycleBin extends MasterDaemon implements Writable {
                 Catalog.getInstance().getSchemaChangeHandler().removeDbAlterJob(db.getId());
                 Catalog.getInstance().getRollupHandler().removeDbAlterJob(db.getId());
 
+                // remove database transaction manager
+                Catalog.getInstance().getGlobalTransactionMgr().removeDatabaseTransactionMgr(db.getId());
+
                 // log
                 Catalog.getInstance().getEditLog().logEraseDb(entry.getKey());
                 LOG.info("erase db[{}]", entry.getKey());
@@ -183,6 +186,8 @@ public class CatalogRecycleBin extends MasterDaemon implements Writable {
         Catalog.getInstance().getSchemaChangeHandler().removeDbAlterJob(dbId);
         Catalog.getInstance().getRollupHandler().removeDbAlterJob(dbId);
 
+        // remove database transaction manager
+        Catalog.getInstance().getGlobalTransactionMgr().removeDatabaseTransactionMgr(dbId);
         LOG.info("replay erase db[{}]", dbId);
     }
 

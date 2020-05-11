@@ -1557,6 +1557,7 @@ public class Catalog {
             if (db.getDbState() == DbState.LINK) {
                 fullNameToDb.put(db.getAttachDb(), db);
             }
+            globalTransactionMgr.addDatabaseTransactionMgr(db.getId());
         }
 
         return newChecksum;
@@ -2554,6 +2555,7 @@ public class Catalog {
         fullNameToDb.put(db.getFullName(), db);
         final Cluster cluster = nameToCluster.get(db.getClusterName());
         cluster.addDb(db.getFullName(), db.getId());
+        globalTransactionMgr.addDatabaseTransactionMgr(db.getId());
     }
 
     // for test
