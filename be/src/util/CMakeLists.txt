@@ -93,6 +93,13 @@ set(UTIL_FILES
   condition_variable.cpp
   thread.cpp
   threadpool.cpp
+  atomic.cpp
+  debug/trace_event_impl.cpp
+  debug/trace_event_impl_constants.cpp
+  debug/trace_event_synthetic_delay.cpp
+  threadlocal.cpp
+  trace.cpp
+  trace_metrics.cpp
 )
 
 if (WITH_MYSQL)

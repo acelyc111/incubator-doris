@@ -23,9 +23,9 @@
 #include <cstdlib>
 #include <type_traits>
 
-#include "kudu/gutil/atomicops.h"
-#include "kudu/gutil/macros.h"
-#include "kudu/gutil/port.h"
+#include "gutil/atomicops.h"
+#include "gutil/macros.h"
+#include "gutil/port.h"
 
 namespace kudu {
 
@@ -58,7 +58,7 @@ enum MemoryOrder {
 // IncrementBy is undefined behavior (it is also undefined for signed types,
 // as always).
 //
-// See also: kudu/gutil/atomicops.h
+// See also: gutil/atomicops.h
 template<typename T>
 class AtomicInt {
  public:

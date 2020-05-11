@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "kudu/util/trace.h"
+#include "util/trace.h"
 
 #include <cctype>
 #include <cstdint>
@@ -32,37 +32,37 @@
 #include <rapidjson/document.h>
 #include <rapidjson/rapidjson.h>
 
-#include "kudu/gutil/macros.h"
-#include "kudu/gutil/port.h"
-#include "kudu/gutil/ref_counted.h"
-#include "kudu/gutil/walltime.h"
-#include "kudu/util/atomic.h"
-#include "kudu/util/countdown_latch.h"
-#include "kudu/util/debug/trace_event.h"
-#include "kudu/util/debug/trace_event_impl.h"
-#include "kudu/util/debug/trace_event_synthetic_delay.h"
-#include "kudu/util/debug/trace_logging.h"
-#include "kudu/util/monotime.h"
-#include "kudu/util/scoped_cleanup.h"
-#include "kudu/util/status.h"
-#include "kudu/util/stopwatch.h"
-#include "kudu/util/test_macros.h"
-#include "kudu/util/test_util.h"
-#include "kudu/util/thread.h"
-#include "kudu/util/trace_metrics.h"
+#include "gutil/macros.h"
+#include "gutil/port.h"
+#include "gutil/ref_counted.h"
+#include "gutil/walltime.h"
+#include "util/atomic.h"
+#include "util/countdown_latch.h"
+#include "util/debug/trace_event.h"
+#include "util/debug/trace_event_impl.h"
+#include "util/debug/trace_event_synthetic_delay.h"
+#include "util/debug/trace_logging.h"
+#include "util/monotime.h"
+#include "util/scoped_cleanup.h"
+#include "common/status.h"
+#include "util/stopwatch.hpp"
+#include "util/test_macros.h"
+//#include "util/test_util.h"
+#include "util/thread.h"
+#include "util/trace_metrics.h"
 
-using kudu::debug::TraceLog;
-using kudu::debug::TraceResultBuffer;
-using kudu::debug::CategoryFilter;
+using doris::debug::TraceLog;
+using doris::debug::TraceResultBuffer;
+using doris::debug::CategoryFilter;
 using rapidjson::Document;
 using rapidjson::Value;
 using std::string;
 using std::thread;
 using std::vector;
 
-namespace kudu {
+namespace doris {
 
-class TraceTest : public KuduTest {
+class TraceTest : public ::testing::Test {
 };
 
 // Replace all digits in 's' with the character 'X'.
@@ -85,8 +85,8 @@ TEST_F(TraceTest, TestBasic) {
   TRACE_TO(t, "goodbye $0, $1", "cruel world", 54321);
 
   string result = XOutDigits(t->DumpToString(Trace::NO_FLAGS));
-  ASSERT_EQ("XXXX XX:XX:XX.XXXXXX trace-test.cc:XX] hello world, XXXXX\n"
-            "XXXX XX:XX:XX.XXXXXX trace-test.cc:XX] goodbye cruel world, XXXXX\n",
+  ASSERT_EQ("XXXX XX:XX:XX.XXXXXX trace_test.cpp:XX] hello world, XXXXX\n"
+            "XXXX XX:XX:XX.XXXXXX trace_test.cpp:XX] goodbye cruel world, XXXXX\n",
             result);
 }
 
@@ -107,9 +107,9 @@ TEST_F(TraceTest, TestAttach) {
   EXPECT_TRUE(Trace::CurrentTrace() == nullptr);
   TRACE("this goes nowhere");
 
-  EXPECT_EQ("XXXX XX:XX:XX.XXXXXX trace-test.cc:XXX] hello from traceA\n",
+  EXPECT_EQ("XXXX XX:XX:XX.XXXXXX trace_test.cpp:XXX] hello from traceA\n",
             XOutDigits(traceA->DumpToString(Trace::NO_FLAGS)));
-  EXPECT_EQ("XXXX XX:XX:XX.XXXXXX trace-test.cc:XXX] hello from traceB\n",
+  EXPECT_EQ("XXXX XX:XX:XX.XXXXXX trace_test.cpp:XXX] hello from traceB\n",
             XOutDigits(traceB->DumpToString(Trace::NO_FLAGS)));
 }
 
@@ -123,9 +123,9 @@ TEST_F(TraceTest, TestChildTrace) {
     ADOPT_TRACE(traceB.get());
     TRACE("hello from traceB");
   }
-  EXPECT_EQ("XXXX XX:XX:XX.XXXXXX trace-test.cc:XXX] hello from traceA\n"
+  EXPECT_EQ("XXXX XX:XX:XX.XXXXXX trace_test.cpp:XXX] hello from traceA\n"
             "Related trace 'child':\n"
-            "XXXX XX:XX:XX.XXXXXX trace-test.cc:XXX] hello from traceB\n",
+            "XXXX XX:XX:XX.XXXXXX trace_test.cpp:XXX] hello from traceB\n",
             XOutDigits(traceA->DumpToString(Trace::NO_FLAGS)));
 }
 
@@ -159,7 +159,8 @@ int ParseAndReturnEventCount(const string& trace_json) {
 
 TEST_F(TraceTest, TestChromeTracing) {
   const int kNumThreads = 4;
-  const int kEventsPerThread = AllowSlowTests() ? 1000000 : 10000;
+  //const int kEventsPerThread = AllowSlowTests() ? 1000000 : 10000;
+  const int kEventsPerThread = 10000;
 
   TraceLog* tl = TraceLog::GetInstance();
   tl->SetEnabled(CategoryFilter(CategoryFilter::kDefaultCategoryFilterString),
@@ -168,22 +169,22 @@ TEST_F(TraceTest, TestChromeTracing) {
 
   vector<scoped_refptr<Thread> > threads(kNumThreads);
 
-  Stopwatch s;
+  MonotonicStopWatch s;
   s.start();
   for (int i = 0; i < kNumThreads; i++) {
-    CHECK_OK(Thread::CreateWithFlags(
+    CHECK_OK(Thread::create_with_flags(
         "test", "gen-traces",
         [i, kEventsPerThread]() { GenerateTraceEvents(i, kEventsPerThread); },
         Thread::NO_STACK_WATCHDOG, &threads[i]));
   }
 
   for (int i = 0; i < kNumThreads; i++) {
-    threads[i]->Join();
+    threads[i]->join();
   }
   tl->SetDisabled();
 
   int total_events = kNumThreads * kEventsPerThread;
-  double elapsed = s.elapsed().wall_seconds();
+  double elapsed = s.elapsed_time();
 
   LOG(INFO) << "Trace performance: " << static_cast<int>(total_events / elapsed) << " traces/sec";
 
@@ -207,10 +208,10 @@ TEST_F(TraceTest, TestTraceFromExitedThread) {
   // Generate 10 trace events in a separate thread.
   int kNumEvents = 10;
   scoped_refptr<Thread> t;
-  CHECK_OK(Thread::CreateWithFlags(
+  CHECK_OK(Thread::create_with_flags(
       "test", "gen-traces", [kNumEvents]() { GenerateTraceEvents(1, kNumEvents); },
       Thread::NO_STACK_WATCHDOG, &t));
-  t->Join();
+  t->join();
   tl->SetDisabled();
   string trace_json = TraceResultBuffer::FlushTraceLogToString();
   LOG(INFO) << trace_json;
@@ -236,10 +237,10 @@ TEST_F(TraceTest, TestWideSpan) {
                  TraceLog::RECORD_CONTINUOUSLY);
 
   scoped_refptr<Thread> t;
-  CHECK_OK(Thread::CreateWithFlags(
+  CHECK_OK(Thread::create_with_flags(
       "test", "gen-traces", &GenerateWideSpan,
       Thread::NO_STACK_WATCHDOG, &t));
-  t->Join();
+  t->join();
   tl->SetDisabled();
 
   string trace_json = TraceResultBuffer::FlushTraceLogToString();
@@ -263,7 +264,7 @@ TEST_F(TraceTest, TestJsonEncodingString) {
 
 // Generate trace events continuously until 'latch' fires.
 // Increment *num_events_generated for each event generated.
-void GenerateTracesUntilLatch(AtomicInt<int64_t>* num_events_generated,
+void GenerateTracesUntilLatch(kudu::AtomicInt<int64_t>* num_events_generated,
                               CountDownLatch* latch) {
   while (latch->count()) {
     {
@@ -282,14 +283,15 @@ TEST_F(TraceTest, TestStartAndStopCollection) {
   TraceLog* tl = TraceLog::GetInstance();
 
   CountDownLatch latch(1);
-  AtomicInt<int64_t> num_events_generated(0);
+  kudu::AtomicInt<int64_t> num_events_generated(0);
   scoped_refptr<Thread> t;
-  CHECK_OK(Thread::CreateWithFlags(
+  CHECK_OK(Thread::create_with_flags(
       "test", "gen-traces",
       [&]() { GenerateTracesUntilLatch(&num_events_generated, &latch); },
       Thread::NO_STACK_WATCHDOG, &t));
 
-  const int num_flushes = AllowSlowTests() ? 50 : 3;
+  //const int num_flushes = AllowSlowTests() ? 50 : 3;
+  const int num_flushes = 3;
   for (int i = 0; i < num_flushes; i++) {
     tl->SetEnabled(CategoryFilter(CategoryFilter::kDefaultCategoryFilterString),
                    TraceLog::RECORDING_MODE,
@@ -311,8 +313,8 @@ TEST_F(TraceTest, TestStartAndStopCollection) {
     ASSERT_GE(captured_events, expected_events_lowerbound);
   }
 
-  latch.CountDown();
-  t->Join();
+  latch.count_down();
+  t->join();
 }
 
 TEST_F(TraceTest, TestChromeSampling) {
@@ -341,10 +343,9 @@ TEST_F(TraceTest, TestChromeSampling) {
   ASSERT_GT(ParseAndReturnEventCount(trace_json), 0);
 }
 
-class TraceEventCallbackTest : public KuduTest {
+class TraceEventCallbackTest : public ::testing::Test {
  public:
   virtual void SetUp() OVERRIDE {
-    KuduTest::SetUp();
     ASSERT_EQ(nullptr, s_instance);
     s_instance = this;
   }
@@ -357,8 +358,6 @@ class TraceEventCallbackTest : public KuduTest {
 
     ASSERT_TRUE(!!s_instance);
     s_instance = nullptr;
-    KuduTest::TearDown();
-
   }
 
  protected:
@@ -666,7 +665,7 @@ const int kShortDurationMs = 10;
 
 namespace debug {
 
-class TraceEventSyntheticDelayTest : public KuduTest,
+class TraceEventSyntheticDelayTest : public ::testing::Test,
                                      public TraceEventSyntheticDelayClock {
  public:
   TraceEventSyntheticDelayTest() {
@@ -817,7 +816,7 @@ TEST_F(TraceTest, TestVLogTrace) {
     tl->SetDisabled();
     string trace_json = TraceResultBuffer::FlushTraceLogToString();
     ASSERT_STR_CONTAINS(trace_json, "hello world");
-    ASSERT_STR_CONTAINS(trace_json, "trace-test.cc");
+    ASSERT_STR_CONTAINS(trace_json, "trace_test.cpp");
   }
 }
 
@@ -897,4 +896,10 @@ TEST_F(TraceTest, TestTraceFromVanillaThreads) {
   }
 }
 } // namespace debug
-} // namespace kudu
+} // namespace doris
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+

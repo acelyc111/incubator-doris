@@ -107,7 +107,7 @@ do {                                                                            
 
 // Internal implementation below.
 
-namespace kudu {
+namespace doris {
 namespace threadlocal {
 namespace internal {
 
@@ -123,6 +123,6 @@ static void Destroy(void* t) {
 
 } // namespace internal
 } // namespace threadlocal
-} // namespace kudu
+} // namespace doris
 
 #endif // KUDU_UTIL_THREADLOCAL_H_

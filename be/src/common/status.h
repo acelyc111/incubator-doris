@@ -13,6 +13,17 @@
 #include "gen_cpp/status.pb.h" // for PStatus
 #include "util/slice.h" // for Slice
 
+/// @brief If @c to_call returns a bad status, CHECK immediately with
+///   a logged message of @c msg followed by the status.
+#define CHECK_OK_PREPEND(to_call, msg) do { \
+    const ::doris::Status& _s = (to_call);                   \
+    CHECK(_s.ok()) << (msg) << ": " << _s.to_string();  \
+  } while (0)
+
+/// @brief If the status is bad, CHECK immediately, appending the status to the
+///   logged message.
+#define CHECK_OK(s) CHECK_OK_PREPEND(s, "Bad status")
+
 namespace doris {
 
 class Status {

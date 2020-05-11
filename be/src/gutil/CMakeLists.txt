@@ -32,6 +32,7 @@ SET(SOURCE_FILES
         int128.cc
         once.cc
         ref_counted.cc
+        ref_counted_memory.cc
         spinlock_internal.cc
         stringprintf.cc
         strings/ascii_ctype.cc

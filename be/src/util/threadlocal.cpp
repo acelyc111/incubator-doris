@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-#include "kudu/util/threadlocal.h"
+#include "util/threadlocal.h"
 
 #include <pthread.h>
 
@@ -23,10 +23,10 @@
 
 #include <glog/logging.h>
 
-#include "kudu/gutil/once.h"
-#include "kudu/util/errno.h"
+#include "gutil/once.h"
+#include "util/errno.h"
 
-namespace kudu {
+namespace doris {
 namespace threadlocal {
 namespace internal {
 
@@ -64,7 +64,7 @@ static void CreateKey() {
   int ret = pthread_key_create(&destructors_key, &InvokeDestructors);
   // Linux supports up to 1024 keys, we will use only one for all thread locals.
   CHECK_EQ(0, ret) << "pthread_key_create() failed, cannot add destructor to thread: "
-      << "error " << ret << ": " << ErrnoToString(ret);
+      << "error " << ret << ": " << errno_to_string(ret);
 }
 
 // Adds a destructor to the list.
@@ -80,9 +80,9 @@ void AddDestructor(void (*destructor)(void*), void* arg) {
   // The only time this check should fail is if we are out of memory, or if
   // somehow key creation failed, which should be caught by the above CHECK.
   CHECK_EQ(0, ret) << "pthread_setspecific() failed, cannot update destructor list: "
-      << "error " << ret << ": " << ErrnoToString(ret);
+      << "error " << ret << ": " << errno_to_string(ret);
 }
 
 } // namespace internal
 } // namespace threadlocal
-} // namespace kudu
+} // namespace doris

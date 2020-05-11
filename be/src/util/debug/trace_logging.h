@@ -51,8 +51,8 @@
 #include <glog/logging.h>
 #include <string>
 
-#include "kudu/gutil/macros.h"
-#include "kudu/util/debug/trace_event.h"
+#include "gutil/macros.h"
+#include "util/debug/trace_event.h"
 
 // The inner workings of these macros are a bit arcane:
 // - We make use of the fact that a block can be embedded within a ternary expression.
@@ -62,7 +62,7 @@
 //   of the ternary expression and the log stream on the other. This technique is
 //   cribbed from glog/logging.h.
 #define VLOG_AND_TRACE_INTERNAL(category, vlevel) \
-  kudu::debug::TraceGLog(__FILE__, __LINE__, category, google::GLOG_INFO, \
+  doris::debug::TraceGLog(__FILE__, __LINE__, category, google::GLOG_INFO, \
                          /* send_to_log= */VLOG_IS_ON(vlevel)).stream()
 
 #define VLOG_AND_TRACE(category, vlevel)                              \
@@ -77,13 +77,13 @@
   VLOG_AND_TRACE(category, vlevel) << LogPrefix()
 
 #define LOG_AND_TRACE(category, severity) \
-  kudu::debug::TraceGLog(__FILE__, __LINE__, category, \
+  doris::debug::TraceGLog(__FILE__, __LINE__, category, \
                         google::GLOG_ ## severity, /* send_to_log= */true).stream()
 
 #define LOG_AND_TRACE_WITH_PREFIX(category, severity) \
   LOG_AND_TRACE(category, severity) << LogPrefix()
 
-namespace kudu {
+namespace doris {
 namespace debug {
 
 class TraceGLog {
@@ -133,5 +133,5 @@ class TraceGLog {
 };
 
 } // namespace debug
-} // namespace kudu
+} // namespace doris
 #endif /* KUDU_DEBUG_TRACE_LOGGING_H */

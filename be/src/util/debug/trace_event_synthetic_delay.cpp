@@ -2,22 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "kudu/util/debug/trace_event_synthetic_delay.h"
+#include "util/debug/trace_event_synthetic_delay.h"
 
 #include <cstring>
 #include <ostream>
 
 #include <glog/logging.h>
 
-#include "kudu/gutil/dynamic_annotations.h"
-#include "kudu/gutil/port.h"
-#include "kudu/gutil/singleton.h"
+#include "gutil/dynamic_annotations.h"
+#include "gutil/port.h"
 
 namespace {
 const int kMaxSyntheticDelays = 32;
 }  // namespace
 
-namespace kudu {
+namespace doris {
 namespace debug {
 
 TraceEventSyntheticDelayClock::TraceEventSyntheticDelayClock() {}
@@ -35,8 +34,6 @@ class TraceEventSyntheticDelayRegistry : public TraceEventSyntheticDelayClock {
 
  private:
   TraceEventSyntheticDelayRegistry();
-
-  friend class Singleton<TraceEventSyntheticDelayRegistry>;
 
   Mutex lock_;
   TraceEventSyntheticDelay delays_[kMaxSyntheticDelays];
@@ -65,19 +62,19 @@ void TraceEventSyntheticDelay::Initialize(
 }
 
 void TraceEventSyntheticDelay::SetTargetDuration(const MonoDelta& target_duration) {
-  MutexLock lock(lock_);
+  MutexLock lock(&lock_);
   target_duration_ = target_duration;
   trigger_count_ = 0;
   begin_count_ = 0;
 }
 
 void TraceEventSyntheticDelay::SetMode(Mode mode) {
-  MutexLock lock(lock_);
+  MutexLock lock(&lock_);
   mode_ = mode;
 }
 
 void TraceEventSyntheticDelay::SetClock(TraceEventSyntheticDelayClock* clock) {
-  MutexLock lock(lock_);
+  MutexLock lock(&lock_);
   clock_ = clock;
 }
 
@@ -93,7 +90,7 @@ void TraceEventSyntheticDelay::Begin() {
 
   MonoTime start_time = clock_->Now();
   {
-    MutexLock lock(lock_);
+    MutexLock lock(&lock_);
     if (++begin_count_ != 1)
       return;
     end_time_ = CalculateEndTimeLocked(start_time);
@@ -110,7 +107,7 @@ void TraceEventSyntheticDelay::BeginParallel(MonoTime* out_end_time) {
 
   MonoTime start_time = clock_->Now();
   {
-    MutexLock lock(lock_);
+    MutexLock lock(&lock_);
     *out_end_time = CalculateEndTimeLocked(start_time);
   }
 }
@@ -123,7 +120,7 @@ void TraceEventSyntheticDelay::End() {
 
   MonoTime end_time;
   {
-    MutexLock lock(lock_);
+    MutexLock lock(&lock_);
     if (!begin_count_ || --begin_count_ != 0)
       return;
     end_time = end_time_;
@@ -155,7 +152,8 @@ void TraceEventSyntheticDelay::ApplyDelay(const MonoTime& end_time) {
 
 TraceEventSyntheticDelayRegistry*
 TraceEventSyntheticDelayRegistry::GetInstance() {
-  return Singleton<TraceEventSyntheticDelayRegistry>::get();
+  static TraceEventSyntheticDelayRegistry instance;
+  return &instance;
 }
 
 TraceEventSyntheticDelayRegistry::TraceEventSyntheticDelayRegistry()
@@ -171,7 +169,7 @@ TraceEventSyntheticDelay* TraceEventSyntheticDelayRegistry::GetOrCreateDelay(
       return &delays_[i];
   }
 
-  MutexLock lock(lock_);
+  MutexLock lock(&lock_);
   delay_count = base::subtle::Acquire_Load(&delay_count_);
   for (int i = 0; i < delay_count; ++i) {
     if (!strcmp(name, delays_[i].name_.c_str()))
@@ -193,7 +191,7 @@ MonoTime TraceEventSyntheticDelayRegistry::Now() {
 }
 
 void TraceEventSyntheticDelayRegistry::ResetAllDelays() {
-  MutexLock lock(lock_);
+  MutexLock lock(&lock_);
   int delay_count = base::subtle::Acquire_Load(&delay_count_);
   for (int i = 0; i < delay_count; ++i) {
     delays_[i].SetTargetDuration(MonoDelta());
@@ -206,7 +204,7 @@ void ResetTraceEventSyntheticDelays() {
 }
 
 }  // namespace debug
-}  // namespace kudu
+}  // namespace doris
 
 namespace trace_event_internal {
 
@@ -220,14 +218,14 @@ ScopedSyntheticDelay::~ScopedSyntheticDelay() {
   delay_impl_->EndParallel(end_time_);
 }
 
-kudu::debug::TraceEventSyntheticDelay* GetOrCreateDelay(
+doris::debug::TraceEventSyntheticDelay* GetOrCreateDelay(
     const char* name,
     AtomicWord* impl_ptr) {
-  kudu::debug::TraceEventSyntheticDelay* delay_impl =
-      reinterpret_cast<kudu::debug::TraceEventSyntheticDelay*>(
+  doris::debug::TraceEventSyntheticDelay* delay_impl =
+      reinterpret_cast<doris::debug::TraceEventSyntheticDelay*>(
           base::subtle::Acquire_Load(impl_ptr));
   if (!delay_impl) {
-    delay_impl = kudu::debug::TraceEventSyntheticDelayRegistry::GetInstance()
+    delay_impl = doris::debug::TraceEventSyntheticDelayRegistry::GetInstance()
                      ->GetOrCreateDelay(name);
     base::subtle::Release_Store(
         impl_ptr, reinterpret_cast<AtomicWord>(delay_impl));

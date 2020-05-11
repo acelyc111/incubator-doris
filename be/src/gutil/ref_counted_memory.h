@@ -10,12 +10,12 @@
 #include <string>
 #include <vector>
 
-#include "kudu/gutil/macros.h"
-#include "kudu/gutil/ref_counted.h"
-#include "kudu/gutil/port.h"
-#include "kudu/gutil/threading/thread_collision_warner.h"
+#include "gutil/macros.h"
+#include "gutil/ref_counted.h"
+#include "gutil/port.h"
+#include "gutil/threading/thread_collision_warner.h"
 
-namespace kudu {
+namespace doris {
 
 // A generic interface to memory. This object is reference counted because one
 // of its two subclasses own the data they carry, and we need to have
@@ -144,6 +144,6 @@ class RefCountedMallocedMemory : public RefCountedMemory {
   DISALLOW_COPY_AND_ASSIGN(RefCountedMallocedMemory);
 };
 
-}  // namespace kudu
+}  // namespace doris
 
 #endif  // KUDU_GUTIL_REF_COUNTED_MEMORY_H_

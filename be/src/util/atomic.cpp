@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "kudu/util/atomic.h"
+#include "util/atomic.h"
 
 #include <cstdint>
 #include <ostream>

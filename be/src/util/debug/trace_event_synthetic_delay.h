@@ -34,11 +34,11 @@
 
 #include <string>
 
-#include "kudu/gutil/atomicops.h"
-#include "kudu/gutil/macros.h"
-#include "kudu/util/debug/trace_event.h"
-#include "kudu/util/monotime.h"
-#include "kudu/util/mutex.h"
+#include "gutil/atomicops.h"
+#include "gutil/macros.h"
+#include "util/debug/trace_event.h"
+#include "util/monotime.h"
+#include "util/mutex.h"
 
 // Apply a named delay in the current scope.
 #define TRACE_EVENT_SYNTHETIC_DELAY(name)                                     \
@@ -64,7 +64,7 @@
     trace_event_internal::GetOrCreateDelay(name, &impl_ptr)->End();   \
   } while (false)
 
-namespace kudu {
+namespace doris {
 namespace debug {
 
 // Time source for computing delay durations. Used for testing.
@@ -139,7 +139,7 @@ class TraceEventSyntheticDelay {
 void ResetTraceEventSyntheticDelays();
 
 }  // namespace debug
-}  // namespace kudu
+}  // namespace doris
 
 namespace trace_event_internal {
 
@@ -151,14 +151,14 @@ class ScopedSyntheticDelay {
   ~ScopedSyntheticDelay();
 
  private:
-  kudu::debug::TraceEventSyntheticDelay* delay_impl_;
-  kudu::MonoTime end_time_;
+  doris::debug::TraceEventSyntheticDelay* delay_impl_;
+  doris::MonoTime end_time_;
 
   DISALLOW_COPY_AND_ASSIGN(ScopedSyntheticDelay);
 };
 
 // Helper for registering delays. Do not use directly.
-kudu::debug::TraceEventSyntheticDelay*
+doris::debug::TraceEventSyntheticDelay*
     GetOrCreateDelay(const char* name, AtomicWord* impl_ptr);
 
 }  // namespace trace_event_internal

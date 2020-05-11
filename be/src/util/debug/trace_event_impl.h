@@ -16,12 +16,12 @@
 #include <glog/logging.h>
 #include <gtest/gtest_prod.h>
 
-#include "kudu/gutil/atomicops.h"
-#include "kudu/gutil/macros.h"
-#include "kudu/gutil/ref_counted.h"
-#include "kudu/gutil/spinlock.h"
-#include "kudu/gutil/walltime.h"
-#include "kudu/util/mutex.h"
+#include "gutil/atomicops.h"
+#include "gutil/macros.h"
+#include "gutil/ref_counted.h"
+#include "gutil/walltime.h"
+#include "util/mutex.h"
+#include "util/spinlock.h"
 
 // Older style trace macros with explicit id and extra data
 // Only these macros result in publishing data to ETW as currently implemented.
@@ -46,15 +46,15 @@ class Singleton;
 #if defined(COMPILER_GCC)
 namespace BASE_HASH_NAMESPACE {
 template <>
-struct hash<kudu::Thread*> {
-  std::size_t operator()(kudu::Thread* value) const {
+struct hash<doris::Thread*> {
+  std::size_t operator()(doris::Thread* value) const {
     return reinterpret_cast<std::size_t>(value);
   }
 };
 }  // BASE_HASH_NAMESPACE
 #endif
 
-namespace kudu {
+namespace doris {
 
 class RefCountedString;
 class Thread;
@@ -63,7 +63,7 @@ namespace debug {
 
 // For any argument of type TRACE_VALUE_TYPE_CONVERTABLE the provided
 // class must implement this interface.
-class ConvertableToTraceFormat : public kudu::RefCountedThreadSafe<ConvertableToTraceFormat> {
+class ConvertableToTraceFormat : public doris::RefCountedThreadSafe<ConvertableToTraceFormat> {
  public:
   // Append the class info to the provided |out| string. The appended
   // data must be a valid JSON object. Strings must be properly quoted, and
@@ -75,7 +75,7 @@ class ConvertableToTraceFormat : public kudu::RefCountedThreadSafe<ConvertableTo
   virtual ~ConvertableToTraceFormat() {}
 
  private:
-  friend class kudu::RefCountedThreadSafe<ConvertableToTraceFormat>;
+  friend class doris::RefCountedThreadSafe<ConvertableToTraceFormat>;
 };
 
 struct TraceEventHandle {
@@ -142,7 +142,7 @@ class TraceEvent {
 
   // Exposed for unittesting:
 
-  const kudu::RefCountedString* parameter_copy_storage() const {
+  const doris::RefCountedString* parameter_copy_storage() const {
     return parameter_copy_storage_.get();
   }
 
@@ -169,7 +169,7 @@ class TraceEvent {
   scoped_refptr<ConvertableToTraceFormat> convertable_values_[kTraceMaxNumArgs];
   const unsigned char* category_group_enabled_;
   const char* name_;
-  scoped_refptr<kudu::RefCountedString> parameter_copy_storage_;
+  scoped_refptr<doris::RefCountedString> parameter_copy_storage_;
   int thread_id_;
   char phase_;
   unsigned char flags_;
@@ -469,7 +469,7 @@ class TraceLog {
   // done when tracing is enabled. If called when tracing is enabled, the
   // callback will be called directly with (empty_string, false) to indicate
   // the end of this unsuccessful flush.
-  typedef std::function<void(const scoped_refptr<kudu::RefCountedString>&,
+  typedef std::function<void(const scoped_refptr<doris::RefCountedString>&,
                              bool has_more_events)> OutputCallback;
   void Flush(const OutputCallback& cb);
   void FlushButLeaveBufferIntact(const OutputCallback& flush_output_callback);
@@ -643,10 +643,10 @@ class TraceLog {
 
   // This lock protects TraceLog member accesses (except for members protected
   // by thread_info_lock_) from arbitrary threads.
-  mutable base::SpinLock lock_;
+  mutable SpinLock lock_;
   // This lock protects accesses to thread_names_, thread_event_start_times_
   // and thread_colors_.
-  base::SpinLock thread_info_lock_;
+  SpinLock thread_info_lock_;
   int locked_line_;
   Mode mode_;
   int num_traces_recorded_;
@@ -681,7 +681,7 @@ class TraceLog {
 
   // Sampling thread handles.
   std::unique_ptr<TraceSamplingThread> sampling_thread_;
-  scoped_refptr<kudu::Thread> sampling_thread_handle_;
+  scoped_refptr<doris::Thread> sampling_thread_handle_;
 
   CategoryFilter category_filter_;
   CategoryFilter event_callback_category_filter_;
@@ -717,4 +717,4 @@ class TraceLog {
 };
 
 }  // namespace debug
-}  // namespace kudu
+}  // namespace doris

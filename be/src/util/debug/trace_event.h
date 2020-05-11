@@ -141,7 +141,7 @@
 // means, if the category for the event is disabled, the conversion will not
 // happen.
 //
-//   class MyData : public kudu::debug::ConvertableToTraceFormat {
+//   class MyData : public doris::debug::ConvertableToTraceFormat {
 //    public:
 //     MyData() {}
 //     virtual void AppendAsTraceFormat(std::string* out) const OVERRIDE {
@@ -191,11 +191,11 @@
 
 #include <string>
 
-#include "kudu/gutil/atomicops.h"
-#include "kudu/util/debug/trace_event_impl.h"
-#include "kudu/util/debug/trace_event_memory.h"
-#include "kudu/util/thread.h"
-#include "kudu/gutil/walltime.h"
+#include "gutil/atomicops.h"
+#include "util/debug/trace_event_impl.h"
+#include "util/debug/trace_event_memory.h"
+#include "util/thread.h"
+#include "gutil/walltime.h"
 
 // By default, const char* argument values are assumed to have long-lived scope
 // and will not be copied. Use this macro to force a const char* to be copied.
@@ -727,8 +727,8 @@
 
 #define INTERNAL_TRACE_EVENT_CATEGORY_GROUP_ENABLED_FOR_RECORDING_MODE() \
     PREDICT_FALSE(*INTERNAL_TRACE_EVENT_UID(category_group_enabled) & \
-        (kudu::debug::TraceLog::ENABLED_FOR_RECORDING | \
-         kudu::debug::TraceLog::ENABLED_FOR_EVENT_CALLBACK))
+        (doris::debug::TraceLog::ENABLED_FOR_RECORDING | \
+         doris::debug::TraceLog::ENABLED_FOR_EVENT_CALLBACK))
 
 // Macro to efficiently determine if a given category group is enabled.
 #define TRACE_EVENT_CATEGORY_GROUP_ENABLED(category_group, ret) \
@@ -771,16 +771,16 @@
 // const unsigned char*
 //     TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED(const char* category_group)
 #define TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED \
-    kudu::debug::TraceLog::GetCategoryGroupEnabled
+    doris::debug::TraceLog::GetCategoryGroupEnabled
 
 // Get the number of times traces have been recorded. This is used to implement
 // the TRACE_EVENT_IS_NEW_TRACE facility.
 // unsigned int TRACE_EVENT_API_GET_NUM_TRACES_RECORDED()
 #define TRACE_EVENT_API_GET_NUM_TRACES_RECORDED \
-    kudu::debug::TraceLog::GetInstance()->GetNumTracesRecorded
+    doris::debug::TraceLog::GetInstance()->GetNumTracesRecorded
 
 // Add a trace event to the platform tracing system.
-// kudu::debug::TraceEventHandle TRACE_EVENT_API_ADD_TRACE_EVENT(
+// doris::debug::TraceEventHandle TRACE_EVENT_API_ADD_TRACE_EVENT(
 //                    char phase,
 //                    const unsigned char* category_group_enabled,
 //                    const char* name,
@@ -791,10 +791,10 @@
 //                    const uint64_t* arg_values,
 //                    unsigned char flags)
 #define TRACE_EVENT_API_ADD_TRACE_EVENT \
-    kudu::debug::TraceLog::GetInstance()->AddTraceEvent
+    doris::debug::TraceLog::GetInstance()->AddTraceEvent
 
 // Add a trace event to the platform tracing system.
-// kudu::debug::TraceEventHandle TRACE_EVENT_API_ADD_TRACE_EVENT_WITH_TIMESTAMP(
+// doris::debug::TraceEventHandle TRACE_EVENT_API_ADD_TRACE_EVENT_WITH_TIMESTAMP(
 //                    char phase,
 //                    const unsigned char* category_group_enabled,
 //                    const char* name,
@@ -807,15 +807,15 @@
 //                    const uint64_t* arg_values,
 //                    unsigned char flags)
 #define TRACE_EVENT_API_ADD_TRACE_EVENT_WITH_THREAD_ID_AND_TIMESTAMP \
-    kudu::debug::TraceLog::GetInstance()->AddTraceEventWithThreadIdAndTimestamp
+    doris::debug::TraceLog::GetInstance()->AddTraceEventWithThreadIdAndTimestamp
 
 // Set the duration field of a COMPLETE trace event.
 // void TRACE_EVENT_API_UPDATE_TRACE_EVENT_DURATION(
 //     const unsigned char* category_group_enabled,
 //     const char* name,
-//     kudu::debug::TraceEventHandle id)
+//     doris::debug::TraceEventHandle id)
 #define TRACE_EVENT_API_UPDATE_TRACE_EVENT_DURATION \
-    kudu::debug::TraceLog::GetInstance()->UpdateTraceEventDuration
+    doris::debug::TraceLog::GetInstance()->UpdateTraceEventDuration
 
 // Defines atomic operations used internally by the tracing system.
 #define TRACE_EVENT_API_ATOMIC_WORD AtomicWord
@@ -884,7 +884,7 @@ extern TRACE_EVENT_API_ATOMIC_WORD g_trace_state[3];
     INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category_group); \
     trace_event_internal::ScopedTracer INTERNAL_TRACE_EVENT_UID(tracer); \
     if (INTERNAL_TRACE_EVENT_CATEGORY_GROUP_ENABLED_FOR_RECORDING_MODE()) { \
-      kudu::debug::TraceEventHandle h = trace_event_internal::AddTraceEvent( \
+      doris::debug::TraceEventHandle h = trace_event_internal::AddTraceEvent( \
           TRACE_EVENT_PHASE_COMPLETE, \
           INTERNAL_TRACE_EVENT_UID(category_group_enabled), \
           name, trace_event_internal::kNoEventId, \
@@ -1161,7 +1161,7 @@ static inline void SetTraceValue(const std::string& arg,
 // pointers to the internal c_str and pass through to the tracing API,
 // the arg_values must live throughout these procedures.
 
-static inline kudu::debug::TraceEventHandle
+static inline doris::debug::TraceEventHandle
 AddTraceEventWithThreadIdAndTimestamp(
     char phase,
     const unsigned char* category_group_enabled,
@@ -1171,7 +1171,7 @@ AddTraceEventWithThreadIdAndTimestamp(
     const MicrosecondsInt64& timestamp,
     unsigned char flags,
     const char* arg1_name,
-    const scoped_refptr<kudu::debug::ConvertableToTraceFormat>& arg1_val) {
+    const scoped_refptr<doris::debug::ConvertableToTraceFormat>& arg1_val) {
   const int num_args = 1;
   unsigned char arg_types[1] = { TRACE_VALUE_TYPE_CONVERTABLE };
   return TRACE_EVENT_API_ADD_TRACE_EVENT_WITH_THREAD_ID_AND_TIMESTAMP(
@@ -1180,7 +1180,7 @@ AddTraceEventWithThreadIdAndTimestamp(
 }
 
 template<class ARG1_TYPE>
-static inline kudu::debug::TraceEventHandle
+static inline doris::debug::TraceEventHandle
 AddTraceEventWithThreadIdAndTimestamp(
     char phase,
     const unsigned char* category_group_enabled,
@@ -1192,7 +1192,7 @@ AddTraceEventWithThreadIdAndTimestamp(
     const char* arg1_name,
     const ARG1_TYPE& arg1_val,
     const char* arg2_name,
-    const scoped_refptr<kudu::debug::ConvertableToTraceFormat>& arg2_val) {
+    const scoped_refptr<doris::debug::ConvertableToTraceFormat>& arg2_val) {
   const int num_args = 2;
   const char* arg_names[2] = { arg1_name, arg2_name };
 
@@ -1201,7 +1201,7 @@ AddTraceEventWithThreadIdAndTimestamp(
   SetTraceValue(arg1_val, &arg_types[0], &arg_values[0]);
   arg_types[1] = TRACE_VALUE_TYPE_CONVERTABLE;
 
-  scoped_refptr<kudu::debug::ConvertableToTraceFormat> convertable_values[2];
+  scoped_refptr<doris::debug::ConvertableToTraceFormat> convertable_values[2];
   convertable_values[1] = arg2_val;
 
   return TRACE_EVENT_API_ADD_TRACE_EVENT_WITH_THREAD_ID_AND_TIMESTAMP(
@@ -1210,7 +1210,7 @@ AddTraceEventWithThreadIdAndTimestamp(
 }
 
 template<class ARG2_TYPE>
-static inline kudu::debug::TraceEventHandle
+static inline doris::debug::TraceEventHandle
 AddTraceEventWithThreadIdAndTimestamp(
     char phase,
     const unsigned char* category_group_enabled,
@@ -1220,7 +1220,7 @@ AddTraceEventWithThreadIdAndTimestamp(
     const MicrosecondsInt64& timestamp,
     unsigned char flags,
     const char* arg1_name,
-    const scoped_refptr<kudu::debug::ConvertableToTraceFormat>& arg1_val,
+    const scoped_refptr<doris::debug::ConvertableToTraceFormat>& arg1_val,
     const char* arg2_name,
     const ARG2_TYPE& arg2_val) {
   const int num_args = 2;
@@ -1232,7 +1232,7 @@ AddTraceEventWithThreadIdAndTimestamp(
   arg_values[0] = 0;
   SetTraceValue(arg2_val, &arg_types[1], &arg_values[1]);
 
-  scoped_refptr<kudu::debug::ConvertableToTraceFormat> convertable_values[2];
+  scoped_refptr<doris::debug::ConvertableToTraceFormat> convertable_values[2];
   convertable_values[0] = arg1_val;
 
   return TRACE_EVENT_API_ADD_TRACE_EVENT_WITH_THREAD_ID_AND_TIMESTAMP(
@@ -1240,7 +1240,7 @@ AddTraceEventWithThreadIdAndTimestamp(
       num_args, arg_names, arg_types, arg_values, convertable_values, flags);
 }
 
-static inline kudu::debug::TraceEventHandle
+static inline doris::debug::TraceEventHandle
 AddTraceEventWithThreadIdAndTimestamp(
     char phase,
     const unsigned char* category_group_enabled,
@@ -1250,14 +1250,14 @@ AddTraceEventWithThreadIdAndTimestamp(
     const MicrosecondsInt64& timestamp,
     unsigned char flags,
     const char* arg1_name,
-    const scoped_refptr<kudu::debug::ConvertableToTraceFormat>& arg1_val,
+    const scoped_refptr<doris::debug::ConvertableToTraceFormat>& arg1_val,
     const char* arg2_name,
-    const scoped_refptr<kudu::debug::ConvertableToTraceFormat>& arg2_val) {
+    const scoped_refptr<doris::debug::ConvertableToTraceFormat>& arg2_val) {
   const int num_args = 2;
   const char* arg_names[2] = { arg1_name, arg2_name };
   unsigned char arg_types[2] =
       { TRACE_VALUE_TYPE_CONVERTABLE, TRACE_VALUE_TYPE_CONVERTABLE };
-  scoped_refptr<kudu::debug::ConvertableToTraceFormat> convertable_values[2] =
+  scoped_refptr<doris::debug::ConvertableToTraceFormat> convertable_values[2] =
       { arg1_val, arg2_val };
 
   return TRACE_EVENT_API_ADD_TRACE_EVENT_WITH_THREAD_ID_AND_TIMESTAMP(
@@ -1265,7 +1265,7 @@ AddTraceEventWithThreadIdAndTimestamp(
       num_args, arg_names, arg_types, NULL, convertable_values, flags);
 }
 
-static inline kudu::debug::TraceEventHandle
+static inline doris::debug::TraceEventHandle
 AddTraceEventWithThreadIdAndTimestamp(
     char phase,
     const unsigned char* category_group_enabled,
@@ -1279,20 +1279,20 @@ AddTraceEventWithThreadIdAndTimestamp(
       kZeroNumArgs, NULL, NULL, NULL, NULL, flags);
 }
 
-static inline kudu::debug::TraceEventHandle AddTraceEvent(
+static inline doris::debug::TraceEventHandle AddTraceEvent(
     char phase,
     const unsigned char* category_group_enabled,
     const char* name,
     uint64_t id,
     unsigned char flags) {
-  int thread_id = static_cast<int>(kudu::Thread::UniqueThreadId());
+  int thread_id = static_cast<int>(doris::Thread::unique_thread_id());
   MicrosecondsInt64 now = GetMonoTimeMicros();
   return AddTraceEventWithThreadIdAndTimestamp(phase, category_group_enabled,
                                                name, id, thread_id, now, flags);
 }
 
 template<class ARG1_TYPE>
-static inline kudu::debug::TraceEventHandle
+static inline doris::debug::TraceEventHandle
 AddTraceEventWithThreadIdAndTimestamp(
     char phase,
     const unsigned char* category_group_enabled,
@@ -1313,7 +1313,7 @@ AddTraceEventWithThreadIdAndTimestamp(
 }
 
 template<class ARG1_TYPE>
-static inline kudu::debug::TraceEventHandle AddTraceEvent(
+static inline doris::debug::TraceEventHandle AddTraceEvent(
     char phase,
     const unsigned char* category_group_enabled,
     const char* name,
@@ -1321,7 +1321,7 @@ static inline kudu::debug::TraceEventHandle AddTraceEvent(
     unsigned char flags,
     const char* arg1_name,
     const ARG1_TYPE& arg1_val) {
-  int thread_id = static_cast<int>(kudu::Thread::UniqueThreadId());
+  int thread_id = static_cast<int>(doris::Thread::unique_thread_id());
   MicrosecondsInt64 now = GetMonoTimeMicros();
   return AddTraceEventWithThreadIdAndTimestamp(phase, category_group_enabled,
                                                name, id, thread_id, now, flags,
@@ -1329,7 +1329,7 @@ static inline kudu::debug::TraceEventHandle AddTraceEvent(
 }
 
 template<class ARG1_TYPE, class ARG2_TYPE>
-static inline kudu::debug::TraceEventHandle
+static inline doris::debug::TraceEventHandle
 AddTraceEventWithThreadIdAndTimestamp(
     char phase,
     const unsigned char* category_group_enabled,
@@ -1354,7 +1354,7 @@ AddTraceEventWithThreadIdAndTimestamp(
 }
 
 template<class ARG1_TYPE, class ARG2_TYPE>
-static inline kudu::debug::TraceEventHandle AddTraceEvent(
+static inline doris::debug::TraceEventHandle AddTraceEvent(
     char phase,
     const unsigned char* category_group_enabled,
     const char* name,
@@ -1364,7 +1364,7 @@ static inline kudu::debug::TraceEventHandle AddTraceEvent(
     const ARG1_TYPE& arg1_val,
     const char* arg2_name,
     const ARG2_TYPE& arg2_val) {
-  int thread_id = static_cast<int>(kudu::Thread::UniqueThreadId());
+  int thread_id = static_cast<int>(doris::Thread::unique_thread_id());
   MicrosecondsInt64 now = GetMonoTimeMicros();
   return AddTraceEventWithThreadIdAndTimestamp(phase, category_group_enabled,
                                                name, id, thread_id, now, flags,
@@ -1386,7 +1386,7 @@ class ScopedTracer {
 
   void Initialize(const unsigned char* category_group_enabled,
                   const char* name,
-                  kudu::debug::TraceEventHandle event_handle) {
+                  doris::debug::TraceEventHandle event_handle) {
     data_.category_group_enabled = category_group_enabled;
     data_.name = name;
     data_.event_handle = event_handle;
@@ -1402,7 +1402,7 @@ class ScopedTracer {
   struct Data {
     const unsigned char* category_group_enabled;
     const char* name;
-    kudu::debug::TraceEventHandle event_handle;
+    doris::debug::TraceEventHandle event_handle;
   };
   Data* p_data_;
   Data data_;
@@ -1417,7 +1417,7 @@ class ScopedTraceBinaryEfficient {
  private:
   const unsigned char* category_group_enabled_;
   const char* name_;
-  kudu::debug::TraceEventHandle event_handle_;
+  doris::debug::TraceEventHandle event_handle_;
 };
 
 // This macro generates less code then TRACE_EVENT0 but is also

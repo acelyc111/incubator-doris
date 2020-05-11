@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "kudu/gutil/ref_counted_memory.h"
+#include "gutil/ref_counted_memory.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -10,7 +10,7 @@
 
 #include <glog/logging.h>
 
-namespace kudu {
+namespace doris {
 
 bool RefCountedMemory::Equals(
     const scoped_refptr<RefCountedMemory>& other) const {
@@ -98,4 +98,4 @@ RefCountedMallocedMemory::~RefCountedMallocedMemory() {
   free(data_);
 }
 
-}  //  namespace kudu
+}  //  namespace doris

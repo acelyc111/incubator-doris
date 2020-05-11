@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "kudu/util/atomic.h"
+#include "util/atomic.h"
 
 #include <cstdint>
 #include <limits>
@@ -23,12 +23,17 @@
 
 #include <gtest/gtest.h>
 
-#include "kudu/util/test_util.h"
-
-namespace kudu {
+namespace doris {
 
 using std::numeric_limits;
 using std::vector;
+using kudu::MemoryOrder;
+using kudu::kMemOrderNoBarrier;
+using kudu::kMemOrderAcquire;
+using kudu::kMemOrderRelease;
+using kudu::kMemOrderBarrier;
+using kudu::AtomicInt;
+using kudu::AtomicBool;
 
 // TODO Add some multi-threaded tests; currently AtomicInt is just a
 // wrapper around 'atomicops.h', but should the underlying
@@ -36,7 +41,7 @@ using std::vector;
 // invariants are preserved in a multi-threaded environment.
 
 template<typename T>
-class AtomicIntTest : public KuduTest {
+class AtomicIntTest : public ::testing::Test {
  public:
 
   AtomicIntTest()
@@ -132,4 +137,9 @@ TEST(Atomic, AtomicBool) {
   }
 }
 
-} // namespace kudu
+} // namespace doris
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
