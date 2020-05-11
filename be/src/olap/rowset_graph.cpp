@@ -24,19 +24,19 @@
 
 namespace doris {
 
-OLAPStatus RowsetGraph::construct_rowset_graph(const std::vector<RowsetMetaSharedPtr>& rs_metas) {
+void RowsetGraph::construct_rowset_graph(const std::vector<RowsetMetaSharedPtr>& rs_metas) {
     if (rs_metas.empty()) {
         VLOG(3) << "there is no version in the header.";
-        return OLAP_SUCCESS;
+        return;
     }
 
     // Distill vertex values from versions in TabletMeta.
     std::vector<int64_t> vertex_values;
     vertex_values.reserve(2 * rs_metas.size());
 
-    for (size_t i = 0; i < rs_metas.size(); ++i) {
-        vertex_values.push_back(rs_metas[i]->start_version());
-        vertex_values.push_back(rs_metas[i]->end_version() + 1);
+    for (const auto rs_meta : rs_metas) {
+        vertex_values.push_back(rs_meta.start_version());
+        vertex_values.push_back(rs_meta.end_version() + 1);
     }
 
     std::sort(vertex_values.begin(), vertex_values.end());
@@ -50,52 +50,37 @@ OLAPStatus RowsetGraph::construct_rowset_graph(const std::vector<RowsetMetaShare
         }
 
         // Add vertex to graph.
-        OLAPStatus status = _add_vertex_to_graph(vertex_values[i]);
-        if (status != OLAP_SUCCESS) {
-            LOG(WARNING) << "fail to add vertex to version graph. vertex=" << vertex_values[i];
-            return status;
-        }
-
+        _add_vertex_to_graph(vertex_values[i]);
         last_vertex_value = vertex_values[i];
     }
 
     // Create edges for version graph according to TabletMeta's versions.
-    for (size_t i = 0; i < rs_metas.size(); ++i) {
+    for (const auto rs_meta : rs_metas) {
         // Versions in header are unique.
         // We ensure _vertex_index_map has its start_version.
-        int64_t start_vertex_index = _vertex_index_map[rs_metas[i]->start_version()];
-        int64_t end_vertex_index = _vertex_index_map[rs_metas[i]->end_version() + 1];
+        int64_t start_vertex_index = _vertex_index_map[rs_meta.start_version()];
+        int64_t end_vertex_index = _vertex_index_map[rs_meta.end_version() + 1];
         // Add one edge from start_version to end_version.
         _version_graph[start_vertex_index].edges.push_front(end_vertex_index);
         // Add reverse edge from end_version to start_version.
         _version_graph[end_vertex_index].edges.push_front(start_vertex_index);
     }
-    return OLAP_SUCCESS;
 }
 
-OLAPStatus RowsetGraph::reconstruct_rowset_graph(const std::vector<RowsetMetaSharedPtr>& rs_metas) {
+void RowsetGraph::reconstruct_rowset_graph(const std::vector<RowsetMetaSharedPtr>& rs_metas) {
     _version_graph.clear();
     _vertex_index_map.clear();
-    return construct_rowset_graph(rs_metas);
+    construct_rowset_graph(rs_metas);
 }
 
-OLAPStatus RowsetGraph::add_version_to_graph(const Version& version) {
+void RowsetGraph::add_version_to_graph(const Version& version) {
     // Add version.first as new vertex of version graph if not exist.
     int64_t start_vertex_value = version.first;
     int64_t end_vertex_value = version.second + 1;
 
     // Add vertex to graph.
-    OLAPStatus status = _add_vertex_to_graph(start_vertex_value);
-    if (status != OLAP_SUCCESS) {
-        LOG(WARNING) << "fail to add vertex to version graph. vertex=" << start_vertex_value;
-        return status;
-    }
-
-    status = _add_vertex_to_graph(end_vertex_value);
-    if (status != OLAP_SUCCESS) {
-        LOG(WARNING) << "fail to add vertex to version graph. vertex=" << end_vertex_value;
-        return status;
-    }
+    _add_vertex_to_graph(start_vertex_value);
+    _add_vertex_to_graph(end_vertex_value);
 
     int64_t start_vertex_index = _vertex_index_map[start_vertex_value];
     int64_t end_vertex_index = _vertex_index_map[end_vertex_value];
@@ -106,8 +91,6 @@ OLAPStatus RowsetGraph::add_version_to_graph(const Version& version) {
 
     // We add reverse edge(from end_version to start_version) to graph
     _version_graph[end_vertex_index].edges.push_front(start_vertex_index);
-
-    return OLAP_SUCCESS;
 }
 
 OLAPStatus RowsetGraph::delete_version_from_graph(const Version& version) {
@@ -130,16 +113,15 @@ OLAPStatus RowsetGraph::delete_version_from_graph(const Version& version) {
     return OLAP_SUCCESS;
 }
 
-OLAPStatus RowsetGraph::_add_vertex_to_graph(int64_t vertex_value) {
+void RowsetGraph::_add_vertex_to_graph(int64_t vertex_value) {
     // Vertex with vertex_value already exists.
     if (_vertex_index_map.find(vertex_value) != _vertex_index_map.end()) {
         VLOG(3) << "vertex with vertex value already exists. value=" << vertex_value;
-        return OLAP_SUCCESS;
+        return;
     }
 
     _version_graph.emplace_back(Vertex(vertex_value));
     _vertex_index_map[vertex_value] = _version_graph.size() - 1;
-    return OLAP_SUCCESS;
 }
 
 OLAPStatus RowsetGraph::capture_consistent_versions(const Version& spec_version,
@@ -150,12 +132,6 @@ OLAPStatus RowsetGraph::capture_consistent_versions(const Version& spec_version,
         return OLAP_ERR_INPUT_PARAMETER_ERROR;
     }
 
-    // bfs_queue's element is vertex_index.
-    std::queue<int64_t> bfs_queue;
-    // predecessor[i] means the predecessor of vertex_index 'i'.
-    std::vector<int64_t> predecessor(_version_graph.size());
-    // visited[int64_t]==true means it had entered bfs_queue.
-    std::vector<bool> visited(_version_graph.size());
     // [start_vertex_value, end_vertex_value)
     int64_t start_vertex_value = spec_version.first;
     int64_t end_vertex_value = spec_version.second + 1;
@@ -174,69 +150,71 @@ OLAPStatus RowsetGraph::capture_consistent_versions(const Version& spec_version,
     }
 
     if (start_vertex_index < 0 || end_vertex_index < 0) {
-        LOG(WARNING) << "fail to find path in version_graph. "
-                     << "spec_version: " << spec_version.first << "-" << spec_version.second;
+        LOG(WARNING) << "fail to find path in version_graph. spec_version: " << spec_version;
         return OLAP_ERR_VERSION_NOT_EXIST;
     }
 
-    for (size_t i = 0; i < _version_graph.size(); ++i) {
-        visited[i] = false;
-    }
+    // bfs_queue's element is vertex_index.
+    std::queue<int64_t> bfs_queue;
+    // visited[i]==true means it had entered bfs_queue.
+    std::vector<bool> visited(_version_graph.size(), false);
+    // predecessor[i] means the predecessor of vertex_index 'i'.
+    std::vector<int64_t> predecessor(_version_graph.size());
 
     bfs_queue.push(start_vertex_index);
     visited[start_vertex_index] = true;
     // The predecessor of root is itself.
     predecessor[start_vertex_index] = start_vertex_index;
 
-    while (bfs_queue.empty() == false && visited[end_vertex_index] == false) {
+    while (!bfs_queue.empty() && !visited[end_vertex_index]) {
         int64_t top_vertex_index = bfs_queue.front();
         bfs_queue.pop();
-        for (const auto& it : _version_graph[top_vertex_index].edges) {
-            if (visited[it] == false) {
+        for (const auto& vertex_index : _version_graph[top_vertex_index].edges) {
+            if (!visited[vertex_index]) {
                 // If we don't support reverse version in the path, and start vertex
                 // value is larger than the end vertex value, we skip this edge.
-                if (_version_graph[top_vertex_index].value > _version_graph[it].value) {
+                if (_version_graph[top_vertex_index].value > _version_graph[vertex_index].value) {
                     continue;
                 }
 
-                visited[it] = true;
-                predecessor[it] = top_vertex_index;
-                bfs_queue.push(it);
+                visited[vertex_index] = true;
+                predecessor[vertex_index] = top_vertex_index;
+                bfs_queue.push(vertex_index);
             }
         }
     }
 
     if (!visited[end_vertex_index]) {
-        LOG(WARNING) << "fail to find path in version_graph. "
-                     << "spec_version: " << spec_version.first << "-" << spec_version.second;
+        LOG(WARNING) << "fail to find path in version_graph. spec_version: " << spec_version;
         return OLAP_ERR_VERSION_NOT_EXIST;
     }
 
-    std::vector<int64_t> reversed_path;
-    int64_t tmp_vertex_index = end_vertex_index;
-    reversed_path.push_back(tmp_vertex_index);
-
-    // For start_vertex_index, its predecessor must be itself.
-    while (predecessor[tmp_vertex_index] != tmp_vertex_index) {
-        tmp_vertex_index = predecessor[tmp_vertex_index];
-        reversed_path.push_back(tmp_vertex_index);
-    }
-
     if (version_path != nullptr) {
+        std::vector<int64_t> reversed_path;
+        int64_t pre_vertex_index = end_vertex_index;
+        reversed_path.push_back(pre_vertex_index);
+
+        // Only start_vertex_index's predecessor is itself.
+        while (predecessor[pre_vertex_index] != pre_vertex_index) {
+            pre_vertex_index = predecessor[pre_vertex_index];
+            reversed_path.push_back(pre_vertex_index);
+        }
+
         // Make version_path from reversed_path.
         std::stringstream shortest_path_for_debug;
         for (size_t path_id = reversed_path.size() - 1; path_id > 0; --path_id) {
             int64_t tmp_start_vertex_value = _version_graph[reversed_path[path_id]].value;
             int64_t tmp_end_vertex_value = _version_graph[reversed_path[path_id - 1]].value;
 
-            // tmp_start_vertex_value mustn't be equal to tmp_end_vertex_value
+            // TODO(yingchun): CHECK_LT(tmp_start_vertex_value, tmp_end_vertex_value);
+            // TODO: tmp_start_vertex_value mustn't be equal to tmp_end_vertex_value
             if (tmp_start_vertex_value <= tmp_end_vertex_value) {
-                version_path->emplace_back(tmp_start_vertex_value, tmp_end_vertex_value - 1);
+                version_path->emplace_back(Version(tmp_start_vertex_value, tmp_end_vertex_value - 1));
             } else {
-                version_path->emplace_back(tmp_end_vertex_value, tmp_start_vertex_value - 1);
+                version_path->emplace_back(Version(tmp_end_vertex_value, tmp_start_vertex_value - 1));
             }
 
-            shortest_path_for_debug << (*version_path)[version_path->size() - 1] << ' ';
+            shortest_path_for_debug << version_path->rbegin() << ' ';
         }
         VLOG(10) << "success to find path for spec_version. spec_version=" << spec_version
                  << ", path=" << shortest_path_for_debug.str();
