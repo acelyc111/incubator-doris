@@ -17,7 +17,6 @@
 
 package org.apache.doris.transaction;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.doris.catalog.Catalog;
 import org.apache.doris.catalog.Database;
 import org.apache.doris.common.AnalysisException;
