@@ -170,9 +170,7 @@ OLAPStatus TabletManager::_add_tablet_to_map_unlocked(TTabletId tablet_id, Schem
     OLAPStatus res = OLAP_SUCCESS;
     if (update_meta) {
         // call tablet save meta in order to valid the meta
-        RETURN_NOT_OK_LOG(tablet->save_meta(), Substitute(
-                "failed to save new tablet's meta. tablet_id=$0, schema_hash=$1",
-                tablet_id, schema_hash));
+        tablet->save_meta();
     }
     if (drop_old) {
         // If the new tablet is fresher than the existing one, then replace
@@ -529,11 +527,7 @@ OLAPStatus TabletManager::_drop_tablet_unlocked(
             && related_alter_task->related_tablet_id() == tablet_id
             && related_alter_task->related_schema_hash() == schema_hash) {
         related_tablet->delete_alter_task();
-        res = related_tablet->save_meta();
-        if (res != OLAP_SUCCESS) {
-            LOG(FATAL) << "fail to save tablet header. res=" << res
-                    << ", tablet=" << related_tablet->full_name();
-        }
+        related_tablet->save_meta();
     }
     related_tablet->release_header_lock();
     res = _drop_tablet_directly_unlocked(tablet_id, schema_hash, keep_files);
@@ -686,7 +680,7 @@ void TabletManager::get_tablet_stat(TTabletStatResult* result) {
 TabletSharedPtr TabletManager::find_best_tablet_to_compaction(CompactionType compaction_type,
                                                               DataDir* data_dir) {
     int64_t now_ms = UnixMillis();
-    const string& compaction_type_str = CompactionType::BASE_COMPACTION ? "base" : "cumulative";
+    const string& compaction_type_str = compaction_type == CompactionType::BASE_COMPACTION ? "base" : "cumulative";
     uint32_t highest_score = 0;
     TabletSharedPtr best_tablet;
     for (int32 i = 0; i < _tablet_map_lock_shard_size; i++) {
@@ -1326,8 +1320,7 @@ OLAPStatus TabletManager::_drop_tablet_directly_unlocked(
             // and the tablet will be loaded at restart time.
             // To avoid this exception, we first set the state of the tablet to `SHUTDOWN`.
             tablet->set_tablet_state(TABLET_SHUTDOWN);
-            RETURN_NOT_OK_LOG(tablet->save_meta(), Substitute(
-                    "fail to drop tablet.tablet_id=$0, schema_hash=$1", tablet_id, schema_hash));
+            tablet->save_meta();
             {
                 WriteLock wlock(&_shutdown_tablets_lock);
                 _shutdown_tablets.push_back(tablet);

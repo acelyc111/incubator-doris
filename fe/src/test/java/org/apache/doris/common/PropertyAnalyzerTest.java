@@ -32,7 +32,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import org.apache.doris.thrift.TStorageMedium;
 import org.junit.Assert;
 import org.junit.Test;
 
