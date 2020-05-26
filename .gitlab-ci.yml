@@ -1,6 +1,10 @@
 image:
   name: cr.d.xiaomi.net/doris/doris:1.2
 
+variables:
+  KUBERNETES_CPU_REQUEST: 6
+  KUBERNETES_MEMORY_REQUEST: 16Gi
+
 before_script:
   - ulimit -n 60000
   - echo "Working Directory is $(pwd)"
