@@ -851,7 +851,7 @@ public class DatabaseTransactionMgr {
         try {
             Set<Long> existingTxns = unprotectedGetTxnIdsByLabel(label);
             if (existingTxns == null || existingTxns.isEmpty()) {
-                throw new UserException("transaction not found, label=" + label);
+                throw new TransactionNotFoundException("transaction not found, label=" + label);
             }
             // find PREPARE txn. For one load label, there should be only one PREPARE txn.
             TransactionState prepareTxn = null;
@@ -864,7 +864,7 @@ public class DatabaseTransactionMgr {
             }
 
             if (prepareTxn == null) {
-                throw new UserException("running transaction not found, label=" + label);
+                throw new TransactionNotFoundException("running transaction not found, label=" + label);
             }
 
             transactionId = prepareTxn.getTransactionId();
@@ -887,7 +887,7 @@ public class DatabaseTransactionMgr {
             readUnlock();
         }
         if (transactionState == null) {
-            throw new UserException("transaction not found");
+            throw new TransactionNotFoundException("transaction not found", transactionId);
         }
 
         // update transaction state extra if exists
@@ -920,7 +920,7 @@ public class DatabaseTransactionMgr {
             throws UserException {
         TransactionState transactionState = unprotectedGetTransactionState(transactionId);
         if (transactionState == null) {
-            throw new UserException("transaction not found");
+            throw new TransactionNotFoundException("transaction not found", transactionId);
         }
         if (transactionState.getTransactionStatus() == TransactionStatus.ABORTED) {
             return false;
