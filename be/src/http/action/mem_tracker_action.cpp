@@ -23,6 +23,7 @@
 #include <rapidjson/stringbuffer.h>
 
 #include <string>
+#include <sstream>
 #include <vector>
 
 #include "common/configbase.h"
@@ -41,7 +42,7 @@ namespace doris {
 const static std::string HEADER_JSON = "application/json";
 
 void MemTrackerAction::handle(HttpRequest* req) {
-    ostringstream output;
+    std::ostringstream output;
     output << "<h1>Memory usage by subsystem</h1>\n";
     output << "<table data-toggle='table' "
               "       data-pagination='true' "

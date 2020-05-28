@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <limits>
 #include <memory>
+#include <deque>
 //#include <boost/lexical_cast.hpp>
 //#include <boost/shared_ptr.hpp>
 //include <boost/weak_ptr.hpp>
@@ -49,6 +50,7 @@ const std::string MemTracker::COUNTER_NAME = "PeakMemoryUsage";
 // Name for request pool MemTrackers. '$0' is replaced with the pool name.
 const std::string REQUEST_POOL_MEM_TRACKER_LABEL_FORMAT = "RequestPool=$0";
 
+std::mutex MemTracker::_s_mem_trackers_lock;
 std::list<MemTracker*> MemTracker::_s_root_trackers;
 
 MemTracker::MemTracker(
@@ -121,7 +123,7 @@ void MemTracker::register_as_root_tracker() {
 
 void MemTracker::get_all_trackers_under_root(std::vector<MemTracker*>* trackers) {
     trackers->clear();
-    deque<MemTracker*> to_process;
+    std::deque<MemTracker*> to_process;
     {
         std::unique_lock<std::mutex> l(_s_mem_trackers_lock);
         for (const auto& root_tracker : _s_root_trackers) {
