@@ -21,6 +21,7 @@
 #include "http/action/compaction_action.h"
 #include "http/action/health_action.h"
 #include "http/action/meta_action.h"
+#include "http/action/mem_tracker_action.h"
 #include "http/action/metrics_action.h"
 #include "http/action/mini_load.h"
 #include "http/action/pprof_actions.h"
@@ -122,6 +123,9 @@ Status HttpService::start() {
 
     UpdateConfigAction* update_config_action = new UpdateConfigAction();
     _ev_http_server->register_handler(HttpMethod::POST, "/api/update_config", update_config_action);
+
+    MemTrackerAction* mem_tracker_action = new MemTrackerAction();
+    _ev_http_server->register_handler(HttpMethod::GET, "/memtracker", mem_tracker_action);
 
     RETURN_IF_ERROR(_ev_http_server->start());
     return Status::OK();
