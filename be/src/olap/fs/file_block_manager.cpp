@@ -380,11 +380,12 @@ Status FileReadableBlock::readv(uint64_t offset, const Slice* results, size_t re
 FileBlockManager::FileBlockManager(Env* env, BlockManagerOptions opts) :
         _env(DCHECK_NOTNULL(env)),
         _opts(std::move(opts)),
-        _mem_tracker(new MemTracker(-1, "file_block_manager", _opts.parent_mem_tracker.get())) {
+        _mem_tracker(new MemTracker(-1, "file_block_manager")) {
     if (_opts.enable_metric) {
         _metrics.reset(new internal::BlockManagerMetrics());
     }
 
+    _mem_tracker->register_as_root_tracker();
     _file_cache.reset(new FileCache<RandomAccessFile>("Readable file cache", config::file_descriptor_cache_capacity));
 }
 
