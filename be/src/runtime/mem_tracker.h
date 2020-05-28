@@ -85,6 +85,10 @@ public:
 
     ~MemTracker();
 
+    void register_as_root_tracker();
+    // TODO(yingchun): should use shared_ptr
+    static void get_all_trackers_under_root(std::vector<MemTracker*>* trackers);
+
     /// Closes this MemTracker. After closing it is invalid to consume memory on this
     /// tracker and the tracker's consumption counter (which may be owned by a
     /// RuntimeProfile, not this MemTracker) can be safely destroyed. MemTrackers without
@@ -420,7 +424,7 @@ private:
     /// Lock to protect GcMemory(). This prevents many GCs from occurring at once.
     std::mutex _gc_lock;
 
-    // Protects _request_to_mem_trackers and _pool_to_mem_trackers
+    // Protects _request_to_mem_trackers, _pool_to_mem_trackers and _s_root_trackers
     static std::mutex _s_mem_trackers_lock;
 
     // All per-request MemTracker objects that are in use.  For memory management, this map
@@ -429,6 +433,9 @@ private:
     // d'tor will be called at which point the weak ptr will be removed from the map.
     typedef std::unordered_map<TUniqueId, std::weak_ptr<MemTracker> > RequestTrackersMap;
     static RequestTrackersMap _s_request_to_mem_trackers;
+
+    // TODO(yingchun): should use shared_ptr
+    static std::list<MemTracker*> _s_root_trackers;
 
     // Only valid for MemTrackers returned from get_query_mem_tracker()
     /// Only valid for MemTrackers returned from CreateQueryMemTracker()
@@ -465,6 +472,7 @@ private:
     // All the child trackers of this tracker. Used for error reporting only.
     // i.e., Updating a parent tracker does not update the children.
     mutable std::mutex _child_trackers_lock;
+    // TODO(yingchun): should use weak_ptr
     std::list<MemTracker*> _child_trackers;
     // Iterator into _parent->_child_trackers for this object. Stored to have O(1)
     // remove.

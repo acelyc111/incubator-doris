@@ -49,6 +49,8 @@ const std::string MemTracker::COUNTER_NAME = "PeakMemoryUsage";
 // Name for request pool MemTrackers. '$0' is replaced with the pool name.
 const std::string REQUEST_POOL_MEM_TRACKER_LABEL_FORMAT = "RequestPool=$0";
 
+std::list<MemTracker*> MemTracker::_s_root_trackers;
+
 MemTracker::MemTracker(
         int64_t byte_limit, const std::string& label, MemTracker* parent, bool log_usage_if_zero)
     : _limit(byte_limit),
@@ -110,6 +112,34 @@ void MemTracker::Init() {
     }
     DCHECK_GT(_all_trackers.size(), 0);
     DCHECK_EQ(_all_trackers[0], this);
+}
+
+void MemTracker::register_as_root_tracker() {
+    std::unique_lock<std::mutex> l(_s_mem_trackers_lock);
+    _s_root_trackers.push_back(this);
+}
+
+void MemTracker::get_all_trackers_under_root(std::vector<MemTracker*>* trackers) {
+    trackers->clear();
+    deque<MemTracker*> to_process;
+    {
+        std::unique_lock<std::mutex> l(_s_mem_trackers_lock);
+        for (const auto& root_tracker : _s_root_trackers) {
+            to_process.push_front(root_tracker);
+        }
+    }
+    while (!to_process.empty()) {
+        MemTracker* t = to_process.back();
+        to_process.pop_back();
+
+        trackers->push_back(t);
+        {
+            std::lock_guard<std::mutex> l(t->_child_trackers_lock);
+            for (const auto& child : t->_child_trackers) {
+                to_process.push_back(child);
+            }
+        }
+    }
 }
 
 // TODO chenhao , set MemTracker close state
