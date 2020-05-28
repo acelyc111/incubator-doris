@@ -39,10 +39,11 @@
 
 namespace doris {
 
-const static std::string HEADER_JSON = "application/json";
-
 void MemTrackerAction::handle(HttpRequest* req) {
     std::ostringstream output;
+    output << "<!DOCTYPE html>\n";
+    output << "<html>\n";
+    output << "<body>\n";
     output << "<h1>Memory usage by subsystem</h1>\n";
     output << "<table data-toggle='table' "
               "       data-pagination='true' "
@@ -59,7 +60,6 @@ void MemTrackerAction::handle(HttpRequest* req) {
               "    data-sortable='true' "
               ">Peak Consumption</th>";
     output << "<tbody>\n";
-
     std::vector<MemTracker*> trackers;
     MemTracker::get_all_trackers_under_root(&trackers);
     for (const auto& tracker : trackers) {
@@ -73,8 +73,10 @@ void MemTrackerAction::handle(HttpRequest* req) {
                                       peak_consumption_str);
     }
     output << "</tbody></table>\n";
+    output << "</body>\n";
+    output << "</html>\n";
 
-    req->add_output_header(HttpHeaders::CONTENT_TYPE, HEADER_JSON.c_str());
+    req->add_output_header(HttpHeaders::CONTENT_TYPE, "text/html");
     HttpChannel::send_reply(req, HttpStatus::OK, output.str());
 }
 
