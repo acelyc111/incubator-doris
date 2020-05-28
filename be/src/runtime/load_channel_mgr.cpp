@@ -81,6 +81,7 @@ Status LoadChannelMgr::init(int64_t process_mem_limit) {
     int64_t load_mem_limit = calc_process_max_load_memory(process_mem_limit);
     _mem_tracker.reset(new MemTracker(load_mem_limit, "load channel mgr"));
     RETURN_IF_ERROR(_start_bg_worker());
+    _mem_tracker->register_as_root_tracker();
     return Status::OK();
 }
 

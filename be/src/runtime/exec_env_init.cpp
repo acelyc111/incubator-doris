@@ -179,6 +179,7 @@ Status ExecEnv::_init_mem_tracker() {
     }
 
     _mem_tracker = new MemTracker(bytes_limit);
+    _mem_tracker->register_as_root_tracker();
 
     LOG(INFO) << "Using global memory limit: " << PrettyPrinter::print(bytes_limit, TUnit::BYTES);
     RETURN_IF_ERROR(_disk_io_mgr->init(_mem_tracker));
