@@ -24,11 +24,6 @@ test_fe_job:
   script:
     - ./run-fe-ut.sh
 
-build_job:
-  stage: build
-  script:
-    - ./make_distribution.sh
-
 package_job:
   only:
     - tags
