@@ -21,6 +21,16 @@ test_be_job:
   script:
     - ./run-ut.sh --run
 
+test_be_job_asan:
+  stage: test
+  script:
+    - BUILD_TYPE=ASAN ./run-ut.sh --run
+
+test_be_job_lsan:
+  stage: test
+  script:
+    - BUILD_TYPE=LSAN ./run-ut.sh --run
+
 test_fe_job:
   stage: test
   script:
