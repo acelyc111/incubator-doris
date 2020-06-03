@@ -8,6 +8,8 @@ variables:
 before_script:
   - ulimit -n 60000
   - echo "Working Directory is $(pwd)"
+  - ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime  
+  - date -R  
 
 stages:
   - test
