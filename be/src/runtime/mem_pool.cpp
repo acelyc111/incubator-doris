@@ -119,7 +119,7 @@ bool MemPool::find_chunk(size_t min_size, bool check_limits) {
 
     chunk_size = BitUtil::RoundUpToPowerOfTwo(chunk_size);
     if (check_limits) {
-        if (!mem_tracker_->try_consume(chunk_size)) return false;
+        if (!mem_tracker_->TryConsume(chunk_size)) return false;
     } else {
         mem_tracker_->Consume(chunk_size);
     }

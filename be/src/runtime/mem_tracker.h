@@ -114,12 +114,12 @@ class MemTracker {
   /// Idempotent: calling multiple times has no effect.
   void Close();
 
-  // Removes this tracker from _parent->_child_trackers.
+  // Removes this tracker from parent_->child_trackers_.
   void unregister_from_parent() {
-      DCHECK(_parent != NULL);
-      std::lock_guard<std::mutex> l(_parent->_child_trackers_lock);
-      _parent->_child_trackers.erase(_child_tracker_it);
-      _child_tracker_it = _parent->_child_trackers.end();
+      DCHECK(parent_ != NULL);
+      std::lock_guard<SpinLock> l(parent_->child_trackers_lock_);
+      parent_->child_trackers_.erase(child_tracker_it_);
+      child_tracker_it_ = parent_->child_trackers_.end();
   }
 
   /// Closes the MemTracker and deregisters it from its parent. Can be called before
