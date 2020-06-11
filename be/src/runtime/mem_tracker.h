@@ -114,6 +114,14 @@ class MemTracker {
   /// Idempotent: calling multiple times has no effect.
   void Close();
 
+  // Removes this tracker from _parent->_child_trackers.
+  void unregister_from_parent() {
+      DCHECK(_parent != NULL);
+      std::lock_guard<std::mutex> l(_parent->_child_trackers_lock);
+      _parent->_child_trackers.erase(_child_tracker_it);
+      _child_tracker_it = _parent->_child_trackers.end();
+  }
+
   /// Closes the MemTracker and deregisters it from its parent. Can be called before
   /// destruction to prevent other threads from getting a reference to the MemTracker
   /// via its parent. Only used to deregister the query-level MemTracker from the
@@ -376,7 +384,7 @@ class MemTracker {
     query_exec_finished_.store(1);
   }
 
-    static void updatelimit_s(int64_t bytes, std::vector<MemTracker*>* limits) {
+    static void update_limits(int64_t bytes, std::vector<MemTracker*>* limits) {
         for (std::vector<MemTracker*>::iterator i = limits->begin(); i != limits->end(); ++i) {
             (*i)->Consume(bytes);
         }

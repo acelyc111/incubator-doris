@@ -569,7 +569,7 @@ void PlanFragmentExecutor::close() {
      
     // _mem_tracker init failed
     if (_mem_tracker.get() != nullptr) {
-        _mem_tracker->release(_mem_tracker->consumption());
+        _mem_tracker->Release(_mem_tracker->consumption());
     }
     _closed = true;
 }
