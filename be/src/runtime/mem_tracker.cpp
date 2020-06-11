@@ -21,14 +21,13 @@
 #include <limits>
 #include <memory>
 #include <boost/algorithm/string/join.hpp>
-//#include <boost/shared_ptr.hpp>
-//include <boost/weak_ptr.hpp>
 
 #include "exec/exec_node.h"
 #include "runtime/bufferpool/reservation_tracker_counters.h"
 #include "gutil/strings/substitute.h"
 #include "runtime/exec_env.h"
 #include "runtime/runtime_state.h"
+#include "service/backend_options.h"
 #include "util/debug_util.h"
 #include "util/doris_metrics.h"
 #include "util/mem_info.h"
@@ -37,6 +36,10 @@
 #include "util/uid_util.h"
 
 using std::endl;
+using std::greater;
+using std::pair;
+using std::priority_queue;
+using std::string;
 using strings::Substitute;
 
 namespace doris {
@@ -374,7 +377,7 @@ string MemTracker::LogUsage(int max_recursive_depth, const string& prefix,
     if (!usage_string.empty()) usage_strings.push_back(usage_string);
     *logged_consumption += tracker_consumption;
   }
-  return join(usage_strings, "\n");
+  return boost::join(usage_strings, "\n");
 }
 
 string MemTracker::LogTopNQueries(int limit) {
@@ -390,7 +393,7 @@ string MemTracker::LogTopNQueries(int limit) {
     min_pq.pop();
   }
   std::reverse(usage_strings.begin(), usage_strings.end());
-  return join(usage_strings, "\n");
+  return boost::join(usage_strings, "\n");
 }
 
 void MemTracker::GetTopNQueries(
@@ -427,8 +430,8 @@ Status MemTracker::MemLimitExceeded(MemTracker* mtracker, RuntimeState* state,
        << PrettyPrinter::print(failed_allocation_size, TUnit::BYTES)
        << " without exceeding limit." << endl;
   }
-  ss << "Error occurred on backend " << GetBackendString();
-  if (state != nullptr) ss << " by fragment " << PrintId(state->fragment_instance_id());
+  ss << "Error occurred on backend " << BackendOptions::get_localhost();
+  if (state != nullptr) ss << " by fragment " << print_id(state->fragment_instance_id());
   ss << endl;
   ExecEnv* exec_env = ExecEnv::GetInstance();
   MemTracker* process_tracker = exec_env->process_mem_tracker();
@@ -459,8 +462,8 @@ Status MemTracker::MemLimitExceeded(MemTracker* mtracker, RuntimeState* state,
     ss << process_tracker->LogUsage(PROCESS_MEMTRACKER_LIMITED_DEPTH);
   }
 
-  Status status = Status::MemLimitExceeded(ss.str());
-  if (state != nullptr) state->log_error(status.msg());
+  Status status = Status::MemoryLimitExceeded(ss.str());
+  if (state != nullptr) state->log_error(status.to_string());
   return status;
 }
 
@@ -477,7 +480,7 @@ bool MemTracker::LimitExceededSlow(MemLimit mode) {
 
 bool MemTracker::GcMemory(int64_t max_consumption) {
   if (max_consumption < 0) return true;
-  lock_guard<mutex> l(gc_lock_);
+  lock_guard<std::mutex> l(gc_lock_);
   if (consumption_metric_ != NULL) RefreshConsumptionFromMetric();
   int64_t pre_gc_consumption = consumption();
   // Check if someone gc'd before us

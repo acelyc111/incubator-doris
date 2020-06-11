@@ -356,7 +356,7 @@ class MemTracker {
   /// to two levels limits the level of detail to a one-line summary for each query
   /// MemTracker, avoiding all MemTrackers below that level. This provides a summary
   /// of process usage with substantially lower cost than the full dump.
-  static const int PROCESS_MEMTRACKERlimit_ED_DEPTH = 2;
+  static const int PROCESS_MEMTRACKER_LIMITED_DEPTH = 2;
   /// Unlimited dumping is useful for query memtrackers or error conditions that
   /// are not performance sensitive
   static const int UNLIMITED_DEPTH = INT_MAX;
