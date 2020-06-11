@@ -25,7 +25,7 @@ export DORIS_HOME=${ROOT}
 
 . ${DORIS_HOME}/env.sh
 
-PARALLEL=$[$(nproc)/4+1]
+PARALLEL=32 #$[$(nproc)/4+1]
 
 # Check args
 usage() {
@@ -89,7 +89,7 @@ fi
 
 cd ${DORIS_HOME}/be/ut_build/
 
-${CMAKE_CMD} ../ -DWITH_MYSQL=OFF -DMAKE_TEST=ON -DCMAKE_BUILD_TYPE=DEBUG
+${CMAKE_CMD} ../ -DWITH_MYSQL=OFF -DMAKE_TEST=ON -DCMAKE_BUILD_TYPE=ASAN
 make -j${PARALLEL}
 
 if [ ${RUN} -ne 1 ]; then

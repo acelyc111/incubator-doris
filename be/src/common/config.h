@@ -539,6 +539,8 @@ namespace config {
     // Directory where BE's website files placed.
     CONF_String(www_path, "${DORIS_HOME}/www");
 
+    // Soft memory limit as a fraction of hard memory limit.
+    CONF_Double(soft_mem_limit_frac, "0.9");
 } // namespace config
 
 } // namespace doris

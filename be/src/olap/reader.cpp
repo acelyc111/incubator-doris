@@ -285,10 +285,7 @@ void CollectIterator::clear() {
     _child_idx = 0;
 }
 
-Reader::Reader() {
-    _tracker.reset(new MemTracker(-1));
-    _predicate_mem_pool.reset(new MemPool(_tracker.get()));
-}
+Reader::Reader() : _tracker(new MemTracker(-1)), _predicate_mem_pool(new MemPool(_tracker.get())) {}
 
 Reader::~Reader() {
     close();
