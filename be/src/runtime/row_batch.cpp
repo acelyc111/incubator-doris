@@ -56,7 +56,7 @@ RowBatch::RowBatch(const RowDescriptor& row_desc, int capacity, MemTracker* mem_
     DCHECK_GT(_tuple_ptrs_size, 0);
     // TODO: switch to Init() pattern so we can check memory limit and return Status.
     if (config::enable_partitioned_aggregation) {
-        _mem_tracker->consume(_tuple_ptrs_size);
+        _mem_tracker->Consume(_tuple_ptrs_size);
         _tuple_ptrs = reinterpret_cast<Tuple**>(malloc(_tuple_ptrs_size));
         DCHECK(_tuple_ptrs != NULL);
     } else {
@@ -90,7 +90,7 @@ RowBatch::RowBatch(const RowDescriptor& row_desc,
     DCHECK_GT(_tuple_ptrs_size, 0);
     // TODO: switch to Init() pattern so we can check memory limit and return Status.
     if (config::enable_partitioned_aggregation) {
-        _mem_tracker->consume(_tuple_ptrs_size);
+        _mem_tracker->Consume(_tuple_ptrs_size);
         _tuple_ptrs = reinterpret_cast<Tuple**>(malloc(_tuple_ptrs_size));
         DCHECK(_tuple_ptrs != nullptr);
     } else {
@@ -188,7 +188,7 @@ RowBatch::RowBatch(const RowDescriptor& row_desc, const TRowBatch& input_batch, 
     DCHECK_GT(_tuple_ptrs_size, 0);
     // TODO: switch to Init() pattern so we can check memory limit and return Status.
     if (config::enable_partitioned_aggregation) {
-        _mem_tracker->consume(_tuple_ptrs_size);
+        _mem_tracker->Consume(_tuple_ptrs_size);
         _tuple_ptrs = reinterpret_cast<Tuple**>(malloc(_tuple_ptrs_size));
         DCHECK(_tuple_ptrs != NULL);
     } else {

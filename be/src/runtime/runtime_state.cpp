@@ -273,7 +273,7 @@ Status RuntimeState::init_instance_mem_tracker() {
 
 Status RuntimeState::init_buffer_poolstate() {
   ExecEnv* exec_env = ExecEnv::GetInstance();
-  int64_t mem_limit = _query_mem_tracker->lowest_limit();
+  int64_t mem_limit = _query_mem_tracker->GetLowestLimit(MemLimit::HARD);
   int64_t max_reservation;
   if (query_options().__isset.buffer_pool_limit
       && query_options().buffer_pool_limit > 0) {
