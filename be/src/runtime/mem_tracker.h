@@ -297,7 +297,7 @@ class MemTracker {
 
   int64_t limit() const { return limit_; }
   bool has_limit() const { return limit_ >= 0; }
-  int64_t softlimit_() const { return softlimit__; }
+  int64_t softlimit_() const { return soft_limit_; }
   int64_t GetLimit(MemLimit mode) const {
     if (mode == MemLimit::SOFT) return softlimit_();
     DCHECK_ENUM_EQ(mode, MemLimit::HARD);
@@ -467,7 +467,7 @@ class MemTracker {
     DCHECK(consumption_metric_ == nullptr) << "Should not be called on root.";
     for (MemTracker* tracker : all_trackers_) {
       if (tracker == end_tracker) return;
-      DCHECK(!tracker->haslimit_());
+      DCHECK(!tracker->has_limit());
       DCHECK(!tracker->closed_) << tracker->label_;
       tracker->consumption_->add(bytes);
     }
@@ -498,7 +498,7 @@ class MemTracker {
 
   /// Soft limit on memory consumption, in bytes. Can be exceeded but callers to
   /// TryConsume() can opt not to exceed this limit. If -1, there is no consumption limit.
-  const int64_t softlimit__;
+  const int64_t soft_limit_;
 
   std::string label_;
 
@@ -554,7 +554,7 @@ class MemTracker {
   /// The number of bytes over the limit we were the last time LimitExceeded() was called
   /// and the limit was exceeded pre-GC. -1 if there is no limit or the limit was never
   /// exceeded.
-  IntGauge* bytes_overlimit__metric_;
+  IntGauge* bytes_over_limit_metric_;
 
   /// Metric for limit_.
   IntGauge* limit_metric_;

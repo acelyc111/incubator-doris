@@ -25,7 +25,7 @@
 //include <boost/weak_ptr.hpp>
 
 #include "exec/exec_node.h"
-#include "runtime/bufferpool/reservation-tracker-counters.h"
+#include "runtime/bufferpool/reservation_tracker_counters.h"
 #include "gutil/strings/substitute.h"
 #include "runtime/exec_env.h"
 #include "runtime/runtime_state.h"
@@ -36,7 +36,8 @@
 #include "util/stack_util.h"
 #include "util/uid_util.h"
 
-using std::strings;
+using std::endl;
+using strings::Substitute;
 
 namespace doris {
 
@@ -48,7 +49,7 @@ const string REQUEST_POOL_MEM_TRACKER_LABEL_FORMAT = "RequestPool=$0";
 /// Calculate the soft limit for a MemTracker based on the hard limit 'limit'.
 static int64_t CalcSoftLimit(int64_t limit) {
   if (limit < 0) return -1;
-  double frac = max(0.0, min(1.0, FLAGS_soft_mem_limit_frac));
+  double frac = std::max(0.0, std::min(1.0, config::soft_mem_limit_frac));
   return static_cast<int64_t>(limit * frac);
 }
 
@@ -65,9 +66,9 @@ MemTracker::MemTracker(
     num_gcs_metric_(NULL),
     bytes_freed_by_last_gc_metric_(NULL),
     bytes_over_limit_metric_(NULL),
-    limit_metric_(NULL) {
+    limit_metric_(NULL),
     auto_unregister_(auto_unregister) {
-        if (parent != NULL) parent_->add_child_tracker(this);
+  if (parent != NULL) parent_->AddChildTracker(this);
   Init();
 }
 
@@ -85,7 +86,7 @@ MemTracker::MemTracker(RuntimeProfile* profile, int64_t byte_limit,
     bytes_freed_by_last_gc_metric_(NULL),
     bytes_over_limit_metric_(NULL),
     limit_metric_(NULL) {
-        if (parent != NULL) parent_->add_child_tracker(this);
+  if (parent != NULL) parent_->AddChildTracker(this);
   Init();
 }
 
@@ -130,7 +131,7 @@ void MemTracker::Close() {
   if (closed_) return;
   if (consumption_metric_ == nullptr) {
     DCHECK_EQ(consumption_->current_value(), 0) << label_ << "\n"
-                                                << GetStackTrace() << "\n"
+                                                //<< GetStackTrace() << "\n"
                                                 << LogUsage(UNLIMITED_DEPTH);
   }
   closed_ = true;
@@ -144,7 +145,7 @@ void MemTracker::CloseAndUnregisterFromParent() {
 }
 
 void MemTracker::EnableReservationReporting(const ReservationTrackerCounters& counters) {
-  delete reservation_counters_.Swap(new ReservationTrackerCounters(counters));
+  delete reservation_counters_.swap(new ReservationTrackerCounters(counters));
 }
 
 int64_t MemTracker::GetLowestLimit(MemLimit mode) const {
@@ -152,7 +153,7 @@ int64_t MemTracker::GetLowestLimit(MemLimit mode) const {
   int64_t min_limit = numeric_limits<int64_t>::max();
   for (MemTracker* limit_tracker : limit_trackers_) {
     DCHECK(limit_tracker->has_limit());
-    min_limit = min(min_limit, limit_tracker->GetLimit(mode));
+    min_limit = std::min(min_limit, limit_tracker->GetLimit(mode));
   }
   return min_limit;
 }
@@ -168,7 +169,7 @@ int64_t MemTracker::SpareCapacity(MemLimit mode) const {
 
 void MemTracker::RefreshConsumptionFromMetric() {
   DCHECK(consumption_metric_ != nullptr);
-  consumption_->set(consumption_metric_->GetValue());
+  consumption_->set(consumption_metric_->value());
 }
 
 int64_t MemTracker::GetPoolMemReserved() {
@@ -209,7 +210,7 @@ MemTracker* PoolMemTrackerRegistry::GetRequestPoolMemTracker(
       new MemTracker(-1, Substitute(REQUEST_POOL_MEM_TRACKER_LABEL_FORMAT, pool_name),
           ExecEnv::GetInstance()->process_mem_tracker());
   tracker->pool_name_ = pool_name;
-  pool_to_mem_trackers_.emplace(pool_name, unique_ptr<MemTracker>(tracker));
+  pool_to_mem_trackers_.emplace(pool_name, std::unique_ptr<MemTracker>(tracker));
   return tracker;
 }
 
@@ -217,19 +218,19 @@ MemTracker* MemTracker::CreateQueryMemTracker(const TUniqueId& id,
     int64_t mem_limit, const string& pool_name, ObjectPool* obj_pool) {
   if (mem_limit != -1) {
     if (mem_limit > MemInfo::physical_mem()) {
-      LOG(WARNING) << "Memory limit " << PrettyPrinter::Print(mem_limit, TUnit::BYTES)
+      LOG(WARNING) << "Memory limit " << PrettyPrinter::print(mem_limit, TUnit::BYTES)
                    << " exceeds physical memory of "
-                   << PrettyPrinter::Print(MemInfo::physical_mem(), TUnit::BYTES);
+                   << PrettyPrinter::print(MemInfo::physical_mem(), TUnit::BYTES);
     }
     VLOG(2) << "Using query memory limit: "
-            << PrettyPrinter::Print(mem_limit, TUnit::BYTES);
+            << PrettyPrinter::print(mem_limit, TUnit::BYTES);
   }
 
   MemTracker* pool_tracker =
       ExecEnv::GetInstance()->pool_mem_trackers()->GetRequestPoolMemTracker(
           pool_name, true);
-  MemTracker* tracker = obj_pool->Add(new MemTracker(
-      mem_limit, Substitute("Query($0)", PrintId(id)), pool_tracker));
+  MemTracker* tracker = obj_pool->add(new MemTracker(
+      mem_limit, Substitute("Query($0)", print_id(id)), pool_tracker));
   tracker->is_query_mem_tracker_ = true;
   tracker->query_id_ = id;
   return tracker;
@@ -238,9 +239,9 @@ MemTracker* MemTracker::CreateQueryMemTracker(const TUniqueId& id,
 MemTracker::~MemTracker() {
   // We should explicitly close MemTrackers in the context of a daemon process. It is ok
   // if backend tests don't call Close() to make tests more concise.
-  if (TestInfo::is_test()) Close();
+  //if (TestInfo::is_test()) Close();
   DCHECK(closed_) << label_;
-  delete reservation_counters_.Load();
+  delete reservation_counters_.load();
 
     if (auto_unregister_ && parent()) {
         unregister_from_parent();
@@ -313,26 +314,26 @@ string MemTracker::LogUsage(int max_recursive_depth, const string& prefix,
   stringstream ss;
   ss << prefix << label_ << ":";
   if (CheckLimitExceeded(MemLimit::HARD)) ss << " memory limit exceeded.";
-  if (limit_ > 0) ss << " Limit=" << PrettyPrinter::Print(limit_, TUnit::BYTES);
+  if (limit_ > 0) ss << " Limit=" << PrettyPrinter::print(limit_, TUnit::BYTES);
 
-  ReservationTrackerCounters* reservation_counters = reservation_counters_.Load();
+  ReservationTrackerCounters* reservation_counters = reservation_counters_.load();
   if (reservation_counters != nullptr) {
     int64_t reservation = reservation_counters->peak_reservation->current_value();
-    ss << " Reservation=" << PrettyPrinter::Print(reservation, TUnit::BYTES);
+    ss << " Reservation=" << PrettyPrinter::print(reservation, TUnit::BYTES);
     if (reservation_counters->reservation_limit != nullptr) {
       int64_t limit = reservation_counters->reservation_limit->value();
-      ss << " ReservationLimit=" << PrettyPrinter::Print(limit, TUnit::BYTES);
+      ss << " ReservationLimit=" << PrettyPrinter::print(limit, TUnit::BYTES);
     }
     ss << " OtherMemory="
-       << PrettyPrinter::Print(curr_consumption - reservation, TUnit::BYTES);
+       << PrettyPrinter::print(curr_consumption - reservation, TUnit::BYTES);
   }
-  ss << " Total=" << PrettyPrinter::Print(curr_consumption, TUnit::BYTES);
+  ss << " Total=" << PrettyPrinter::print(curr_consumption, TUnit::BYTES);
   // Peak consumption is not accurate if the metric is lazily updated (i.e.
   // this is a non-root tracker that exists only for reporting purposes).
   // Only report peak consumption if we actually call Consume()/Release() on
   // this tracker or an descendent.
   if (consumption_metric_ == nullptr || parent_ == nullptr) {
-    ss << " Peak=" << PrettyPrinter::Print(peak_consumption, TUnit::BYTES);
+    ss << " Peak=" << PrettyPrinter::print(peak_consumption, TUnit::BYTES);
   }
 
   // This call does not need the children, so return early.
@@ -357,13 +358,13 @@ string MemTracker::LogUsage(int max_recursive_depth, const string& prefix,
     int64_t untracked_bytes = curr_consumption - child_consumption;
     ss << "\n"
        << new_prefix << "Untracked Memory: Total="
-       << PrettyPrinter::Print(untracked_bytes, TUnit::BYTES);
+       << PrettyPrinter::print(untracked_bytes, TUnit::BYTES);
   }
   return ss.str();
 }
 
 string MemTracker::LogUsage(int max_recursive_depth, const string& prefix,
-    const list<MemTracker*>& trackers, int64_t* logged_consumption) {
+    const std::list<MemTracker*>& trackers, int64_t* logged_consumption) {
   *logged_consumption = 0;
   vector<string> usage_strings;
   for (MemTracker* tracker : trackers) {
@@ -423,7 +424,7 @@ Status MemTracker::MemLimitExceeded(MemTracker* mtracker, RuntimeState* state,
   if (failed_allocation_size != 0) {
     if (mtracker != nullptr) ss << mtracker->label();
     ss << " could not allocate "
-       << PrettyPrinter::Print(failed_allocation_size, TUnit::BYTES)
+       << PrettyPrinter::print(failed_allocation_size, TUnit::BYTES)
        << " without exceeding limit." << endl;
   }
   ss << "Error occurred on backend " << GetBackendString();
@@ -433,7 +434,7 @@ Status MemTracker::MemLimitExceeded(MemTracker* mtracker, RuntimeState* state,
   MemTracker* process_tracker = exec_env->process_mem_tracker();
   const int64_t process_capacity = process_tracker->SpareCapacity(MemLimit::HARD);
   ss << "Memory left in process limit: "
-     << PrettyPrinter::Print(process_capacity, TUnit::BYTES) << endl;
+     << PrettyPrinter::print(process_capacity, TUnit::BYTES) << endl;
 
   // Always log the query tracker (if available).
   MemTracker* query_tracker = nullptr;
@@ -444,7 +445,7 @@ Status MemTracker::MemLimitExceeded(MemTracker* mtracker, RuntimeState* state,
         const int64_t query_capacity =
             query_tracker->limit() - query_tracker->consumption();
         ss << "Memory left in query limit: "
-           << PrettyPrinter::Print(query_capacity, TUnit::BYTES) << endl;
+           << PrettyPrinter::print(query_capacity, TUnit::BYTES) << endl;
       }
       ss << query_tracker->LogUsage(UNLIMITED_DEPTH);
     }
@@ -459,7 +460,7 @@ Status MemTracker::MemLimitExceeded(MemTracker* mtracker, RuntimeState* state,
   }
 
   Status status = Status::MemLimitExceeded(ss.str());
-  if (state != nullptr) state->LogError(status.msg());
+  if (state != nullptr) state->log_error(status.msg());
   return status;
 }
 
@@ -469,7 +470,7 @@ void MemTracker::AddGcFunction(GcFunction f) {
 
 bool MemTracker::LimitExceededSlow(MemLimit mode) {
   if (mode == MemLimit::HARD && bytes_over_limit_metric_ != nullptr) {
-    bytes_over_limit_metric_->SetValue(consumption() - limit_);
+    bytes_over_limit_metric_->set_value(consumption() - limit_);
   }
   return GcMemory(GetLimit(mode));
 }
@@ -481,7 +482,7 @@ bool MemTracker::GcMemory(int64_t max_consumption) {
   int64_t pre_gc_consumption = consumption();
   // Check if someone gc'd before us
   if (pre_gc_consumption < max_consumption) return false;
-  if (num_gcs_metric_ != NULL) num_gcs_metric_->Increment(1);
+  if (num_gcs_metric_ != NULL) num_gcs_metric_->increment(1);
 
   int64_t curr_consumption = pre_gc_consumption;
   // Try to free up some memory
@@ -498,7 +499,7 @@ bool MemTracker::GcMemory(int64_t max_consumption) {
   }
 
   if (bytes_freed_by_last_gc_metric_ != NULL) {
-    bytes_freed_by_last_gc_metric_->SetValue(pre_gc_consumption - curr_consumption);
+    bytes_freed_by_last_gc_metric_->set_value(pre_gc_consumption - curr_consumption);
   }
   return curr_consumption > max_consumption;
 }
