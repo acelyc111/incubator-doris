@@ -66,8 +66,8 @@ MemTracker::MemTracker(
     bytes_freed_by_last_gc_metric_(NULL),
     bytes_over_limit_metric_(NULL),
     limit_metric_(NULL) {
-    _auto_unregister(auto_unregister) {
-        if (parent != NULL) _parent->add_child_tracker(this);
+    auto_unregister_(auto_unregister) {
+        if (parent != NULL) parent_->add_child_tracker(this);
   Init();
 }
 
@@ -85,7 +85,7 @@ MemTracker::MemTracker(RuntimeProfile* profile, int64_t byte_limit,
     bytes_freed_by_last_gc_metric_(NULL),
     bytes_over_limit_metric_(NULL),
     limit_metric_(NULL) {
-        if (parent != NULL) _parent->add_child_tracker(this);
+        if (parent != NULL) parent_->add_child_tracker(this);
   Init();
 }
 
@@ -168,7 +168,7 @@ int64_t MemTracker::SpareCapacity(MemLimit mode) const {
 
 void MemTracker::RefreshConsumptionFromMetric() {
   DCHECK(consumption_metric_ != nullptr);
-  consumption_->Set(consumption_metric_->GetValue());
+  consumption_->set(consumption_metric_->GetValue());
 }
 
 int64_t MemTracker::GetPoolMemReserved() {
@@ -180,7 +180,7 @@ int64_t MemTracker::GetPoolMemReserved() {
   lock_guard<SpinLock> l(child_trackers_lock_);
   for (MemTracker* child : child_trackers_) {
     int64_t child_limit = child->limit();
-    bool query_exec_finished = child->query_exec_finished_.Load() != 0;
+    bool query_exec_finished = child->query_exec_finished_.load() != 0;
     if (child_limit > 0 && !query_exec_finished) {
       // Make sure we don't overflow if the query limits are set to ridiculous values.
       mem_reserved += std::min(child_limit, MemInfo::physical_mem());
@@ -242,23 +242,23 @@ MemTracker::~MemTracker() {
   DCHECK(closed_) << label_;
   delete reservation_counters_.Load();
 
-    if (_auto_unregister && parent()) {
+    if (auto_unregister_ && parent()) {
         unregister_from_parent();
     }
 }
 
-void MemTracker::RegisterMetrics(MetricGroup* metrics, const string& prefix) {
-  num_gcs_metric_ = metrics->AddCounter(Substitute("$0.num-gcs", prefix), 0);
-
-  // TODO: Consider a total amount of bytes freed counter
-  bytes_freed_by_last_gc_metric_ = metrics->AddGauge(
-      Substitute("$0.bytes-freed-by-last-gc", prefix), -1);
-
-  bytes_over_limit_metric_ = metrics->AddGauge(
-      Substitute("$0.bytes-over-limit", prefix), -1);
-
-  limit_metric_ = metrics->AddGauge(Substitute("$0.limit", prefix), limit_);
-}
+//void MemTracker::RegisterMetrics(MetricGroup* metrics, const string& prefix) {
+//  num_gcs_metric_ = metrics->AddCounter(Substitute("$0.num-gcs", prefix), 0);
+//
+//  // TODO: Consider a total amount of bytes freed counter
+//  bytes_freed_by_last_gc_metric_ = metrics->AddGauge(
+//      Substitute("$0.bytes-freed-by-last-gc", prefix), -1);
+//
+//  bytes_over_limit_metric_ = metrics->AddGauge(
+//      Substitute("$0.bytes-over-limit", prefix), -1);
+//
+//  limit_metric_ = metrics->AddGauge(Substitute("$0.limit", prefix), limit_);
+//}
 
 void MemTracker::TransferTo(MemTracker* dst, int64_t bytes) {
   DCHECK_EQ(all_trackers_.back(), dst->all_trackers_.back())
