@@ -63,7 +63,7 @@ public:
     // It must be okay to call this multiple times. Subsequent calls should
     // be ignored.
     virtual Status close(RuntimeState* state, Status exec_status) {
-        _expr_mem_tracker->close();
+        _expr_mem_tracker->Close();
         _closed = true;   
         return Status::OK();
     }

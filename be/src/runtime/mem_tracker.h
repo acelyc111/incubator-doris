@@ -266,7 +266,7 @@ class MemTracker {
   }
   
     // Return limit exceeded tracker or null
-    MemTracker* findlimit__exceeded_tracker() {
+    MemTracker* find_limit_exceeded_tracker() {
         for (std::vector<MemTracker*>::iterator tracker = limit_trackers_.begin();
                 tracker != limit_trackers_.end(); ++tracker) {
             if ((*tracker)->limit_exceeded()) {

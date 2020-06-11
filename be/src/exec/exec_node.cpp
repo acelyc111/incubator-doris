@@ -247,11 +247,11 @@ Status ExecNode::close(RuntimeState* state) {
     }
 
     if (_expr_mem_tracker != nullptr) { 
-        _expr_mem_tracker->close();
+        _expr_mem_tracker->Close();
     }
   
     if (_mem_tracker != nullptr) {
-        _mem_tracker->close();
+        _mem_tracker->Close();
     }
 
     return result;
