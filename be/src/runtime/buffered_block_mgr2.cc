@@ -110,7 +110,7 @@ public:
         if (buffer->len == _mgr->max_block_size()) {
             DCHECK_GT(_num_pinned_buffers, 0);
             --_num_pinned_buffers;
-            _tracker->release_local(buffer->len, _query_tracker);
+            _tracker->ReleaseLocal(buffer->len, _query_tracker);
             // _tracker->Release(buffer->len);
         }
     }
@@ -264,7 +264,7 @@ int64_t BufferedBlockMgr2::available_buffers(Client* client) const {
 int64_t BufferedBlockMgr2::remaining_unreserved_buffers() const {
     int64_t num_buffers = _free_io_buffers.size() +
         _unpinned_blocks.size() + _non_local_outstanding_writes;
-    num_buffers += _mem_tracker->SpareCapacity() / max_block_size();
+    num_buffers += _mem_tracker->SpareCapacity(MemLimit::HARD) / max_block_size();
     num_buffers -= _unfullfilled_reserved_buffers;
     return num_buffers;
 }
@@ -405,7 +405,7 @@ bool BufferedBlockMgr2::consume_memory(Client* client, int64_t size) {
 
 void BufferedBlockMgr2::release_memory(Client* client, int64_t size) {
     _mem_tracker->Release(size);
-    client->_tracker->release_local(size, client->_query_tracker);
+    client->_tracker->ReleaseLocal(size, client->_query_tracker);
 }
 
 void BufferedBlockMgr2::cancel() {
@@ -1244,8 +1244,8 @@ string BufferedBlockMgr2::debug_internal() const {
         << "  Num available buffers: " << remaining_unreserved_buffers() << endl
         << "  Total pinned buffers: " << _total_pinned_buffers << endl
         << "  Unfullfilled reserved buffers: " << _unfullfilled_reserved_buffers << endl
-        << "  Remaining memory: " << _mem_tracker->SpareCapacity()
-        << " (#blocks=" << (_mem_tracker->SpareCapacity() / _max_block_size) << ")" << endl
+        << "  Remaining memory: " << _mem_tracker->SpareCapacity(MemLimit::HARD)
+        << " (#blocks=" << (_mem_tracker->SpareCapacity(MemLimit::HARD) / _max_block_size) << ")" << endl
         << "  Block write threshold: " << _block_write_threshold;
     return ss.str();
 }

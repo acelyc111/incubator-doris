@@ -296,7 +296,7 @@ class MemTracker {
     bool limit_exceeded() const { return limit_ >= 0 && limit_ < consumption(); }
 
   int64_t limit() const { return limit_; }
-  bool haslimit_() const { return limit_ >= 0; }
+  bool has_limit() const { return limit_ >= 0; }
   int64_t softlimit_() const { return softlimit__; }
   int64_t GetLimit(MemLimit mode) const {
     if (mode == MemLimit::SOFT) return softlimit_();

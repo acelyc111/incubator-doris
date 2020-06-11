@@ -85,6 +85,6 @@ void InitialReservations::Return(BufferPool::ClientHandle* src, int64_t bytes) {
 
 void InitialReservations::ReleaseResources() {
   initial_reservations_.Close();
-  initial_reservation_mem_tracker_->close();
+  initial_reservation_mem_tracker_->Close();
 }
 }

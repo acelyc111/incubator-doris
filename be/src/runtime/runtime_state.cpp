@@ -165,14 +165,14 @@ RuntimeState::~RuntimeState() {
     if (_instance_mem_tracker.get() != NULL) {
         // May be NULL if InitMemTrackers() is not called, for example from tests.
         _instance_mem_tracker->unregister_from_parent();
-        _instance_mem_tracker->close();
+        _instance_mem_tracker->Close();
     }
 
     _instance_mem_tracker.reset();
    
     if (_query_mem_tracker.get() != NULL) {
         _query_mem_tracker->unregister_from_parent();
-        _query_mem_tracker->close();
+        _query_mem_tracker->Close();
     }
     _query_mem_tracker.reset();
 #endif

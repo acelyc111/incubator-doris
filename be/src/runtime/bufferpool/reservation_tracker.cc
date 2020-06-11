@@ -114,7 +114,7 @@ void ReservationTracker::InitCounters(
     counters_.reservation_limit = ADD_COUNTER(profile, "ReservationLimit", TUnit::BYTES);
     COUNTER_SET(counters_.reservation_limit, reservation_limit);
   }
-  if (mem_tracker_ != nullptr) mem_tracker_->enable_reservation_reporting(counters_);
+  if (mem_tracker_ != nullptr) mem_tracker_->EnableReservationReporting(counters_);
 }
 
 void ReservationTracker::Close() {
@@ -207,7 +207,7 @@ void ReservationTracker::ReleaseToMemTracker(int64_t reservation_decrease) {
   if (GetParentMemTracker() == nullptr) {
     mem_tracker_->Release(reservation_decrease);
   } else {
-    mem_tracker_->release_local(reservation_decrease, GetParentMemTracker());
+    mem_tracker_->ReleaseLocal(reservation_decrease, GetParentMemTracker());
   }
 }
 

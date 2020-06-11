@@ -422,7 +422,7 @@ void DataStreamRecvr::close() {
     _mgr->deregister_recvr(fragment_instance_id(), dest_node_id());
     _mgr = NULL;
     _merger.reset();
-    _mem_tracker->close();
+    _mem_tracker->Close();
     _mem_tracker->unregister_from_parent();
     _mem_tracker.reset();
 }
