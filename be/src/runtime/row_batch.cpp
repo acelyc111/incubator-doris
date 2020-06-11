@@ -291,7 +291,7 @@ void RowBatch::clear() {
     if (config::enable_partitioned_aggregation) {
         DCHECK(_tuple_ptrs != NULL);
         free(_tuple_ptrs);
-        _mem_tracker->release(_tuple_ptrs_size);
+        _mem_tracker->Release(_tuple_ptrs_size);
         _tuple_ptrs = NULL;
     }
     _cleared = true;
