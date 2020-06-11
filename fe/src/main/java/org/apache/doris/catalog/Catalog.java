@@ -3079,7 +3079,7 @@ public class Catalog {
                     bfColumns, olapTable.getBfFpp(),
                     tabletIdSet, olapTable.getCopiedIndexes(),
                     singlePartitionDesc.isInMemory(),
-                    olapTable.getTableProperty().getStorageFormat());
+                    olapTable.getStorageFormat());
 
             // check again
             db.writeLock();
@@ -6176,7 +6176,7 @@ public class Catalog {
                         tabletIdSet,
                         copiedTbl.getCopiedIndexes(),
                         copiedTbl.isInMemory(),
-                        copiedTbl.getTableProperty().getStorageFormat());
+                        copiedTbl.getStorageFormat());
                 newPartitions.add(newPartition);
             }
         } catch (DdlException e) {
