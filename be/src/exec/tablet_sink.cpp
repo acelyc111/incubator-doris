@@ -39,6 +39,10 @@ NodeChannel::NodeChannel(OlapTableSink* parent, int64_t index_id, int64_t node_i
         : _parent(parent), _index_id(index_id), _node_id(node_id), _schema_hash(schema_hash) {}
 
 NodeChannel::~NodeChannel() {
+    // TODO(HW): remove after mem tracker shared
+    CHECK(!_cur_batch) << name();
+    CHECK(_pending_batches.empty()) << name();
+
     if (_open_closure != nullptr) {
         if (_open_closure->unref()) {
             delete _open_closure;
@@ -65,7 +69,7 @@ Status NodeChannel::init(RuntimeState* state) {
 
     _row_desc.reset(new RowDescriptor(_tuple_desc, false));
     _batch_size = state->batch_size();
-    _cur_batch.reset(new RowBatch(*_row_desc, _batch_size, _parent->_mem_tracker));
+    _cur_batch.reset(new RowBatch(*_row_desc, _batch_size, _parent->_mem_tracker.get()));
 
     _stub = state->exec_env()->brpc_stub_cache()->get_stub(_node_info->host, _node_info->brpc_port);
     if (_stub == nullptr) {
@@ -187,7 +191,8 @@ Status NodeChannel::add_row(Tuple* input_tuple, int64_t tablet_id) {
     // But there is still some unfinished things, we do mem limit here temporarily.
     // _cancelled may be set by rpc callback, and it's possible that _cancelled might be set in any of the steps below.
     // It's fine to do a fake add_row() and return OK, because we will check _cancelled in next add_row() or mark_close().
-    while (!_cancelled && _parent->_mem_tracker->any_limit_exceeded() && _pending_batches_num > 0) {
+    while (!_cancelled && _parent->_mem_tracker->AnyLimitExceeded(MemLimit::HARD) &&
+           _pending_batches_num > 0) {
         SCOPED_RAW_TIMER(&_mem_exceeded_block_ns);
         SleepFor(MonoDelta::FromMilliseconds(10));
     }
@@ -202,7 +207,7 @@ Status NodeChannel::add_row(Tuple* input_tuple, int64_t tablet_id) {
             _pending_batches_num++;
         }
 
-        _cur_batch.reset(new RowBatch(*_row_desc, _batch_size, _parent->_mem_tracker));
+        _cur_batch.reset(new RowBatch(*_row_desc, _batch_size, _parent->_mem_tracker.get()));
         _cur_add_batch_request.clear_tablet_ids();
 
         row_no = _cur_batch->add_row();
@@ -248,13 +253,11 @@ Status NodeChannel::close_wait(RuntimeState* state) {
     timer.stop();
     VLOG(1) << name() << " close_wait cost: " << timer.elapsed_time() / 1000000 << " ms";
 
-    {
-        std::lock_guard<std::mutex> lg(_pending_batches_lock);
-        DCHECK(_pending_batches.empty());
-        DCHECK(_cur_batch == nullptr);
-    }
-
     if (_add_batches_finished) {
+        std::lock_guard<std::mutex> lg(_pending_batches_lock);
+        CHECK(_pending_batches.empty());
+        CHECK(_cur_batch == nullptr);
+
         state->tablet_commit_infos().insert(state->tablet_commit_infos().end(),
                                             std::make_move_iterator(_tablet_commit_infos.begin()),
                                             std::make_move_iterator(_tablet_commit_infos.end()));
@@ -280,15 +283,6 @@ void NodeChannel::cancel() {
     closure->cntl.set_timeout_ms(_rpc_timeout_ms);
     _stub->tablet_writer_cancel(&closure->cntl, &request, &closure->result, closure);
     request.release_id();
-
-    // Beware of the destruct sequence. RowBatches will use mem_trackers(include ancestors).
-    // Delete RowBatches here is a better choice to reduce the potential of dtor errors.
-    {
-        std::lock_guard<std::mutex> lg(_pending_batches_lock);
-        std::queue<AddBatchReq> empty;
-        std::swap(_pending_batches, empty);
-        _cur_batch.reset();
-    }
 }
 
 int NodeChannel::try_send_and_fetch_status() {
@@ -356,6 +350,12 @@ Status NodeChannel::none_of(std::initializer_list<bool> vars) {
     }
 
     return st;
+}
+
+void NodeChannel::clear_all_batches() {
+    std::queue<AddBatchReq> empty;
+    std::swap(_pending_batches, empty);
+    _cur_batch.reset();
 }
 
 IndexChannel::~IndexChannel() {}
@@ -458,13 +458,12 @@ Status OlapTableSink::prepare(RuntimeState* state) {
 
     // profile must add to state's object pool
     _profile = state->obj_pool()->add(new RuntimeProfile(_pool, "OlapTableSink"));
-    _mem_tracker = _pool->add(new MemTracker(-1, "OlapTableSink", state->instance_mem_tracker()));
+    _mem_tracker.reset(new MemTracker(-1, "OlapTableSink", state->instance_mem_tracker()));
 
     SCOPED_TIMER(_profile->total_time_counter());
 
     // Prepare the exprs to run.
-    RETURN_IF_ERROR(
-            Expr::prepare(_output_expr_ctxs, state, _input_row_desc, _expr_mem_tracker.get()));
+    RETURN_IF_ERROR(Expr::prepare(_output_expr_ctxs, state, _input_row_desc, _expr_mem_tracker));
 
     // get table's tuple descriptor
     _output_tuple_desc = state->desc_tbl().get_tuple_descriptor(_tuple_desc_id);
@@ -492,7 +491,7 @@ Status OlapTableSink::prepare(RuntimeState* state) {
     }
 
     _output_row_desc = _pool->add(new RowDescriptor(_output_tuple_desc, false));
-    _output_batch.reset(new RowBatch(*_output_row_desc, state->batch_size(), _mem_tracker));
+    _output_batch.reset(new RowBatch(*_output_row_desc, state->batch_size(), _mem_tracker.get()));
 
     _max_decimal_val.resize(_output_tuple_desc->slots().size());
     _min_decimal_val.resize(_output_tuple_desc->slots().size());
@@ -661,7 +660,7 @@ Status OlapTableSink::close(RuntimeState* state, Status close_status) {
             SCOPED_TIMER(_close_timer);
             for (auto index_channel : _channels) {
                 index_channel->for_each_node_channel(
-                        [](NodeChannel* ch) { WARN_IF_ERROR(ch->mark_close(), ""); });
+                        [](NodeChannel* ch) { WARN_IF_ERROR(ch->mark_close(), ch->name()); });
             }
 
             for (auto index_channel : _channels) {
@@ -718,6 +717,11 @@ Status OlapTableSink::close(RuntimeState* state, Status close_status) {
     // But there is no specific sequence required between sender join() & close_wait().
     if (_sender_thread.joinable()) {
         _sender_thread.join();
+    }
+
+    // TODO(HW): remove after mem tracker shared
+    for (auto channel : _channels) {
+        channel->for_each_node_channel([](NodeChannel* ch) { ch->clear_all_batches(); });
     }
 
     Expr::close(_output_expr_ctxs, state);
