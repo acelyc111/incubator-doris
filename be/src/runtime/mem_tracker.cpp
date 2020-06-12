@@ -64,14 +64,13 @@ MemTracker::MemTracker(
     parent_(parent),
     consumption_(&local_counter_),
     local_counter_(TUnit::BYTES),
-    consumption_metric_(NULL),
+    consumption_metric_(nullptr),
     log_usage_if_zero_(log_usage_if_zero),
-    num_gcs_metric_(NULL),
-    bytes_freed_by_last_gc_metric_(NULL),
-    bytes_over_limit_metric_(NULL),
-    limit_metric_(NULL),
+    num_gcs_metric_(nullptr),
+    bytes_freed_by_last_gc_metric_(nullptr),
+    bytes_over_limit_metric_(nullptr),
+    limit_metric_(nullptr),
     auto_unregister_(auto_unregister) {
-  if (parent != NULL) parent_->AddChildTracker(this);
   Init();
 }
 
@@ -83,13 +82,12 @@ MemTracker::MemTracker(RuntimeProfile* profile, int64_t byte_limit,
     parent_(parent),
     consumption_(profile->AddHighWaterMarkCounter(COUNTER_NAME, TUnit::BYTES)),
     local_counter_(TUnit::BYTES),
-    consumption_metric_(NULL),
+    consumption_metric_(nullptr),
     log_usage_if_zero_(true),
-    num_gcs_metric_(NULL),
-    bytes_freed_by_last_gc_metric_(NULL),
-    bytes_over_limit_metric_(NULL),
-    limit_metric_(NULL) {
-  if (parent != NULL) parent_->AddChildTracker(this);
+    num_gcs_metric_(nullptr),
+    bytes_freed_by_last_gc_metric_(nullptr),
+    bytes_over_limit_metric_(nullptr),
+    limit_metric_(nullptr) {
   Init();
 }
 
@@ -103,29 +101,29 @@ MemTracker::MemTracker(IntGauge* consumption_metric,
     local_counter_(TUnit::BYTES),
     consumption_metric_(consumption_metric),
     log_usage_if_zero_(true),
-    num_gcs_metric_(NULL),
-    bytes_freed_by_last_gc_metric_(NULL),
-    bytes_over_limit_metric_(NULL),
-    limit_metric_(NULL) {
+    num_gcs_metric_(nullptr),
+    bytes_freed_by_last_gc_metric_(nullptr),
+    bytes_over_limit_metric_(nullptr),
+    limit_metric_(nullptr) {
   Init();
 }
 
 void MemTracker::Init() {
   DCHECK_GE(limit_, -1);
   DCHECK_LE(soft_limit_, limit_);
-  if (parent_ != NULL) parent_->AddChildTracker(this);
+  if (parent_ != nullptr) parent_->AddChildTracker(this);
   // populate all_trackers_ and limit_trackers_
   MemTracker* tracker = this;
-  while (tracker != NULL) {
+  while (tracker != nullptr) {
     all_trackers_.push_back(tracker);
     if (tracker->has_limit()) limit_trackers_.push_back(tracker);
-    tracker = tracker->parent_;
+    tracker = tracker->parent_.get();
   }
   DCHECK_GT(all_trackers_.size(), 0);
   DCHECK_EQ(all_trackers_[0], this);
 }
 
-void MemTracker::AddChildTracker(MemTracker* tracker) {
+void MemTracker::AddChildTracker(const std::shared_ptr<MemTracker>& tracker) {
   lock_guard<SpinLock> l(child_trackers_lock_);
   tracker->child_tracker_it_ = child_trackers_.insert(child_trackers_.end(), tracker);
 }
@@ -142,9 +140,7 @@ void MemTracker::Close() {
 
 void MemTracker::CloseAndUnregisterFromParent() {
   Close();
-  lock_guard<SpinLock> l(parent_->child_trackers_lock_);
-  parent_->child_trackers_.erase(child_tracker_it_);
-  child_tracker_it_ = parent_->child_trackers_.end();
+  unregister_from_parent();
 }
 
 void MemTracker::EnableReservationReporting(const ReservationTrackerCounters& counters) {
@@ -162,8 +158,8 @@ int64_t MemTracker::GetLowestLimit(MemLimit mode) const {
 }
 
 int64_t MemTracker::SpareCapacity(MemLimit mode) const {
-  int64_t result = numeric_limits<int64_t>::max();
-  for (MemTracker* tracker : limit_trackers_) {
+  int64_t result = std::numeric_limits<int64_t>::max();
+  for (const auto& tracker : limit_trackers_) {
     int64_t mem_left = tracker->GetLimit(mode) - tracker->consumption();
     result = std::min(result, mem_left);
   }
@@ -240,15 +236,20 @@ MemTracker* MemTracker::CreateQueryMemTracker(const TUniqueId& id,
 }
 
 MemTracker::~MemTracker() {
-  // We should explicitly close MemTrackers in the context of a daemon process. It is ok
-  // if backend tests don't call Close() to make tests more concise.
-  //if (TestInfo::is_test()) Close();
+  // We should explicitly close MemTrackers in the context of a daemon process.
+  // It is ok if backend tests don't call Close() to make tests more concise.
+  // if (TestInfo::is_test()) Close();
   DCHECK(closed_) << label_;
   delete reservation_counters_.load();
 
-    if (auto_unregister_ && parent()) {
-        unregister_from_parent();
+  if (parent()) {
+    DCHECK(consumption() == 0) << "Memory tracker " << ToString()
+                               << " has unreleased consumption " << consumption();
+    parent_->Release(consumption());
+    if (auto_unregister_) {  // TODO(yingchun): when auto_unregister_ is false, and can it be false?
+      unregister_from_parent();
     }
+  }
 }
 
 //void MemTracker::RegisterMetrics(MetricGroup* metrics, const string& prefix) {
@@ -370,7 +371,7 @@ string MemTracker::LogUsage(int max_recursive_depth, const string& prefix,
     const std::list<MemTracker*>& trackers, int64_t* logged_consumption) {
   *logged_consumption = 0;
   vector<string> usage_strings;
-  for (MemTracker* tracker : trackers) {
+  for (const auto& tracker : trackers) {
     int64_t tracker_consumption;
     string usage_string = tracker->LogUsage(max_recursive_depth, prefix,
         &tracker_consumption);
@@ -401,7 +402,7 @@ void MemTracker::GetTopNQueries(
         greater<pair<int64_t, string>>>& min_pq,
     int limit) {
   lock_guard<SpinLock> l(child_trackers_lock_);
-  for (MemTracker* tracker : child_trackers_) {
+  for (const auto& tracker : child_trackers_) {
     if (!tracker->is_query_mem_tracker_) {
       tracker->GetTopNQueries(min_pq, limit);
     } else {
@@ -481,11 +482,11 @@ bool MemTracker::LimitExceededSlow(MemLimit mode) {
 bool MemTracker::GcMemory(int64_t max_consumption) {
   if (max_consumption < 0) return true;
   lock_guard<std::mutex> l(gc_lock_);
-  if (consumption_metric_ != NULL) RefreshConsumptionFromMetric();
+  if (consumption_metric_ != nullptr) RefreshConsumptionFromMetric();
   int64_t pre_gc_consumption = consumption();
   // Check if someone gc'd before us
   if (pre_gc_consumption < max_consumption) return false;
-  if (num_gcs_metric_ != NULL) num_gcs_metric_->increment(1);
+  if (num_gcs_metric_ != nullptr) num_gcs_metric_->increment(1);
 
   int64_t curr_consumption = pre_gc_consumption;
   // Try to free up some memory
@@ -496,12 +497,12 @@ bool MemTracker::GcMemory(int64_t max_consumption) {
     const int64_t EXTRA_BYTES_TO_FREE = 512L * 1024L * 1024L;
     int64_t bytes_to_free = curr_consumption - max_consumption + EXTRA_BYTES_TO_FREE;
     gc_functions_[i](bytes_to_free);
-    if (consumption_metric_ != NULL) RefreshConsumptionFromMetric();
+    if (consumption_metric_ != nullptr) RefreshConsumptionFromMetric();
     curr_consumption = consumption();
     if (max_consumption - curr_consumption <= EXTRA_BYTES_TO_FREE) break;
   }
 
-  if (bytes_freed_by_last_gc_metric_ != NULL) {
+  if (bytes_freed_by_last_gc_metric_ != nullptr) {
     bytes_freed_by_last_gc_metric_->set_value(pre_gc_consumption - curr_consumption);
   }
   return curr_consumption > max_consumption;

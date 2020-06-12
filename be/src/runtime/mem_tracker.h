@@ -81,8 +81,9 @@ class TQueryOptions;
 /// call back into MemTrackers, except to release memory.
 //
 /// This class is thread-safe.
-class MemTracker {
+class MemTracker : public std::enable_shared_from_this<MemTracker> {
  public:
+  // TODO(yingchun): change to std::shared_ptr<MemTracker> parent
   /// 'bytelimit_' < 0 means no limit
   /// 'label' is the label used in the usage string (LogUsage())
   /// If 'auto_unregister' is true, never call unregister_from_parent().
@@ -139,15 +140,21 @@ class MemTracker {
 
   /// Increases consumption of this tracker and its ancestors by 'bytes'.
   void Consume(int64_t bytes) {
-    DCHECK_GE(bytes, 0);
+    // DCHECK_GE(bytes, 0);
     DCHECK(!closed_) << label_;
-    if (UNLIKELY(bytes <= 0)) return; // < 0 needed in RELEASE, hits DCHECK in DEBUG
+    if (bytes < 0) {
+      Release(-bytes);
+      return;
+    }
+    if (bytes == 0) {
+      return;
+    }
 
     if (consumption_metric_ != nullptr) {
       RefreshConsumptionFromMetric();
-      return;
+      return;  // TODO(yingchun): why return not update tracker?
     }
-    for (MemTracker* tracker : all_trackers_) {
+    for (auto& tracker : all_trackers_) {
       tracker->consumption_->add(bytes);
       if (tracker->consumption_metric_ == nullptr) {
         DCHECK_GE(tracker->consumption_->current_value(), 0);
@@ -181,10 +188,14 @@ class MemTracker {
   /// of success. Returns true if the consumption was successfully updated.
   WARN_UNUSED_RESULT
   bool TryConsume(int64_t bytes, MemLimit mode = MemLimit::HARD) {
-    DCHECK_GE(bytes, 0);
+    // DCHECK_GE(bytes, 0);
     DCHECK(!closed_) << label_;
-    if (UNLIKELY(bytes == 0)) return true;
-    if (UNLIKELY(bytes < 0)) return false; // needed in RELEASE, hits DCHECK in DEBUG
+    if (bytes <= 0) {
+        Release(-bytes);
+        return true;
+    }
+    // if (UNLIKELY(bytes == 0)) return true;
+    // if (UNLIKELY(bytes < 0)) return false; // needed in RELEASE, hits DCHECK in DEBUG
     if (consumption_metric_ != nullptr) RefreshConsumptionFromMetric();
     int i;
     // Walk the tracker tree top-down.
@@ -224,15 +235,24 @@ class MemTracker {
 
   /// Decreases consumption of this tracker and its ancestors by 'bytes'.
   void Release(int64_t bytes) {
-    DCHECK_GE(bytes, 0);
+    // DCHECK_GE(bytes, 0);
     DCHECK(!closed_) << label_;
-    if (UNLIKELY(bytes <= 0)) return; // < 0 needed in RELEASE, hits DCHECK in DEBUG
+    if (bytes < 0) {
+      Consume(-bytes);
+      return;
+    }
+
+    if (bytes == 0) {
+      return;
+    }
+
+    // if (UNLIKELY(bytes <= 0)) return; // < 0 needed in RELEASE, hits DCHECK in DEBUG
 
     if (consumption_metric_ != nullptr) {
       RefreshConsumptionFromMetric();
       return;
     }
-    for (MemTracker* tracker : all_trackers_) {
+    for (auto& tracker : all_trackers_) {
       tracker->consumption_->add(-bytes);
       /// If a UDF calls FunctionContext::TrackAllocation() but allocates less than the
       /// reported amount, the subsequent call to FunctionContext::Free() may cause the
@@ -257,8 +277,10 @@ class MemTracker {
   /// Returns true if a valid limit of this tracker or one of its ancestors is
   /// exceeded.
   bool AnyLimitExceeded(MemLimit mode) {
-    for (MemTracker* tracker : limit_trackers_) {
-      if (tracker->LimitExceeded(mode)) return true;
+    for (const auto& tracker : limit_trackers_) {
+      if (tracker->LimitExceeded(mode)) {
+        return true;
+      }
     }
     return false;
   }
@@ -272,16 +294,15 @@ class MemTracker {
     return false;
   }
   
-    // Return limit exceeded tracker or null
-    MemTracker* find_limit_exceeded_tracker() {
-        for (std::vector<MemTracker*>::iterator tracker = limit_trackers_.begin();
-                tracker != limit_trackers_.end(); ++tracker) {
-            if ((*tracker)->limit_exceeded()) {
-                return *tracker;
-            }
-        }
-        return NULL;
+  // Return limit exceeded tracker or null
+  MemTracker* find_limit_exceeded_tracker() {
+    for (const auto& tracker : limit_trackers_) {
+      if (tracker->limit_exceeded()) {
+        return tracker;
+      }
     }
+    return nullptr;
+  }
 
   /// Returns the maximum consumption that can be made without exceeding the limit on
   /// this tracker or any of its parents. Returns int64_t::max() if there are no
@@ -292,13 +313,15 @@ class MemTracker {
   /// call if this tracker has a consumption metric.
   void RefreshConsumptionFromMetric();
 
-    bool limit_exceeded() const { return limit_ >= 0 && limit_ < consumption(); }
+  // TODO(yingchun): following functions are old style which have no MemLimit parameter
+  bool limit_exceeded() const { return limit_ >= 0 && limit_ < consumption(); }
 
   int64_t limit() const { return limit_; }
   bool has_limit() const { return limit_ >= 0; }
-  int64_t softlimit_() const { return soft_limit_; }
+
+  int64_t soft_limit() const { return soft_limit_; }
   int64_t GetLimit(MemLimit mode) const {
-    if (mode == MemLimit::SOFT) return softlimit_();
+    if (mode == MemLimit::SOFT) return soft_limit();
     DCHECK_ENUM_EQ(mode, MemLimit::HARD);
     return limit();
   }
@@ -323,7 +346,7 @@ class MemTracker {
   /// consumption_metric_ has ever reached.
   int64_t peak_consumption() const { return consumption_->value(); }
 
-  MemTracker* parent() const { return parent_; }
+  std::shared_ptr<MemTracker> parent() const { return parent_; }
 
   /// Signature for function that can be called to free some memory after limit is
   /// reached. The function should try to free at least 'bytes_to_free' bytes of
@@ -339,6 +362,7 @@ class MemTracker {
 
   /// Register this MemTracker's metrics. Each key will be of the form
   /// "<prefix>.<metric name>".
+  // TODO(yingchun): remove comments
   //void RegisterMetrics(MetricGroup* metrics, const std::string& prefix);
 
   /// Logs the usage of this tracker and optionally its children (recursively).
@@ -383,37 +407,37 @@ class MemTracker {
     query_exec_finished_.store(1);
   }
 
-    static void update_limits(int64_t bytes, std::vector<MemTracker*>* limits) {
-        for (std::vector<MemTracker*>::iterator i = limits->begin(); i != limits->end(); ++i) {
-            (*i)->Consume(bytes);
-        }
+  static void update_limits(int64_t bytes, std::vector<MemTracker*>* trackers) {
+    for (auto& tracker : *trackers) {
+      tracker->Consume(bytes);
+    }
+  }
+
+  static bool limit_exceeded(const std::vector<MemTracker*>& limits) {
+    for (auto& tracker : *trackers) {
+      if (tracker->limit_exceeded()) {
+        // TODO: remove logging
+        LOG(WARNING) << "exceeded limit: limit=" << tracker->limit() << " consumption="
+                     << tracker->consumption();
+        return true;
+      }
     }
 
-    static bool limit_exceeded(const std::vector<MemTracker*>& limits) {
-        for (std::vector<MemTracker*>::const_iterator i = limits.begin(); i != limits.end(); ++i) {
-            if ((*i)->limit_exceeded()) {
-                // TODO: remove logging
-                LOG(WARNING) << "exceeded limit: limit=" << (*i)->limit() << " consumption="
-                             << (*i)->consumption();
-                return true;
-            }
-        }
+    return false;
+  }
 
-        return false;
-    }
+  std::string debug_string() {
+    std::stringstream msg;
+    msg << "limit: " << limit_ << "; "
+        << "consumption: " << consumption_->current_value() << "; "
+        << "label: " << label_ << "; "
+        << "all tracker size: " << all_trackers_.size() << "; "
+        << "limit trackers size: " << limit_trackers_.size() << "; "
+        << "parent is null: " << ((parent_ == NULL) ? "true" : "false") << "; ";
+    return msg.str();
+  }
 
-    std::string debug_string() {
-        std::stringstream msg;
-        msg << "limit: " << limit_ << "; "
-            << "consumption: " << consumption_->current_value() << "; "
-            << "label: " << label_ << "; "
-            << "all tracker size: " << all_trackers_.size() << "; "
-            << "limit trackers size: " << limit_trackers_.size() << "; "
-            << "parent is null: " << ((parent_ == NULL) ? "true" : "false") << "; ";
-        return msg.str();
-    }
-
-    bool is_consumption_metric_null() { return consumption_metric_ == nullptr; }
+  bool is_consumption_metric_null() { return consumption_metric_ == nullptr; }
   
   static const std::string COUNTER_NAME;
 
@@ -439,7 +463,7 @@ class MemTracker {
   void Init();
 
   /// Adds tracker to child_trackers_
-  void AddChildTracker(MemTracker* tracker);
+  void AddChildTracker(const std::shared_ptr<MemTracker>& tracker);
 
   /// Log consumption of all the trackers provided. Returns the sum of consumption in
   /// 'logged_consumption'. 'max_recursive_depth' specifies the maximum number of levels
@@ -503,7 +527,7 @@ class MemTracker {
 
   /// The parent of this tracker. The pointer is never modified, even after this tracker
   /// is unregistered.
-  MemTracker* const parent_;
+  std::shared_ptr<MemTracker> parent_;
 
   /// in bytes; not owned
   RuntimeProfile::HighWaterMarkCounter* consumption_;
@@ -524,15 +548,15 @@ class MemTracker {
   std::vector<MemTracker*> all_trackers_;  // this tracker plus all of its ancestors
   std::vector<MemTracker*> limit_trackers_;  // all_trackers_ with valid limits
 
-  /// All the child trackers of this tracker. Used only for computing resource pool mem
-  /// reserved and error reporting, i.e., updating a parent tracker does not update its
-  /// children.
+  // All the child trackers of this tracker. Used for error reporting and
+  // listing only (i.e. updating the consumption of a parent tracker does not
+  // update that of its children).
   SpinLock child_trackers_lock_;
-  std::list<MemTracker*> child_trackers_;
+  std::list<std::weak_ptr<MemTracker>> child_trackers_;
 
   /// Iterator into parent_->child_trackers_ for this object. Stored to have O(1)
   /// remove.
-  std::list<MemTracker*>::iterator child_tracker_it_;
+  std::list<std::weak_ptr<MemTracker>>::iterator child_tracker_it_;
 
   /// Functions to call after the limit is reached to free memory.
   std::vector<GcFunction> gc_functions_;
@@ -558,12 +582,12 @@ class MemTracker {
   /// Metric for limit_.
   IntGauge* limit_metric_;
 
-    // If true, calls unregister_from_parent() in the dtor. This is only used for
-    // the query wide trackers to remove it from the process mem tracker. The
-    // process tracker never gets deleted so it is safe to reference it in the dtor.
-    // The query tracker has lifetime shared by multiple plan fragments so it's hard
-    // to do cleanup another way.
-    bool auto_unregister_ = false;
+  // If true, calls unregister_from_parent() in the dtor. This is only used for
+  // the query wide trackers to remove it from the process mem tracker. The
+  // process tracker never gets deleted so it is safe to reference it in the dtor.
+  // The query tracker has lifetime shared by multiple plan fragments so it's hard
+  // to do cleanup another way.
+  bool auto_unregister_ = false;
 };
 
 /// Global registry for query and pool MemTrackers. Owned by ExecEnv.
