@@ -18,7 +18,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <list>
 #include <memory>
 #include <mutex>
