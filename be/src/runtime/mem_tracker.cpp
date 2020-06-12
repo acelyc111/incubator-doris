@@ -111,7 +111,7 @@ MemTracker::MemTracker(IntGauge* consumption_metric,
 void MemTracker::Init() {
   DCHECK_GE(limit_, -1);
   DCHECK_LE(soft_limit_, limit_);
-  if (parent_ != nullptr) parent_->AddChildTracker(this);
+  if (parent_ != nullptr) parent_->AddChildTracker(std::shared_ptr<MemTracker>(this));
   // populate all_trackers_ and limit_trackers_
   MemTracker* tracker = this;
   while (tracker != nullptr) {
@@ -178,16 +178,19 @@ int64_t MemTracker::GetPoolMemReserved() {
 
   int64_t mem_reserved = 0L;
   lock_guard<SpinLock> l(child_trackers_lock_);
-  for (MemTracker* child : child_trackers_) {
-    int64_t child_limit = child->limit();
-    bool query_exec_finished = child->query_exec_finished_.load() != 0;
-    if (child_limit > 0 && !query_exec_finished) {
-      // Make sure we don't overflow if the query limits are set to ridiculous values.
-      mem_reserved += std::min(child_limit, MemInfo::physical_mem());
-    } else {
-      DCHECK(query_exec_finished || child_limit == -1)
-          << child->LogUsage(UNLIMITED_DEPTH);
-      mem_reserved += child->consumption();
+  for (const auto& child_weak : t->child_trackers_) {
+    std::shared_ptr<MemTracker> child = child_weak.lock();
+    if (child) {
+      int64_t child_limit = child->limit();
+      bool query_exec_finished = child->query_exec_finished_.load() != 0;
+      if (child_limit > 0 && !query_exec_finished) {
+        // Make sure we don't overflow if the query limits are set to ridiculous values.
+        mem_reserved += std::min(child_limit, MemInfo::physical_mem());
+      } else {
+        DCHECK(query_exec_finished || child_limit == -1)
+                    << child->LogUsage(UNLIMITED_DEPTH);
+        mem_reserved += child->consumption();
+      }
     }
   }
   return mem_reserved;
@@ -243,7 +246,7 @@ MemTracker::~MemTracker() {
   delete reservation_counters_.load();
 
   if (parent()) {
-    DCHECK(consumption() == 0) << "Memory tracker " << ToString()
+    DCHECK(consumption() == 0) << "Memory tracker " << debug_string()
                                << " has unreleased consumption " << consumption();
     parent_->Release(consumption());
     if (auto_unregister_) {  // TODO(yingchun): when auto_unregister_ is false, and can it be false?
@@ -368,15 +371,18 @@ string MemTracker::LogUsage(int max_recursive_depth, const string& prefix,
 }
 
 string MemTracker::LogUsage(int max_recursive_depth, const string& prefix,
-    const std::list<MemTracker*>& trackers, int64_t* logged_consumption) {
+    const std::list<std::weak_ptr<MemTracker>>& trackers, int64_t* logged_consumption) {
   *logged_consumption = 0;
   vector<string> usage_strings;
-  for (const auto& tracker : trackers) {
-    int64_t tracker_consumption;
-    string usage_string = tracker->LogUsage(max_recursive_depth, prefix,
-        &tracker_consumption);
-    if (!usage_string.empty()) usage_strings.push_back(usage_string);
-    *logged_consumption += tracker_consumption;
+  for (const auto& tracker_weak : trackers) {
+    std::shared_ptr<MemTracker> tracker = tracker_weak.lock();
+    if (tracker) {
+      int64_t tracker_consumption;
+      string usage_string = tracker->LogUsage(max_recursive_depth, prefix,
+                                              &tracker_consumption);
+      if (!usage_string.empty()) usage_strings.push_back(usage_string);
+      *logged_consumption += tracker_consumption;
+    }
   }
   return boost::join(usage_strings, "\n");
 }
@@ -402,12 +408,15 @@ void MemTracker::GetTopNQueries(
         greater<pair<int64_t, string>>>& min_pq,
     int limit) {
   lock_guard<SpinLock> l(child_trackers_lock_);
-  for (const auto& tracker : child_trackers_) {
-    if (!tracker->is_query_mem_tracker_) {
-      tracker->GetTopNQueries(min_pq, limit);
-    } else {
-      min_pq.push(pair<int64_t, string>(tracker->consumption(), tracker->LogUsage(0)));
-      if (min_pq.size() > limit) min_pq.pop();
+  for (const auto& child_weak : t->child_trackers_) {
+    std::shared_ptr<MemTracker> child = child_weak.lock();
+    if (child) {
+      if (!child->is_query_mem_tracker_) {
+        child->GetTopNQueries(min_pq, limit);
+      } else {
+        min_pq.push(pair<int64_t, string>(child->consumption(), child->LogUsage(0)));
+        if (min_pq.size() > limit) min_pq.pop();
+      }
     }
   }
 }
@@ -415,7 +424,7 @@ void MemTracker::GetTopNQueries(
 MemTracker* MemTracker::GetQueryMemTracker() {
   MemTracker* tracker = this;
   while (tracker != nullptr && !tracker->is_query_mem_tracker_) {
-    tracker = tracker->parent_;
+    tracker = tracker->parent_.get();
   }
   return tracker;
 }

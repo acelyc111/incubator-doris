@@ -413,8 +413,8 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
     }
   }
 
-  static bool limit_exceeded(const std::vector<MemTracker*>& limits) {
-    for (auto& tracker : *trackers) {
+  static bool limit_exceeded(const std::vector<MemTracker*>& trackers) {
+    for (const auto& tracker : *trackers) {
       if (tracker->limit_exceeded()) {
         // TODO: remove logging
         LOG(WARNING) << "exceeded limit: limit=" << tracker->limit() << " consumption="
@@ -469,7 +469,7 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// 'logged_consumption'. 'max_recursive_depth' specifies the maximum number of levels
   /// of children to include in the dump. If it is zero, then no children are dumped.
   static std::string LogUsage(int max_recursive_depth, const std::string& prefix,
-      const std::list<MemTracker*>& trackers, int64_t* logged_consumption);
+      const std::list<std::weak_ptr<MemTracker>>& trackers, int64_t* logged_consumption);
 
   /// Helper function for LogTopNQueries that iterates through the MemTracker hierarchy
   /// and populates 'min_pq' with 'limit' number of elements (that contain state related
