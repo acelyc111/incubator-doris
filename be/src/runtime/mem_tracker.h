@@ -414,7 +414,7 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   }
 
   static bool limit_exceeded(const std::vector<MemTracker*>& trackers) {
-    for (const auto& tracker : *trackers) {
+    for (const auto& tracker : trackers) {
       if (tracker->limit_exceeded()) {
         // TODO: remove logging
         LOG(WARNING) << "exceeded limit: limit=" << tracker->limit() << " consumption="

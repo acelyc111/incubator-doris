@@ -178,7 +178,7 @@ int64_t MemTracker::GetPoolMemReserved() {
 
   int64_t mem_reserved = 0L;
   lock_guard<SpinLock> l(child_trackers_lock_);
-  for (const auto& child_weak : t->child_trackers_) {
+  for (const auto& child_weak : child_trackers_) {
     std::shared_ptr<MemTracker> child = child_weak.lock();
     if (child) {
       int64_t child_limit = child->limit();
@@ -408,7 +408,7 @@ void MemTracker::GetTopNQueries(
         greater<pair<int64_t, string>>>& min_pq,
     int limit) {
   lock_guard<SpinLock> l(child_trackers_lock_);
-  for (const auto& child_weak : t->child_trackers_) {
+  for (const auto& child_weak : child_trackers_) {
     std::shared_ptr<MemTracker> child = child_weak.lock();
     if (child) {
       if (!child->is_query_mem_tracker_) {
