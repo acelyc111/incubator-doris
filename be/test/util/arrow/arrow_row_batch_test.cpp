@@ -73,7 +73,7 @@ TEST_F(ArrowRowBatchTest, PrettyPrint) {
     ASSERT_TRUE(doris_st.ok());
     std::shared_ptr<MemTracker> tracker(new MemTracker());
     std::shared_ptr<RowBatch> row_batch;
-    doris_st = convert_to_row_batch(*record_batch, *row_desc, tracker.get(), &row_batch);
+    doris_st = convert_to_row_batch(*record_batch, *row_desc, tracker, &row_batch);
     ASSERT_TRUE(doris_st.ok());
 
     {
