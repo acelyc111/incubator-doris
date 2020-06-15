@@ -81,6 +81,7 @@ extern const char* k_ut_stat_path;
 extern const char* k_ut_diskstats_path;
 extern const char* k_ut_net_dev_path;
 extern const char* k_ut_fd_path;
+extern const char* k_ut_net_snmp_path;
 
 TEST_F(SystemMetricsTest, normal) {
     char buf[1024];
@@ -102,6 +103,26 @@ TEST_F(SystemMetricsTest, normal) {
 
     MetricRegistry registry("test");
     {
+        char buf[1024];
+        readlink("/proc/self/exe", buf, 1023);
+        char* dir_path = dirname(buf);
+        std::string stat_path(dir_path);
+        stat_path += "/test_data/stat_normal";
+        LOG(INFO) << stat_path;
+        k_ut_stat_path = stat_path.c_str();
+        std::string diskstats_path(dir_path);
+        diskstats_path += "/test_data/diskstats_normal";
+        k_ut_diskstats_path = diskstats_path.c_str();
+        std::string net_dev_path(dir_path);
+        net_dev_path += "/test_data/net_dev_normal";
+        k_ut_net_dev_path = net_dev_path.c_str();
+        std::string fd_path(dir_path);
+        fd_path += "/test_data/fd_file_nr";
+        k_ut_fd_path = fd_path.c_str();
+        std::string net_snmp_path(dir_path);
+        net_snmp_path += "/test_data/net_snmp_normal";
+        k_ut_net_snmp_path = net_snmp_path.c_str();
+
         std::set<std::string> disk_devices;
         disk_devices.emplace("sda");
         std::vector<std::string> network_interfaces;
@@ -216,6 +237,14 @@ TEST_F(SystemMetricsTest, normal) {
             "fd_num_used");
         ASSERT_TRUE(fd_metric != nullptr);
         ASSERT_STREQ("19520", fd_metric->to_string().c_str());
+
+        // net snmp
+        Metric* tcp_retrans_segs = registry.get_metric("snmp", MetricLabels().add("name", "tcp_retrans_segs"));
+        ASSERT_TRUE(tcp_retrans_segs != nullptr);
+        Metric* tcp_in_errs = registry.get_metric("snmp", MetricLabels().add("name","tcp_in_errs"));
+        ASSERT_TRUE(tcp_in_errs != nullptr);
+        ASSERT_STREQ("826271", tcp_retrans_segs->to_string().c_str());
+        ASSERT_STREQ("12712", tcp_in_errs->to_string().c_str());
     }
     {
         TestMetricsVisitor visitor;
