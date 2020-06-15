@@ -137,7 +137,7 @@ Status HashJoinNode::prepare(RuntimeState* state) {
                                         true) != _is_null_safe_eq_join.end());
     _hash_tbl.reset(new HashTable(
             _build_expr_ctxs, _probe_expr_ctxs, _build_tuple_size,
-            stores_nulls, _is_null_safe_eq_join, id(), mem_tracker().get(), 1024));
+            stores_nulls, _is_null_safe_eq_join, id(), mem_tracker(), 1024));
 
     _probe_batch.reset(new RowBatch(child(0)->row_desc(), state->batch_size(), mem_tracker().get()));
 

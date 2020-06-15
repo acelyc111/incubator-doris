@@ -141,7 +141,7 @@ Status SetOperationNode::open(RuntimeState* state) {
     }
     // initial build hash table used for remove duplicted
     _hash_tbl.reset(new HashTable(_child_expr_lists[0], _child_expr_lists[1], _build_tuple_size,
-                                  true, _find_nulls, id(), mem_tracker().get(), 1024));
+                                  true, _find_nulls, id(), mem_tracker(), 1024));
     RowBatch build_batch(child(0)->row_desc(), state->batch_size(), mem_tracker().get());
     RETURN_IF_ERROR(child(0)->open(state));
 

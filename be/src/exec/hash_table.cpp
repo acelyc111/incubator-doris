@@ -33,7 +33,7 @@ HashTable::HashTable(const vector<ExprContext*>& build_expr_ctxs,
                      int num_build_tuples, bool stores_nulls, 
                      const std::vector<bool>& finds_nulls,
                      int32_t initial_seed,
-                     MemTracker* mem_tracker, int64_t num_buckets) :
+                     std::shared_ptr<MemTracker> mem_tracker, int64_t num_buckets) :
         _build_expr_ctxs(build_expr_ctxs),
         _probe_expr_ctxs(probe_expr_ctxs),
         _num_build_tuples(num_build_tuples),
@@ -47,7 +47,7 @@ HashTable::HashTable(const vector<ExprContext*>& build_expr_ctxs,
         _exceeded_limit(false),
         _mem_tracker(mem_tracker),
         _mem_limit_exceeded(false) {
-    DCHECK(mem_tracker != NULL);
+    DCHECK(_mem_tracker);
     DCHECK_EQ(_build_expr_ctxs.size(), _probe_expr_ctxs.size());
 
     DCHECK_EQ((num_buckets & (num_buckets - 1)), 0) << "num_buckets must be a power of 2";

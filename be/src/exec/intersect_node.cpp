@@ -56,7 +56,7 @@ Status IntersectNode::open(RuntimeState* state) {
             SCOPED_TIMER(_build_timer);
             std::unique_ptr<HashTable> temp_tbl(
                     new HashTable(_child_expr_lists[0], _child_expr_lists[i], _build_tuple_size,
-                                  true, _find_nulls, id(), mem_tracker().get(), 1024));
+                                  true, _find_nulls, id(), mem_tracker(), 1024));
             _hash_tbl_iterator = _hash_tbl->begin();
             while (_hash_tbl_iterator.has_next()) {
                 if (_hash_tbl_iterator.matched()) {
