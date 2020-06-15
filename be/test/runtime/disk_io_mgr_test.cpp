@@ -672,7 +672,7 @@ TEST_F(DiskIoMgrTest, MemTrackers) {
             LOG(ERROR) << "Starting iteration " << iters;
         }
 
-        MemTracker mem_tracker(mem_limit_num_buffers * MAX_BUFFER_SIZE);
+        std::shared_ptr<MemTracker> mem_tracker(new MemTracker(mem_limit_num_buffers * MAX_BUFFER_SIZE));
         DiskIoMgr io_mgr(1, 1, MIN_BUFFER_SIZE, MAX_BUFFER_SIZE);
 
         Status status = io_mgr.init(mem_tracker);
@@ -755,7 +755,7 @@ TEST_F(DiskIoMgrTest, CachedReads) {
 
         Status status = io_mgr.init(mem_tracker);
         ASSERT_TRUE(status.ok());
-        MemTracker reader_mem_tracker;
+        std::shared_ptr<MemTracker> reader_mem_tracker(new MemTracker());
         DiskIoMgr::RequestContext* reader;
         status = io_mgr.register_context(&reader, reader_mem_tracker);
         ASSERT_TRUE(status.ok());
@@ -1002,7 +1002,7 @@ TEST_F(DiskIoMgrTest, Buffers) {
     // Test default min/max buffer size
     int min_buffer_size = 1024;
     int max_buffer_size = 8 * 1024 * 1024; // 8 MB
-    MemTracker mem_tracker(max_buffer_size * 2);
+    std::shared_ptr<MemTracker> mem_tracker(new MemTracker(max_buffer_size * 2));
 
     DiskIoMgr io_mgr(1, 1, min_buffer_size, max_buffer_size);
     Status status = io_mgr.init(mem_tracker);

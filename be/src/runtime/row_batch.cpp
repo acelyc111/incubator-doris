@@ -438,7 +438,7 @@ void RowBatch::add_io_buffer(DiskIoMgr::BufferDescriptor* buffer) {
     DCHECK(buffer != NULL);
     _io_buffers.push_back(buffer);
     _auxiliary_mem_usage += buffer->buffer_len();
-    buffer->set_mem_tracker(_mem_tracker);
+    buffer->set_mem_tracker(std::shared_ptr<MemTracker>(_mem_tracker));  // TODO(yingchun): fixme
 }
 
 Status RowBatch::resize_and_allocate_tuple_buffer(RuntimeState* state,
@@ -522,7 +522,7 @@ void RowBatch::transfer_resource_ownership(RowBatch* dest) {
         DiskIoMgr::BufferDescriptor* buffer = _io_buffers[i];
         dest->_io_buffers.push_back(buffer);
         dest->_auxiliary_mem_usage += buffer->buffer_len();
-        buffer->set_mem_tracker(dest->_mem_tracker);
+        buffer->set_mem_tracker(std::shared_ptr<MemTracker>(dest->_mem_tracker));   // TODO(yingchun): fixme
     }
 
     for (BufferInfo& buffer_info : _buffers) {
@@ -578,7 +578,7 @@ void RowBatch::acquire_state(RowBatch* src) {
         DiskIoMgr::BufferDescriptor* buffer = src->_io_buffers[i];
         _io_buffers.push_back(buffer);
         _auxiliary_mem_usage += buffer->buffer_len();
-        buffer->set_mem_tracker(_mem_tracker);
+        buffer->set_mem_tracker(std::shared_ptr<MemTracker>(_mem_tracker));  // TODO(yingchun): fixme
     }
     src->_io_buffers.clear();
     src->_auxiliary_mem_usage = 0;
