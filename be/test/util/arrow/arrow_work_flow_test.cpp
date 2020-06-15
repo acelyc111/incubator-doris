@@ -66,7 +66,6 @@ protected:
         system("rm -rf ./test_run");
 
         delete _state;
-        delete _mem_tracker;
     }
 
     void init();
@@ -80,7 +79,7 @@ private:
     TPlanNode _tnode;
     ExecEnv* _exec_env = nullptr;
     RuntimeState* _state = nullptr;
-    MemTracker *_mem_tracker = nullptr;
+    std::shared_ptr<MemTracker> _mem_tracker;
 }; // end class ArrowWorkFlowTest
 
 void ArrowWorkFlowTest::init() {
@@ -100,7 +99,7 @@ void ArrowWorkFlowTest::init_runtime_state() {
     query_id.hi = 100;
     _state = new RuntimeState(query_id, query_options, TQueryGlobals(), _exec_env);
     _state->init_instance_mem_tracker();
-    _mem_tracker = new MemTracker(-1, "ArrowWorkFlowTest", _state->instance_mem_tracker());
+    _mem_tracker.reset(new MemTracker(-1, "ArrowWorkFlowTest", _state->instance_mem_tracker()));
     _state->set_desc_tbl(_desc_tbl);
     _state->_load_dir = "./test_run/output/";
     _state->init_mem_trackers(TUniqueId());
@@ -333,7 +332,7 @@ TEST_F(ArrowWorkFlowTest, NormalUse) {
     status = scan_node.open(_state);
     ASSERT_TRUE(status.ok());
 
-    std::unique_ptr<MemTracker> mem_tracker(new MemTracker(-1));
+    std::shared_ptr<MemTracker> mem_tracker(new MemTracker(-1));
     RowBatch row_batch(scan_node._row_descriptor, _state->batch_size(), mem_tracker.get());
     bool eos = false;
 
