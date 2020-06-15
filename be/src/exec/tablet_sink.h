@@ -348,7 +348,7 @@ private:
     DorisNodesInfo* _nodes_info = nullptr;
 
     RuntimeProfile* _profile = nullptr;
-    MemTracker* _mem_tracker = nullptr;
+    std::shared_ptr<MemTracker> _mem_tracker = nullptr;
 
     std::set<int64_t> _partition_ids;
 

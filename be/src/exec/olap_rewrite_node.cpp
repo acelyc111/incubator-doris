@@ -51,7 +51,7 @@ Status OlapRewriteNode::init(const TPlanNode& tnode, RuntimeState* state) {
 Status OlapRewriteNode::prepare(RuntimeState* state) {
     RETURN_IF_ERROR(ExecNode::prepare(state));
     RETURN_IF_ERROR(Expr::prepare(
-            _columns, state, child(0)->row_desc(), expr_mem_tracker()));
+            _columns, state, child(0)->row_desc(), expr_mem_tracker().get()));
     _output_tuple_desc = state->desc_tbl().get_tuple_descriptor(_output_tuple_id);
     // _child_row_batch.reset(new RowBatch(child(0)->row_desc(), state->batch_size(), mem_tracker()));
     _child_row_batch.reset(

@@ -81,7 +81,7 @@ Status HashJoinNode::init(const TPlanNode& tnode, RuntimeState* state) {
 Status HashJoinNode::prepare(RuntimeState* state) {
     RETURN_IF_ERROR(ExecNode::prepare(state));
 
-    _build_pool.reset(new MemPool(mem_tracker()));
+    _build_pool.reset(new MemPool(mem_tracker().get()));
     _build_timer =
         ADD_TIMER(runtime_profile(), "BuildTime");
     _push_down_timer =
@@ -102,13 +102,13 @@ Status HashJoinNode::prepare(RuntimeState* state) {
     // build and probe exprs are evaluated in the context of the rows produced by our
     // right and left children, respectively
     RETURN_IF_ERROR(Expr::prepare(
-            _build_expr_ctxs, state, child(1)->row_desc(), expr_mem_tracker()));
+            _build_expr_ctxs, state, child(1)->row_desc(), expr_mem_tracker().get()));
     RETURN_IF_ERROR(Expr::prepare(
-            _probe_expr_ctxs, state, child(0)->row_desc(), expr_mem_tracker()));
+            _probe_expr_ctxs, state, child(0)->row_desc(), expr_mem_tracker().get()));
 
     // _other_join_conjuncts are evaluated in the context of the rows produced by this node
     RETURN_IF_ERROR(Expr::prepare(
-            _other_join_conjunct_ctxs, state, _row_descriptor, expr_mem_tracker()));
+            _other_join_conjunct_ctxs, state, _row_descriptor, expr_mem_tracker().get()));
 
     _result_tuple_row_size = _row_descriptor.tuple_descriptors().size() * sizeof(Tuple*);
 
@@ -137,9 +137,9 @@ Status HashJoinNode::prepare(RuntimeState* state) {
                                         true) != _is_null_safe_eq_join.end());
     _hash_tbl.reset(new HashTable(
             _build_expr_ctxs, _probe_expr_ctxs, _build_tuple_size,
-            stores_nulls, _is_null_safe_eq_join, id(), mem_tracker(), 1024));
+            stores_nulls, _is_null_safe_eq_join, id(), mem_tracker().get(), 1024));
 
-    _probe_batch.reset(new RowBatch(child(0)->row_desc(), state->batch_size(), mem_tracker()));
+    _probe_batch.reset(new RowBatch(child(0)->row_desc(), state->batch_size(), mem_tracker().get()));
 
     return Status::OK();
 }
@@ -185,7 +185,7 @@ Status HashJoinNode::construct_hash_table(RuntimeState* state) {
     // The hash join node needs to keep in memory all build tuples, including the tuple
     // row ptrs.  The row ptrs are copied into the hash table's internal structure so they
     // don't need to be stored in the _build_pool.
-    RowBatch build_batch(child(1)->row_desc(), state->batch_size(), mem_tracker());
+    RowBatch build_batch(child(1)->row_desc(), state->batch_size(), mem_tracker().get());
     RETURN_IF_ERROR(child(1)->open(state));
 
     while (true) {

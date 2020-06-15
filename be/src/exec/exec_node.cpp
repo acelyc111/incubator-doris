@@ -181,7 +181,7 @@ Status ExecNode::prepare(RuntimeState* state) {
     _expr_mem_tracker.reset(new MemTracker(-1, "Exprs", _mem_tracker.get()));
     _expr_mem_pool.reset(new MemPool(_expr_mem_tracker.get()));
     // TODO chenhao
-    RETURN_IF_ERROR(Expr::prepare(_conjunct_ctxs, state, row_desc(), expr_mem_tracker()));
+    RETURN_IF_ERROR(Expr::prepare(_conjunct_ctxs, state, row_desc(), expr_mem_tracker().get()));
     // TODO(zc):
     // AddExprCtxsToFree(_conjunct_ctxs);
 
@@ -593,7 +593,7 @@ Status ExecNode::claim_buffer_reservation(RuntimeState* state) {
     ss << print_plan_node_type(_type) << " id=" << _id << " ptr=" << this;
     RETURN_IF_ERROR(buffer_pool->RegisterClient(ss.str(),
                                                 state->instance_buffer_reservation(),
-                                                mem_tracker(), buffer_pool->GetSystemBytesLimit(), 
+                                                mem_tracker().get(), buffer_pool->GetSystemBytesLimit(), 
                                                 runtime_profile(),
                                                 &_buffer_pool_client));
     

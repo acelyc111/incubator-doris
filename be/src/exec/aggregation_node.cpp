@@ -95,7 +95,7 @@ Status AggregationNode::prepare(RuntimeState* state) {
     _output_tuple_desc = state->desc_tbl().get_tuple_descriptor(_output_tuple_id);
     DCHECK_EQ(_intermediate_tuple_desc->slots().size(), _output_tuple_desc->slots().size());
     RETURN_IF_ERROR(Expr::prepare(
-            _probe_expr_ctxs, state, child(0)->row_desc(), expr_mem_tracker()));
+            _probe_expr_ctxs, state, child(0)->row_desc(), expr_mem_tracker().get()));
 
     // Construct build exprs from _agg_tuple_desc
     for (int i = 0; i < _probe_expr_ctxs.size(); ++i) {
@@ -111,9 +111,9 @@ Status AggregationNode::prepare(RuntimeState* state) {
     // in a single-node plan with an intermediate tuple different from the output tuple.
     RowDescriptor build_row_desc(_intermediate_tuple_desc, false);
     RETURN_IF_ERROR(Expr::prepare(
-            _build_expr_ctxs, state, build_row_desc, expr_mem_tracker()));
+            _build_expr_ctxs, state, build_row_desc, expr_mem_tracker().get()));
 
-    _tuple_pool.reset(new MemPool(mem_tracker()));
+    _tuple_pool.reset(new MemPool(mem_tracker().get()));
 
     _agg_fn_ctxs.resize(_aggregate_evaluators.size());
     int j = _probe_expr_ctxs.size();
@@ -129,14 +129,14 @@ Status AggregationNode::prepare(RuntimeState* state) {
         SlotDescriptor* output_slot_desc = _output_tuple_desc->slots()[j];
         RETURN_IF_ERROR(_aggregate_evaluators[i]->prepare(
                 state, child(0)->row_desc(), _tuple_pool.get(),
-                intermediate_slot_desc, output_slot_desc, mem_tracker(), &_agg_fn_ctxs[i]));
+                intermediate_slot_desc, output_slot_desc, mem_tracker().get(), &_agg_fn_ctxs[i]));
         state->obj_pool()->add(_agg_fn_ctxs[i]);
     }
 
     // TODO: how many buckets?
     _hash_tbl.reset(new HashTable(
             _build_expr_ctxs, _probe_expr_ctxs, 1, true, 
-            vector<bool>(_build_expr_ctxs.size(), false), id(), mem_tracker(), 1024));
+            vector<bool>(_build_expr_ctxs.size(), false), id(), mem_tracker().get(), 1024));
 
     if (_probe_expr_ctxs.empty()) {
         // create single output tuple now; we need to output something
@@ -160,7 +160,7 @@ Status AggregationNode::open(RuntimeState* state) {
 
     RETURN_IF_ERROR(_children[0]->open(state));
 
-    RowBatch batch(_children[0]->row_desc(), state->batch_size(), mem_tracker());
+    RowBatch batch(_children[0]->row_desc(), state->batch_size(), mem_tracker().get());
     int64_t num_input_rows = 0;
     int64_t num_agg_rows = 0;
 

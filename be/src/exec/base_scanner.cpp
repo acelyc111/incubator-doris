@@ -27,23 +27,25 @@
 
 namespace doris {
 
-BaseScanner::BaseScanner(RuntimeState* state, RuntimeProfile* profile, const TBrokerScanRangeParams& params, ScannerCounter* counter) :
-        _state(state), _params(params), _counter(counter),
-        _src_tuple(nullptr),
-        _src_tuple_row(nullptr),
+BaseScanner::BaseScanner(RuntimeState* state, RuntimeProfile* profile,
+                         const TBrokerScanRangeParams& params, ScannerCounter* counter)
+        : _state(state),
+          _params(params),
+          _counter(counter),
+          _src_tuple(nullptr),
+          _src_tuple_row(nullptr),
 #if BE_TEST
-        _mem_tracker(new MemTracker()),
-        _mem_pool(_mem_tracker.get()),
+          _mem_tracker(new MemTracker()),
 #else
-        _mem_tracker(new MemTracker(-1, "Broker Scanner", state->instance_mem_tracker())),
-        _mem_pool(_state->instance_mem_tracker()),
+          _mem_tracker(new MemTracker(-1, "Broker Scanner", state->instance_mem_tracker())),
 #endif
-        _dest_tuple_desc(nullptr),
-        _strict_mode(false),
-        _profile(profile),
-        _rows_read_counter(nullptr),
-        _read_timer(nullptr),
-        _materialize_timer(nullptr) {
+          _mem_pool(_mem_tracker.get()),
+          _dest_tuple_desc(nullptr),
+          _strict_mode(false),
+          _profile(profile),
+          _rows_read_counter(nullptr),
+          _read_timer(nullptr),
+          _materialize_timer(nullptr) {
 }
 
 Status BaseScanner::open() {

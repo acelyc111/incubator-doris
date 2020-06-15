@@ -65,7 +65,7 @@ Status NodeChannel::init(RuntimeState* state) {
 
     _row_desc.reset(new RowDescriptor(_tuple_desc, false));
     _batch_size = state->batch_size();
-    _cur_batch.reset(new RowBatch(*_row_desc, _batch_size, _parent->_mem_tracker));
+    _cur_batch.reset(new RowBatch(*_row_desc, _batch_size, _parent->_mem_tracker.get()));
 
     _stub = state->exec_env()->brpc_stub_cache()->get_stub(_node_info->host, _node_info->brpc_port);
     if (_stub == nullptr) {
@@ -202,7 +202,7 @@ Status NodeChannel::add_row(Tuple* input_tuple, int64_t tablet_id) {
             _pending_batches_num++;
         }
 
-        _cur_batch.reset(new RowBatch(*_row_desc, _batch_size, _parent->_mem_tracker));
+        _cur_batch.reset(new RowBatch(*_row_desc, _batch_size, _parent->_mem_tracker.get()));
         _cur_add_batch_request.clear_tablet_ids();
 
         row_no = _cur_batch->add_row();
@@ -458,7 +458,7 @@ Status OlapTableSink::prepare(RuntimeState* state) {
 
     // profile must add to state's object pool
     _profile = state->obj_pool()->add(new RuntimeProfile(_pool, "OlapTableSink"));
-    _mem_tracker = _pool->add(new MemTracker(-1, "OlapTableSink", state->instance_mem_tracker()));
+    _mem_tracker.reset(new MemTracker(-1, "OlapTableSink", state->instance_mem_tracker()));
 
     SCOPED_TIMER(_profile->total_time_counter());
 
@@ -492,7 +492,7 @@ Status OlapTableSink::prepare(RuntimeState* state) {
     }
 
     _output_row_desc = _pool->add(new RowDescriptor(_output_tuple_desc, false));
-    _output_batch.reset(new RowBatch(*_output_row_desc, state->batch_size(), _mem_tracker));
+    _output_batch.reset(new RowBatch(*_output_row_desc, state->batch_size(), _mem_tracker.get()));
 
     _max_decimal_val.resize(_output_tuple_desc->slots().size());
     _min_decimal_val.resize(_output_tuple_desc->slots().size());

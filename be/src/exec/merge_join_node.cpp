@@ -80,9 +80,9 @@ Status MergeJoinNode::prepare(RuntimeState* state) {
     // build and probe exprs are evaluated in the context of the rows produced by our
     // right and left children, respectively
     RETURN_IF_ERROR(Expr::prepare(
-            _left_expr_ctxs, state, child(0)->row_desc(), expr_mem_tracker()));
+            _left_expr_ctxs, state, child(0)->row_desc(), expr_mem_tracker().get()));
     RETURN_IF_ERROR(Expr::prepare(
-            _right_expr_ctxs, state, child(1)->row_desc(), expr_mem_tracker()));
+            _right_expr_ctxs, state, child(1)->row_desc(), expr_mem_tracker().get()));
 
     for (int i = 0; i < _left_expr_ctxs.size(); ++i) {
         switch (_left_expr_ctxs[i]->root()->type().type) {
@@ -119,7 +119,7 @@ Status MergeJoinNode::prepare(RuntimeState* state) {
 
     // _other_join_conjuncts are evaluated in the context of the rows produced by this node
     RETURN_IF_ERROR(Expr::prepare(
-            _other_join_conjunct_ctxs, state, _row_descriptor, expr_mem_tracker()));
+            _other_join_conjunct_ctxs, state, _row_descriptor, expr_mem_tracker().get()));
 
     _result_tuple_row_size = _row_descriptor.tuple_descriptors().size() * sizeof(Tuple*);
     // pre-compute the tuple index of build tuples in the output row

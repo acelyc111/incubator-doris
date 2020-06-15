@@ -99,9 +99,9 @@ Status BrokerScanNode::prepare(RuntimeState* state) {
     // prepare partition
     if (_partition_expr_ctxs.size() > 0) {
         RETURN_IF_ERROR(Expr::prepare(
-                _partition_expr_ctxs, state, row_desc(), expr_mem_tracker()));
+                _partition_expr_ctxs, state, row_desc(), expr_mem_tracker().get()));
         for (auto iter : _partition_infos) {
-            RETURN_IF_ERROR(iter->prepare(state, row_desc(), expr_mem_tracker()));
+            RETURN_IF_ERROR(iter->prepare(state, row_desc(), expr_mem_tracker().get()));
         }
     }
 
@@ -325,7 +325,7 @@ Status BrokerScanNode::scanner_scan(
     while (!scanner_eof) {
         // Fill one row batch
         std::shared_ptr<RowBatch> row_batch(
-            new RowBatch(row_desc(), _runtime_state->batch_size(), mem_tracker()));
+            new RowBatch(row_desc(), _runtime_state->batch_size(), mem_tracker().get()));
 
         // create new tuple buffer for row_batch
         MemPool* tuple_pool = row_batch->tuple_data_pool();

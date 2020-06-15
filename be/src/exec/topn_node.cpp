@@ -62,9 +62,9 @@ Status TopNNode::init(const TPlanNode& tnode, RuntimeState* state) {
 Status TopNNode::prepare(RuntimeState* state) {
     SCOPED_TIMER(_runtime_profile->total_time_counter());
     RETURN_IF_ERROR(ExecNode::prepare(state));
-    _tuple_pool.reset(new MemPool(mem_tracker()));
+    _tuple_pool.reset(new MemPool(mem_tracker().get()));
     RETURN_IF_ERROR(_sort_exec_exprs.prepare(
-            state, child(0)->row_desc(), _row_descriptor, expr_mem_tracker()));
+            state, child(0)->row_desc(), _row_descriptor, expr_mem_tracker().get()));
     // AddExprCtxsToFree(_sort_exec_exprs);
 
     _tuple_row_less_than.reset(
@@ -99,7 +99,7 @@ Status TopNNode::open(RuntimeState* state) {
 
     // Limit of 0, no need to fetch anything from children.
     if (_limit != 0) {
-        RowBatch batch(child(0)->row_desc(), state->batch_size(), mem_tracker());
+        RowBatch batch(child(0)->row_desc(), state->batch_size(), mem_tracker().get());
         bool eos = false;
 
         do {
