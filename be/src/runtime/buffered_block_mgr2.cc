@@ -224,7 +224,7 @@ BufferedBlockMgr2::BufferedBlockMgr2(RuntimeState* state, TmpFileMgr* tmp_file_m
 }
 
 Status BufferedBlockMgr2::create(
-        RuntimeState* state, std::shared_ptr<MemTracker> parent,
+        RuntimeState* state, const std::shared_ptr<MemTracker>& parent,
         RuntimeProfile* profile, TmpFileMgr* tmp_file_mgr,
         int64_t mem_limit, int64_t block_size,
         shared_ptr<BufferedBlockMgr2>* block_mgr) {
@@ -270,7 +270,7 @@ int64_t BufferedBlockMgr2::remaining_unreserved_buffers() const {
 }
 
 Status BufferedBlockMgr2::register_client(
-        int num_reserved_buffers, std::shared_ptr<MemTracker> tracker,
+        int num_reserved_buffers, const std::shared_ptr<MemTracker>& tracker,
         RuntimeState* state, Client** client) {
     DCHECK_GE(num_reserved_buffers, 0);
     Client* a_client = new Client(this, num_reserved_buffers, tracker, state);

@@ -294,7 +294,7 @@ public:
     // - mem_limit: maximum memory that will be used by the block mgr.
     // - buffer_size: maximum size of each buffer.
     static Status create(
-            RuntimeState* state, std::shared_ptr<MemTracker> parent,
+            RuntimeState* state, const std::shared_ptr<MemTracker>& parent,
             RuntimeProfile* profile, TmpFileMgr* tmp_file_mgr,
             int64_t mem_limit, int64_t buffer_size,
             boost::shared_ptr<BufferedBlockMgr2>* block_mgr);
@@ -311,7 +311,7 @@ public:
     // Buffers used by this client are reflected in tracker.
     // TODO: The fact that we allow oversubscription is problematic.
     // as the code expects the reservations to always be granted (currently not the case).
-    Status register_client(int num_reserved_buffers, std::shared_ptr<MemTracker> tracker,
+    Status register_client(int num_reserved_buffers, const std::shared_ptr<MemTracker>& tracker,
             RuntimeState* state, Client** client);
 
     // Clears all reservations for this client.

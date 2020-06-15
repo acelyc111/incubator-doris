@@ -66,7 +66,7 @@ Status SpillSortNode::open(RuntimeState* state) {
         // Create and initialize the external sort impl object
         _sorter.reset(new SpillSorter(
                     less_than, _sort_exec_exprs.sort_tuple_slot_expr_ctxs(),
-                    &_row_descriptor, mem_tracker().get(), runtime_profile(), state));
+                    &_row_descriptor, mem_tracker(), runtime_profile(), state));
         RETURN_IF_ERROR(_sorter->init());
     }
 
