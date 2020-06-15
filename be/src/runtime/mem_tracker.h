@@ -84,25 +84,25 @@ class TQueryOptions;
 class MemTracker : public std::enable_shared_from_this<MemTracker> {
  public:
   // TODO(yingchun): change to std::shared_ptr<MemTracker> parent
-  /// 'bytelimit_' < 0 means no limit
+  /// 'byte_limit' < 0 means no limit
   /// 'label' is the label used in the usage string (LogUsage())
   /// If 'auto_unregister' is true, never call unregister_from_parent().
   /// If 'log_usage_if_zero' is false, this tracker (and its children) will not be
   /// included
   /// in LogUsage() output if consumption is 0.
-  MemTracker(int64_t bytelimit_ = -1, const std::string& label = std::string(),
+  MemTracker(int64_t byte_limit = -1, const std::string& label = std::string(),
              MemTracker* parent = nullptr, bool auto_unregister = false, bool log_usage_if_zero = true);
 
   /// C'tor for tracker for which consumption counter is created as part of a profile.
   /// The counter is created with name COUNTER_NAME.
-  MemTracker(RuntimeProfile* profile, int64_t bytelimit_,
+  MemTracker(RuntimeProfile* profile, int64_t byte_limit,
       const std::string& label = std::string(), MemTracker* parent = nullptr);
 
   /// C'tor for tracker that uses consumption_metric as the consumption value.
   /// Consume()/Release() can still be called. This is used for the root process tracker
   /// (if 'parent' is NULL). It is also to report on other categories of memory under the
   /// process tracker, e.g. buffer pool free buffers (if 'parent - non-NULL).
-  MemTracker(IntGauge* consumption_metric, int64_t bytelimit_ = -1,
+  MemTracker(IntGauge* consumption_metric, int64_t byte_limit = -1,
       const std::string& label = std::string(), MemTracker* parent = nullptr);
 
   ~MemTracker();
@@ -132,10 +132,10 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// The counters should be owned by the fragment's RuntimeProfile.
   void EnableReservationReporting(const ReservationTrackerCounters& counters);
 
-  /// Construct a MemTracker object for query 'id' with 'memlimit_' as the memory limit.
+  /// Construct a MemTracker object for query 'id' with 'mem_limit' as the memory limit.
   /// The MemTracker is a child of the request pool MemTracker for 'pool_name', which is
   /// created if needed. The returned MemTracker is owned by 'obj_pool'.
-  static MemTracker* CreateQueryMemTracker(const TUniqueId& id, int64_t memlimit_,
+  static MemTracker* CreateQueryMemTracker(const TUniqueId& id, int64_t mem_limit,
       const std::string& pool_name, ObjectPool* obj_pool);
 
   /// Increases consumption of this tracker and its ancestors by 'bytes'.
