@@ -363,7 +363,7 @@ public:
 
     ToRowBatchConverter(const arrow::RecordBatch& batch,
                         const RowDescriptor& row_desc,
-                        MemTracker* tracker)
+                        std::shared_ptr<MemTracker> tracker)
         : _batch(batch), _row_desc(row_desc), _tracker(tracker) { }
 
 #define PRIMITIVE_VISIT(TYPE) \
@@ -407,7 +407,7 @@ private:
 private:
     const arrow::RecordBatch& _batch;
     const RowDescriptor& _row_desc;
-    MemTracker* _tracker;
+    std::shared_ptr<MemTracker> _tracker;
 
     std::unique_ptr<SlotRef> _cur_slot_ref;
     std::shared_ptr<RowBatch> _output;
