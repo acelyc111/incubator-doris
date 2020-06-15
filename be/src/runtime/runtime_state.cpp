@@ -236,9 +236,9 @@ Status RuntimeState::init_mem_trackers(const TUniqueId& query_id) {
     mem_tracker_counter->set(bytes_limit);
 
     _query_mem_tracker.reset(
-            new MemTracker(bytes_limit, runtime_profile()->name(), _exec_env->process_mem_tracker()));
+            new MemTracker(bytes_limit, std::string("RuntimeState:") + runtime_profile()->name(), _exec_env->process_mem_tracker()));
     _instance_mem_tracker.reset(
-            new MemTracker(&_profile, -1, runtime_profile()->name(), _query_mem_tracker.get()));
+            new MemTracker(&_profile, -1, std::string("RuntimeState:") + runtime_profile()->name(), _query_mem_tracker.get()));
 
     /*
     // TODO: this is a stopgap until we implement ExprContext
@@ -306,7 +306,7 @@ Status RuntimeState::create_block_mgr() {
     if (block_mgr_limit < 0) {
         block_mgr_limit = std::numeric_limits<int64_t>::max();
     }
-    RETURN_IF_ERROR(BufferedBlockMgr2::create(this, _query_mem_tracker.get(),
+    RETURN_IF_ERROR(BufferedBlockMgr2::create(this, _query_mem_tracker,
             runtime_profile(), _exec_env->tmp_file_mgr(),
             block_mgr_limit, _exec_env->disk_io_mgr()->max_read_buffer_size(), &_block_mgr2));
     return Status::OK();

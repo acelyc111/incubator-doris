@@ -53,12 +53,12 @@ SpinLock BufferedBlockMgr2::_s_block_mgrs_lock;
 
 class BufferedBlockMgr2::Client {
 public:
-    Client(BufferedBlockMgr2* mgr, int num_reserved_buffers, MemTracker* tracker,
+    Client(BufferedBlockMgr2* mgr, int num_reserved_buffers, std::shared_ptr<MemTracker> tracker,
             RuntimeState* state) :
             _mgr(mgr),
             _state(state),
             _tracker(tracker),
-            _query_tracker(_mgr->_mem_tracker->parent().get()),
+            _query_tracker(_mgr->_mem_tracker->parent()),
             _num_reserved_buffers(num_reserved_buffers),
             _num_tmp_reserved_buffers(0),
             _num_pinned_buffers(0) {
@@ -81,11 +81,11 @@ public:
     // enforced. Even when we give a buffer to a client, the buffer is still owned and
     // counts against the block mgr tracker (i.e. there is a fixed pool of buffers
     // regardless of if they are in the block mgr or the clients).
-    MemTracker* _tracker;
+    std::shared_ptr<MemTracker> _tracker;
 
     // This is the common ancestor between the block mgr tracker and the client tracker.
     // When memory is transferred to the client, we want it to stop at this tracker.
-    MemTracker* _query_tracker;
+    std::shared_ptr<MemTracker> _query_tracker;
 
     // Number of buffers reserved by this client.
     int _num_reserved_buffers;
@@ -100,7 +100,7 @@ public:
         DCHECK(buffer != NULL);
         if (buffer->len == _mgr->max_block_size()) {
             ++_num_pinned_buffers;
-            _tracker->ConsumeLocal(buffer->len, _query_tracker);
+            _tracker->ConsumeLocal(buffer->len, _query_tracker.get());
             // _tracker->Consume(buffer->len);
         }
     }
@@ -110,7 +110,7 @@ public:
         if (buffer->len == _mgr->max_block_size()) {
             DCHECK_GT(_num_pinned_buffers, 0);
             --_num_pinned_buffers;
-            _tracker->ReleaseLocal(buffer->len, _query_tracker);
+            _tracker->ReleaseLocal(buffer->len, _query_tracker.get());
             // _tracker->Release(buffer->len);
         }
     }
@@ -224,11 +224,11 @@ BufferedBlockMgr2::BufferedBlockMgr2(RuntimeState* state, TmpFileMgr* tmp_file_m
 }
 
 Status BufferedBlockMgr2::create(
-        RuntimeState* state, MemTracker* parent,
+        RuntimeState* state, std::shared_ptr<MemTracker> parent,
         RuntimeProfile* profile, TmpFileMgr* tmp_file_mgr,
         int64_t mem_limit, int64_t block_size,
         shared_ptr<BufferedBlockMgr2>* block_mgr) {
-    DCHECK(parent != NULL);
+    DCHECK(parent != nullptr);
     block_mgr->reset();
     {
         // we do not use global BlockMgrsMap for now, to avoid mem-exceeded different fragments
@@ -270,7 +270,7 @@ int64_t BufferedBlockMgr2::remaining_unreserved_buffers() const {
 }
 
 Status BufferedBlockMgr2::register_client(
-        int num_reserved_buffers, MemTracker* tracker,
+        int num_reserved_buffers, std::shared_ptr<MemTracker> tracker,
         RuntimeState* state, Client** client) {
     DCHECK_GE(num_reserved_buffers, 0);
     Client* a_client = new Client(this, num_reserved_buffers, tracker, state);
@@ -327,7 +327,7 @@ bool BufferedBlockMgr2::consume_memory(Client* client, int64_t size) {
 
     if (size < max_block_size() && _mem_tracker->TryConsume(size)) {
         // For small allocations (less than a block size), just let the allocation through.
-        client->_tracker->ConsumeLocal(size, client->_query_tracker);
+        client->_tracker->ConsumeLocal(size, client->_query_tracker.get());
         // client->_tracker->Consume(size);
         return true;
     }
@@ -339,7 +339,7 @@ bool BufferedBlockMgr2::consume_memory(Client* client, int64_t size) {
 
     if (_mem_tracker->TryConsume(size)) {
         // There was still unallocated memory, don't need to recycle allocated blocks.
-        client->_tracker->ConsumeLocal(size, client->_query_tracker);
+        client->_tracker->ConsumeLocal(size, client->_query_tracker.get());
         // client->_tracker->Consume(size);
         return true;
     }
@@ -397,7 +397,7 @@ bool BufferedBlockMgr2::consume_memory(Client* client, int64_t size) {
     if (!_mem_tracker->TryConsume(size)) {
         return false;
     }
-    client->_tracker->ConsumeLocal(size, client->_query_tracker);
+    client->_tracker->ConsumeLocal(size, client->_query_tracker.get());
     // client->_tracker->Consume(size);
     DCHECK(validate()) << endl << debug_internal();
     return true;
@@ -405,7 +405,7 @@ bool BufferedBlockMgr2::consume_memory(Client* client, int64_t size) {
 
 void BufferedBlockMgr2::release_memory(Client* client, int64_t size) {
     _mem_tracker->Release(size);
-    client->_tracker->ReleaseLocal(size, client->_query_tracker);
+    client->_tracker->ReleaseLocal(size, client->_query_tracker.get());
 }
 
 void BufferedBlockMgr2::cancel() {
@@ -608,7 +608,7 @@ int BufferedBlockMgr2::num_reserved_buffers_remaining(Client* client) const {
 }
 
 MemTracker* BufferedBlockMgr2::get_tracker(Client* client) const {
-    return client->_tracker;
+    return client->_tracker.get();
 }
 
 // TODO: It would be good if we had a sync primitive that supports is_mine() calls, see
@@ -1252,7 +1252,7 @@ string BufferedBlockMgr2::debug_internal() const {
 
 void BufferedBlockMgr2::init(
         DiskIoMgr* io_mgr, RuntimeProfile* parent_profile,
-        MemTracker* parent_tracker, int64_t mem_limit) {
+        std::shared_ptr<MemTracker> parent_tracker, int64_t mem_limit) {
     unique_lock<mutex> l(_lock);
     if (_initialized) {
         return;
@@ -1279,7 +1279,7 @@ void BufferedBlockMgr2::init(
     // Create a new mem_tracker and allocate buffers.
     // _mem_tracker.reset(new MemTracker(
     //             profile(), mem_limit, -1, "Block Manager", parent_tracker));
-    _mem_tracker.reset(new MemTracker(mem_limit, "Block Manager", parent_tracker));
+    _mem_tracker.reset(new MemTracker(mem_limit, "Block Manager2", parent_tracker.get()));
 
     _initialized = true;
 }
