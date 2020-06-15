@@ -103,7 +103,7 @@ public:
     template<typename T>
     ClientCache<T>* get_client_cache() { return nullptr; }
 
-    MemTracker* process_mem_tracker() { return _mem_tracker; }
+    MemTracker* process_mem_tracker() { return _mem_tracker.get(); }
     PoolMemTrackerRegistry* pool_mem_trackers() { return _pool_mem_trackers; }
     ThreadResourceMgr* thread_mgr() { return _thread_mgr; }
     PriorityThreadPool* thread_pool() { return _thread_pool; }
@@ -156,7 +156,7 @@ private:
     ClientCache<FrontendServiceClient>* _frontend_client_cache = nullptr;
     ClientCache<TPaloBrokerServiceClient>* _broker_client_cache = nullptr;
     ClientCache<TExtDataSourceServiceClient>* _extdatasource_client_cache = nullptr;
-    MemTracker* _mem_tracker = nullptr;
+    std::shared_ptr<MemTracker> _mem_tracker;
     PoolMemTrackerRegistry* _pool_mem_trackers = nullptr;
     ThreadResourceMgr* _thread_mgr = nullptr;
     PriorityThreadPool* _thread_pool = nullptr;

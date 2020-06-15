@@ -152,8 +152,7 @@ DiskIoMgr::RequestContext::RequestContext(DiskIoMgr* parent, int num_disks) :
 }
 
 // Resets this object.
-// void DiskIoMgr::RequestContext::reset(MemTracker* tracker) {
-void DiskIoMgr::RequestContext::reset(MemTracker* tracker) {
+void DiskIoMgr::RequestContext::reset(std::shared_ptr<MemTracker> tracker) {
     DCHECK_EQ(_state, Inactive);
     _status = Status::OK();
 

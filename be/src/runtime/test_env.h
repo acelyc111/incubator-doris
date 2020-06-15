@@ -81,7 +81,7 @@ private:
     static boost::scoped_ptr<MetricRegistry> _s_static_metrics;
     boost::scoped_ptr<ExecEnv> _exec_env;
     boost::scoped_ptr<MemTracker> _block_mgr_parent_tracker;
-    boost::scoped_ptr<MemTracker> _io_mgr_tracker;
+    std::shared_ptr<MemTracker> _io_mgr_tracker;
     boost::scoped_ptr<MetricRegistry> _metrics;
     boost::scoped_ptr<TmpFileMgr> _tmp_file_mgr;
 
