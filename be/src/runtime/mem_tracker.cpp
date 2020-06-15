@@ -111,7 +111,7 @@ MemTracker::MemTracker(IntGauge* consumption_metric,
 void MemTracker::Init() {
   DCHECK_GE(limit_, -1);
   DCHECK_LE(soft_limit_, limit_);
-  if (parent_ != nullptr) parent_->AddChildTracker(std::shared_ptr<MemTracker>(this));
+  //if (parent_ != nullptr) parent_->AddChildTracker(std::shared_ptr<MemTracker>(this));
   // populate all_trackers_ and limit_trackers_
   MemTracker* tracker = this;
   while (tracker != nullptr) {
