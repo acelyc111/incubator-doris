@@ -155,7 +155,7 @@ private:
     AtomicInt<int> _num_buffered_bytes;
 
     // Memtracker for batches in the sender queue(s).
-    boost::scoped_ptr<MemTracker> _mem_tracker;
+    std::shared_ptr<MemTracker> _mem_tracker;
 
     // One or more queues of row batches received from senders. If _is_merging is true,
     // there is one SenderQueue for each sender. Otherwise, row batches from all senders
