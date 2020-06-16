@@ -20,6 +20,8 @@
 #include <boost/bind.hpp>
 #include <boost/mem_fn.hpp>
 
+#include <mustache.h>
+
 #include "http/ev_http_server.h"
 #include "http/http_channel.h"
 #include "http/http_headers.h"
@@ -29,6 +31,7 @@
 #include "util/cpu_info.h"
 #include "util/debug_util.h"
 #include "util/disk_info.h"
+#include "util/easy_json.h"
 #include "util/mem_info.h"
 
 namespace doris {
@@ -62,34 +65,41 @@ void WebPageHandler::handle(HttpRequest* req) {
         use_style = false;
     }
 
-    std::stringstream output;
+    std::stringstream content;
 
     // Append header
     if (use_style) {
-        bootstrap_page_header(&output);
+        bootstrap_page_header(&content);
     }
 
     // Append content
-    // push_content(&output);
     LOG(INFO) << req->debug_string();
     {
         boost::mutex::scoped_lock lock(_map_lock);
         auto iter = _page_map.find(req->raw_path());
         if (iter != _page_map.end()) {
             for (auto& callback : iter->second.callbacks()) {
-                callback(*req->params(), &output);
+                callback(*req->params(), &content);
             }
         }
     }
 
     // Append footer
     if (use_style) {
-        bootstrap_page_footer(&output);
+        bootstrap_page_footer(&content);
     }
-    std::string str = output.str();
+
+    std::string output;
+    if (use_style) {
+        stringstream oss;
+        RenderMainTemplate(content.str(), &oss);
+        output = oss.str();
+    } else {
+        output = content;
+    }
 
     req->add_output_header(HttpHeaders::CONTENT_TYPE, s_html_content_type.c_str());
-    HttpChannel::send_reply(req, HttpStatus::OK, str);
+    HttpChannel::send_reply(req, HttpStatus::OK, output);
 #if 0
     HttpResponse response(HttpStatus::OK, s_html_content_type, &str);
     channel->send_response(response);
@@ -161,6 +171,111 @@ void WebPageHandler::root_handler(const ArgumentMap& args, std::stringstream* ou
     for (auto& iter : _page_map) {
         (*output) << "<a href=\"" << iter.first << "\">" << iter.first << "</a><br/>";
     }
+}
+
+static const char* const kMainTemplate = R"(
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Doris</title>
+    <meta charset='utf-8'/>
+    <link href='/bootstrap/css/bootstrap.min.css' rel='stylesheet' media='screen' />
+    <link href='/bootstrap/css/bootstrap-table.min.css' rel='stylesheet' media='screen' />
+    <script src='/jquery-3.2.1.min.js' defer></script>
+    <script src='/bootstrap/js/bootstrap.min.js' defer></script>
+    <script src='/bootstrap/js/bootstrap-table.min.js' defer></script>
+    <script src='/kudu.js' defer></script>
+    <link href='/kudu.css' rel='stylesheet' />
+  </head>
+  <body>
+
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" style="padding-top: 5px;" href="/">
+            <img src="/logo.png" width='61' height='45' alt="Kudu" />
+          </a>
+        </div>
+      </div><!--/.container-fluid -->
+    </nav>
+      {{^static_pages_available}}
+      <div style="color: red">
+        <strong>Static pages not available. Configure KUDU_HOME or use the --webserver_doc_root
+        flag to fix page styling.</strong>
+      </div>
+      {{/static_pages_available}}
+      {{{content}}}
+    </div>
+  </body>
+</html>
+)";
+
+//static const char* const kMainTemplate = R"(
+//<!DOCTYPE html>
+//<html>
+//  <head>
+//    <title>Doris</title>
+//    <meta charset='utf-8'/>
+//    <link href='/bootstrap/css/bootstrap.min.css' rel='stylesheet' media='screen' />
+//    <link href='/bootstrap/css/bootstrap-table.min.css' rel='stylesheet' media='screen' />
+//    <script src='/jquery-3.2.1.min.js' defer></script>
+//    <script src='/bootstrap/js/bootstrap.min.js' defer></script>
+//    <script src='/bootstrap/js/bootstrap-table.min.js' defer></script>
+//    <script src='/kudu.js' defer></script>
+//    <link href='/kudu.css' rel='stylesheet' />
+//  </head>
+//  <body>
+//
+//    <nav class="navbar navbar-default">
+//      <div class="container-fluid">
+//        <div class="navbar-header">
+//          <a class="navbar-brand" style="padding-top: 5px;" href="/">
+//            <img src="/logo.png" width='61' height='45' alt="Kudu" />
+//          </a>
+//        </div>
+//        <div id="navbar" class="navbar-collapse collapse">
+//          <ul class="nav navbar-nav">
+//           {{#path_handlers}}
+//            <li><a class="nav-link"href="{{path}}">{{alias}}</a></li>
+//           {{/path_handlers}}
+//          </ul>
+//        </div><!--/.nav-collapse -->
+//      </div><!--/.container-fluid -->
+//    </nav>
+//      {{^static_pages_available}}
+//      <div style="color: red">
+//        <strong>Static pages not available. Configure KUDU_HOME or use the --webserver_doc_root
+//        flag to fix page styling.</strong>
+//      </div>
+//      {{/static_pages_available}}
+//      {{{content}}}
+//    </div>
+//    {{#footer_html}}
+//    <footer class="footer"><div class="container text-muted">
+//      {{{.}}}
+//    </div></footer>
+//    {{/footer_html}}
+//  </body>
+//</html>
+//)";
+
+void WebPageHandler::RenderMainTemplate(const string& content, stringstream* output) {
+    EasyJson ej;
+    ej["static_pages_available"] = true;  // static_pages_available();
+    ej["content"] = content;
+//    {
+//        shared_lock<RWMutex> l(lock_);
+//        ej["footer_html"] = footer_html_;
+//    }
+//    EasyJson path_handlers = ej.Set("path_handlers", EasyJson::kArray);
+//    for (const auto& handler : _page_map) {
+//        if (handler.second->is_on_nav_bar()) {
+//            EasyJson path_handler = path_handlers.PushBack(EasyJson::kObject);
+//            path_handler["path"] = handler.first;
+//            path_handler["alias"] = handler.second->alias();
+//        }
+//    }
+    RenderTemplate(kMainTemplate, config::www_path, ej.value(), output);
 }
 
 } // namespace doris

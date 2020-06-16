@@ -54,6 +54,10 @@ private:
     void bootstrap_page_footer(std::stringstream* output);
     void root_handler(const ArgumentMap& args, std::stringstream* output);
 
+    // Renders the main HTML template with the pre-rendered string 'content'
+    // in the main body of the page, into 'output'.
+    void RenderMainTemplate(const std::string& content, std::stringstream* output);
+
     // all
     class PageHandlers {
     public:
