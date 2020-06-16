@@ -73,7 +73,7 @@ public:
     explicit BloomFilterIndexWriterImpl(const BloomFilterOptions& bf_options,
             const TypeInfo* typeinfo)
         : _bf_options(bf_options), _typeinfo(typeinfo),
-          _tracker(), _pool(&_tracker), _has_null(false), _bf_buffer_size(0) { }
+          _tracker(new MemTracker()), _pool(_tracker.get()), _has_null(false), _bf_buffer_size(0) { }
 
     ~BloomFilterIndexWriterImpl() = default;
 
@@ -164,7 +164,7 @@ private:
 private:
     BloomFilterOptions _bf_options;
     const TypeInfo* _typeinfo;
-    MemTracker _tracker;
+    std::shared_ptr<MemTracker> _tracker;
     MemPool _pool;
     bool _has_null;
     uint64_t _bf_buffer_size;

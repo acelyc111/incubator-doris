@@ -56,7 +56,7 @@ struct WriteRequest {
 // This class is NOT thread-safe, external synchronization is required.
 class DeltaWriter {
 public:
-    static OLAPStatus open(WriteRequest* req, MemTracker* mem_tracker, DeltaWriter** writer);
+    static OLAPStatus open(WriteRequest* req, MemTracker* parent, DeltaWriter** writer);
 
     ~DeltaWriter();
 
@@ -107,7 +107,7 @@ private:
 
     StorageEngine* _storage_engine;
     std::unique_ptr<FlushToken> _flush_token;
-    std::unique_ptr<MemTracker> _mem_tracker;
+    std::shared_ptr<MemTracker> _mem_tracker;
 };
 
 }  // namespace doris
