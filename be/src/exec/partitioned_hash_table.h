@@ -115,7 +115,7 @@ class PartitionedHashTableCtx {
       const std::vector<Expr*>& probe_exprs, bool stores_nulls,
       const std::vector<bool>& finds_nulls, int32_t initial_seed, int max_levels,
       int num_build_tuples, MemPool* mem_pool, MemPool* expr_results_pool, 
-      MemTracker* tracker, const RowDescriptor& row_desc,
+      std::shared_ptr<MemTracker> tracker, const RowDescriptor& row_desc,
       const RowDescriptor& row_desc_probe,
       boost::scoped_ptr<PartitionedHashTableCtx>* ht_ctx);
 
@@ -392,7 +392,8 @@ class PartitionedHashTableCtx {
   /// be exceeded or the evaluators fail to initialize. 'num_build_tuples' is the number
   /// of tuples of a row in the build side, used for computing the size of a scratch row.
   Status Init(ObjectPool* pool, RuntimeState* state, int num_build_tuples,
-               MemTracker* tracker, const RowDescriptor& row_desc, const RowDescriptor& row_desc_probe);
+              std::shared_ptr<MemTracker> tracker, const RowDescriptor& row_desc,
+              const RowDescriptor& row_desc_probe);
 
   /// Compute the hash of the values in 'expr_values' with nullness 'expr_values_null'.
   /// This will be replaced by codegen.  We don't want this inlined for replacing

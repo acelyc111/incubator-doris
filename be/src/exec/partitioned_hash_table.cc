@@ -109,7 +109,7 @@ PartitionedHashTableCtx::PartitionedHashTableCtx(const std::vector<Expr*>& build
 }
 
 Status PartitionedHashTableCtx::Init(ObjectPool* pool, RuntimeState* state, int num_build_tuples,
-        MemTracker* tracker, const RowDescriptor& row_desc, const RowDescriptor& row_desc_probe) {
+        std::shared_ptr<MemTracker> tracker, const RowDescriptor& row_desc, const RowDescriptor& row_desc_probe) {
 
   int scratch_row_size = sizeof(Tuple*) * num_build_tuples;
   scratch_row_ = reinterpret_cast<TupleRow*>(malloc(scratch_row_size));
@@ -121,7 +121,7 @@ Status PartitionedHashTableCtx::Init(ObjectPool* pool, RuntimeState* state, int 
   // TODO chenhao replace ExprContext with ScalarFnEvaluator
   for (int i = 0; i < build_exprs_.size(); i++) {
       ExprContext* context = pool->add(new ExprContext(build_exprs_[i]));
-      context->prepare(state, row_desc, tracker); 
+      context->prepare(state, row_desc, tracker.get()); 
       if (context == nullptr) {
           return Status::InternalError("Hashtable init error.");
       }
@@ -131,7 +131,7 @@ Status PartitionedHashTableCtx::Init(ObjectPool* pool, RuntimeState* state, int 
   
   for (int i = 0; i < probe_exprs_.size(); i++) {
       ExprContext* context = pool->add(new ExprContext(probe_exprs_[i]));
-      context->prepare(state, row_desc_probe, tracker);
+      context->prepare(state, row_desc_probe, tracker.get());
       if (context == nullptr) {
           return Status::InternalError("Hashtable init error.");
       }
@@ -146,7 +146,7 @@ Status PartitionedHashTableCtx::Create(ObjectPool* pool, RuntimeState* state,
     const std::vector<Expr*>& probe_exprs, bool stores_nulls,
     const std::vector<bool>& finds_nulls, int32_t initial_seed, int max_levels,
     int num_build_tuples, MemPool* mem_pool, MemPool* expr_results_pool, 
-    MemTracker* tracker, const RowDescriptor& row_desc,
+    std::shared_ptr<MemTracker> tracker, const RowDescriptor& row_desc,
     const RowDescriptor& row_desc_probe,
     scoped_ptr<PartitionedHashTableCtx>* ht_ctx) {
   ht_ctx->reset(new PartitionedHashTableCtx(build_exprs, probe_exprs, stores_nulls,

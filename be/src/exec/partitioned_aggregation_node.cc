@@ -253,7 +253,7 @@ Status PartitionedAggregationNode::prepare(RuntimeState* state) {
     RETURN_IF_ERROR(PartitionedHashTableCtx::Create(_pool, state, build_exprs_,
         grouping_exprs_, true, vector<bool>(build_exprs_.size(), true),
         state->fragment_hash_seed(), MAX_PARTITION_DEPTH, 1, expr_mem_pool(),
-        expr_results_pool_.get(), expr_mem_tracker().get(), build_row_desc, row_desc, &ht_ctx_));
+        expr_results_pool_.get(), expr_mem_tracker(), build_row_desc, row_desc, &ht_ctx_));
   }
   // AddCodegenDisabledMessage(state);
   return Status::OK();
