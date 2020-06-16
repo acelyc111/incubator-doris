@@ -685,6 +685,14 @@ build_cctz() {
     make -j$PARALLEL && make install
 }
 
+#mustache
+build_mustache() {
+    check_if_source_exist $CCTZ_SOURCE
+    cd $TP_SOURCE_DIR/$CCTZ_SOURCE
+    export PREFIX=$TP_INSTALL_DIR
+    make -j$PARALLEL && make install
+}
+
 # See https://github.com/apache/incubator-doris/issues/2910
 # LLVM related codes have already be removed in master, so there is
 # no need to build llvm tool here.
@@ -692,34 +700,35 @@ build_cctz() {
 # we just comment it, instead of remove it.
 # build_llvm
 
-build_libevent
-build_zlib
-build_lz4
-build_bzip
-build_lzo2
-build_openssl
-build_boost # must before thrift
-build_protobuf
-build_gflags
-build_gtest
-build_glog
-build_rapidjson
-build_snappy
-build_gperftools
-build_curl
-build_re2
-build_mysql
-build_thrift
-build_leveldb
-build_brpc
-build_rocksdb
-build_librdkafka
-build_flatbuffers
-build_arrow
-build_s2
-build_bitshuffle
-build_croaringbitmap
-build_orc
-build_cctz
+#build_libevent
+#build_zlib
+#build_lz4
+#build_bzip
+#build_lzo2
+#build_openssl
+#build_boost # must before thrift
+#build_protobuf
+#build_gflags
+#build_gtest
+#build_glog
+#build_rapidjson
+#build_snappy
+#build_gperftools
+#build_curl
+#build_re2
+#build_mysql
+#build_thrift
+#build_leveldb
+#build_brpc
+#build_rocksdb
+#build_librdkafka
+#build_flatbuffers
+#build_arrow
+#build_s2
+#build_bitshuffle
+#build_croaringbitmap
+#build_orc
+#build_cctz
+build_mustache
 
 echo "Finihsed to build all thirdparties"
