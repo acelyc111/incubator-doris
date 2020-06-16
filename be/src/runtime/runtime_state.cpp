@@ -163,14 +163,11 @@ RuntimeState::~RuntimeState() {
     if (_instance_mem_tracker.get() != NULL) {
         // May be NULL if InitMemTrackers() is not called, for example from tests.
         _instance_mem_tracker->unregister_from_parent();
-        _instance_mem_tracker->Close();
     }
-
     _instance_mem_tracker.reset();
    
     if (_query_mem_tracker.get() != NULL) {
         _query_mem_tracker->unregister_from_parent();
-        _query_mem_tracker->Close();
     }
     _query_mem_tracker.reset();
 #endif
@@ -234,9 +231,9 @@ Status RuntimeState::init_mem_trackers(const TUniqueId& query_id) {
     mem_tracker_counter->set(bytes_limit);
 
     _query_mem_tracker.reset(
-            new MemTracker(bytes_limit, std::string("RuntimeState:") + runtime_profile()->name(), _exec_env->process_mem_tracker()));
+            new MemTracker(bytes_limit, std::string("RuntimeState: query ") + runtime_profile()->name(), _exec_env->process_mem_tracker()));
     _instance_mem_tracker.reset(
-            new MemTracker(&_profile, -1, std::string("RuntimeState:") + runtime_profile()->name(), _query_mem_tracker.get()));
+            new MemTracker(&_profile, -1, std::string("RuntimeState: instance ") + runtime_profile()->name(), _query_mem_tracker.get()));
 
     /*
     // TODO: this is a stopgap until we implement ExprContext

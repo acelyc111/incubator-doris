@@ -327,7 +327,7 @@ Status DataSpliter::close(RuntimeState* state, Status close_status) {
         }
     }
   
-    _expr_mem_tracker->Close();
+    _expr_mem_tracker.reset();
     _closed = true;
     if (is_ok) {
         return Status::OK();

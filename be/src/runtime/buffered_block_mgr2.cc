@@ -53,15 +53,15 @@ SpinLock BufferedBlockMgr2::_s_block_mgrs_lock;
 
 class BufferedBlockMgr2::Client {
 public:
-    Client(BufferedBlockMgr2* mgr, int num_reserved_buffers, const std::shared_ptr<MemTracker>& tracker,
-            RuntimeState* state) :
-            _mgr(mgr),
-            _state(state),
-            _tracker(tracker),
-            _query_tracker(_mgr->_mem_tracker->parent()),
-            _num_reserved_buffers(num_reserved_buffers),
-            _num_tmp_reserved_buffers(0),
-            _num_pinned_buffers(0) {
+    Client(BufferedBlockMgr2* mgr, int num_reserved_buffers,
+           const std::shared_ptr<MemTracker>& tracker, RuntimeState* state)
+            : _mgr(mgr),
+              _state(state),
+              _tracker(tracker),
+              _query_tracker(new MemTracker(-1, "BufferedBlockMgr2", _mgr->_mem_tracker->parent())),
+              _num_reserved_buffers(num_reserved_buffers),
+              _num_tmp_reserved_buffers(0),
+              _num_pinned_buffers(0) {
         DCHECK(tracker != NULL);
     }
 

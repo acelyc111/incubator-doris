@@ -31,7 +31,7 @@ RowBlockV2::RowBlockV2(const Schema& schema, uint16_t capacity)
           _capacity(capacity),
           _column_datas(_schema.num_columns(), nullptr),
           _column_null_bitmaps(_schema.num_columns(), nullptr),
-          _tracker(new MemTracker()),
+          _tracker(new MemTracker(-1, "RowBlockV2")),
           _pool(new MemPool(_tracker.get())),
           _selection_vector(nullptr) {
     auto bitmap_size = BitmapSize(capacity);
@@ -41,7 +41,6 @@ RowBlockV2::RowBlockV2(const Schema& schema, uint16_t capacity)
 
         if (_schema.column(cid)->is_nullable()) {
             _column_null_bitmaps[cid] = new uint8_t[bitmap_size];
-            ;
         }
     }
     _selection_vector = new uint16_t[_capacity];

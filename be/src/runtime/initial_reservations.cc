@@ -85,6 +85,7 @@ void InitialReservations::Return(BufferPool::ClientHandle* src, int64_t bytes) {
 
 void InitialReservations::ReleaseResources() {
   initial_reservations_.Close();
-  initial_reservation_mem_tracker_->Close();
+  // TODO(HW): Close() is private. make this tracker shared later
+  // initial_reservation_mem_tracker_->Close();
 }
 }

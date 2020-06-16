@@ -107,13 +107,6 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
 
   ~MemTracker();
 
-  /// Closes this MemTracker. After closing it is invalid to consume memory on this
-  /// tracker and the tracker's consumption counter (which may be owned by a
-  /// RuntimeProfile, not this MemTracker) can be safely destroyed. MemTrackers without
-  /// consumption metrics in the context of a daemon must always be closed.
-  /// Idempotent: calling multiple times has no effect.
-  void Close();
-
   // Removes this tracker from parent_->child_trackers_.
   void unregister_from_parent() {
       DCHECK(parent_ != NULL);
@@ -346,7 +339,8 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// consumption_metric_ has ever reached.
   int64_t peak_consumption() const { return consumption_->value(); }
 
-  std::shared_ptr<MemTracker> parent() const { return parent_; }
+  // TODO(HW): return shared later
+  MemTracker* parent() const { return parent_; }
 
   /// Signature for function that can be called to free some memory after limit is
   /// reached. The function should try to free at least 'bytes_to_free' bytes of
@@ -444,6 +438,14 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
  private:
   friend class PoolMemTrackerRegistry;
 
+  // TODO(HW): remove later
+  /// Closes this MemTracker. After closing it is invalid to consume memory on this
+  /// tracker and the tracker's consumption counter (which may be owned by a
+  /// RuntimeProfile, not this MemTracker) can be safely destroyed. MemTrackers without
+  /// consumption metrics in the context of a daemon must always be closed.
+  /// Idempotent: calling multiple times has no effect.
+  void Close();
+
   /// Returns true if the current memory tracker's limit is exceeded.
   bool CheckLimitExceeded(MemLimit mode) const {
     int64_t limit = GetLimit(mode);
@@ -527,7 +529,8 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
 
   /// The parent of this tracker. The pointer is never modified, even after this tracker
   /// is unregistered.
-  std::shared_ptr<MemTracker> parent_;
+  // TODO(HW): std::shared_ptr<MemTracker> parent_;
+  MemTracker* parent_;
 
   /// in bytes; not owned
   RuntimeProfile::HighWaterMarkCounter* consumption_;

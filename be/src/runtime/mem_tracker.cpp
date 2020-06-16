@@ -117,7 +117,7 @@ void MemTracker::Init() {
   while (tracker != nullptr) {
     all_trackers_.push_back(tracker);
     if (tracker->has_limit()) limit_trackers_.push_back(tracker);
-    tracker = tracker->parent_.get();
+    tracker = tracker->parent_; // TODO(HW)
   }
   DCHECK_GT(all_trackers_.size(), 0);
   DCHECK_EQ(all_trackers_[0], this);
@@ -424,7 +424,7 @@ void MemTracker::GetTopNQueries(
 MemTracker* MemTracker::GetQueryMemTracker() {
   MemTracker* tracker = this;
   while (tracker != nullptr && !tracker->is_query_mem_tracker_) {
-    tracker = tracker->parent_.get();
+    tracker = tracker->parent_; // TODO(HW)
   }
   return tracker;
 }
