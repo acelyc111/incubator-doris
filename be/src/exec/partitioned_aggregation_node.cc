@@ -245,7 +245,7 @@ Status PartitionedAggregationNode::prepare(RuntimeState* state) {
   // TODO chenhao
   const RowDescriptor& row_desc = child(0)->row_desc();
   RETURN_IF_ERROR(NewAggFnEvaluator::Create(agg_fns_, state, _pool, agg_fn_pool_.get(),
-      &agg_fn_evals_, expr_mem_tracker().get(), row_desc));
+      &agg_fn_evals_, expr_mem_tracker(), row_desc));
   
   expr_results_pool_.reset(new MemPool(_expr_mem_tracker.get()));
   if (!grouping_exprs_.empty()) {
