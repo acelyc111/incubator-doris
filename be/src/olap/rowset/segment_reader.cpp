@@ -258,7 +258,7 @@ OLAPStatus SegmentReader::seek_to_block(
 
         if (_runtime_state != NULL) {
             MemTracker::update_limits(_buffer_size, _runtime_state->mem_trackers());
-            if (MemTracker::limit_exceeded(*_runtime_state->mem_trackers())) {
+            if (MemTracker::limit_exceeded(_runtime_state->mem_trackers())) {
                 return OLAP_ERR_FETCH_MEMORY_EXCEEDED;
             }
         }

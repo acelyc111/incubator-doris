@@ -362,7 +362,7 @@ DataStreamRecvr::DataStreamRecvr(
             _num_buffered_bytes(0),
             _profile(profile),
             _sub_plan_query_statistics_recvr(sub_plan_query_statistics_recvr) {
-    _mem_tracker.reset(new MemTracker(-1, "DataStreamRecvr", parent_tracker));
+    _mem_tracker.reset(new MemTracker(-1, "DataStreamRecvr", parent_tracker.get()));
 
     // Create one queue per sender if is_merging is true.
     int num_queues = is_merging ? num_senders : 1;

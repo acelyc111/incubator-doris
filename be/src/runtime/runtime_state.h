@@ -564,7 +564,7 @@ private:
     std::shared_ptr<MemTracker> _query_mem_tracker;
 
     // Memory usage of this fragment instance
-    boost::scoped_ptr<MemTracker> _instance_mem_tracker;
+    std::shared_ptr<MemTracker> _instance_mem_tracker;
 
     // if true, execution should stop with a CANCELLED status
     bool _is_cancelled;
