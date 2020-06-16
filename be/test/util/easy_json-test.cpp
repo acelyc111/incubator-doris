@@ -23,7 +23,6 @@
 
 #include "gutil/integral_types.h"
 #include "util/easy_json.h"
-#include "util/test_util.h"
 
 using rapidjson::SizeType;
 using rapidjson::Value;
@@ -102,5 +101,10 @@ TEST_F(EasyJsonTest, TestAllocatorLifetime) {
   child["child_attr"] = 1;
   ASSERT_EQ(child.value()["child_attr"].GetInt(), 1);
 }
-
 } // namespace doris
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+
