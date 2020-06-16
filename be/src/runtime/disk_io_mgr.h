@@ -699,7 +699,6 @@ private:
     ObjectPool _pool;
 
     // Process memory tracker; needed to account for io buffers.
-    // MemTracker* _process_mem_tracker;
     std::shared_ptr<MemTracker> _process_mem_tracker;
 
     // Number of worker(read) threads per disk. Also the max depth of queued

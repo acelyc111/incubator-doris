@@ -227,7 +227,7 @@ Status BufferedBlockMgr2::create(
         RuntimeState* state, const std::shared_ptr<MemTracker>& parent,
         RuntimeProfile* profile, TmpFileMgr* tmp_file_mgr,
         int64_t mem_limit, int64_t block_size,
-        shared_ptr<BufferedBlockMgr2>* block_mgr) {
+        std::shared_ptr<BufferedBlockMgr2>* block_mgr) {
     DCHECK(parent != nullptr);
     block_mgr->reset();
     {

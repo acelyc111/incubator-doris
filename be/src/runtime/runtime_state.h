@@ -172,9 +172,6 @@ public:
     std::shared_ptr<MemTracker> instance_mem_tracker_shared_ptr() {
         return _instance_mem_tracker;
     }
-    MemTracker* query_mem_tracker() { {
-        return _query_mem_tracker.get(); }
-    }
     ThreadResourceMgr::ResourcePool* resource_pool() {
         return _resource_pool;
     }
