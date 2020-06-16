@@ -22,6 +22,7 @@
 
 #include <mustache.h>
 
+#include "common/config.h"
 #include "http/ev_http_server.h"
 #include "http/http_channel.h"
 #include "http/http_headers.h"
@@ -91,11 +92,11 @@ void WebPageHandler::handle(HttpRequest* req) {
 
     std::string output;
     if (use_style) {
-        stringstream oss;
+        std::stringstream oss;
         RenderMainTemplate(content.str(), &oss);
         output = oss.str();
     } else {
-        output = content;
+        output = content.str();
     }
 
     req->add_output_header(HttpHeaders::CONTENT_TYPE, s_html_content_type.c_str());
@@ -259,7 +260,7 @@ static const char* const kMainTemplate = R"(
 //</html>
 //)";
 
-void WebPageHandler::RenderMainTemplate(const string& content, stringstream* output) {
+void WebPageHandler::RenderMainTemplate(const std::string& content, std::stringstream* output) {
     EasyJson ej;
     ej["static_pages_available"] = true;  // static_pages_available();
     ej["content"] = content;
@@ -275,7 +276,7 @@ void WebPageHandler::RenderMainTemplate(const string& content, stringstream* out
 //            path_handler["alias"] = handler.second->alias();
 //        }
 //    }
-    RenderTemplate(kMainTemplate, config::www_path, ej.value(), output);
+    mustache::RenderTemplate(kMainTemplate, config::www_path, ej.value(), output);
 }
 
 } // namespace doris
