@@ -277,7 +277,7 @@ TEST_F(HashTableTest, GrowTableTest) {
     int num_to_add = 4;
     int expected_size = 0;
 
-    auto mem_tracker = make_shared<MemTracker>(1024 * 1024);
+    auto mem_tracker = std::make_shared<MemTracker>(1024 * 1024);
     HashTable hash_table(
         _build_expr, _probe_expr, 1, false, 0, mem_tracker, num_to_add);
     EXPECT_FALSE(mem_tracker->limit_exceeded());
@@ -315,7 +315,7 @@ TEST_F(HashTableTest, GrowTableTest2) {
     int num_to_add = 1024;
     int expected_size = 0;
 
-    auto mem_tracker = make_shared<MemTracker>(1024 * 1024);
+    auto mem_tracker = std::make_shared<MemTracker>(1024 * 1024);
     HashTable hash_table(
         _build_expr, _probe_expr, 1, false, 0, mem_tracker, num_to_add);
 
