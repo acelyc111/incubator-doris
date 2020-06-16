@@ -280,7 +280,7 @@ CCTZ_MD5SUM="209348e50b24dbbdec6d961059c2fc92"
 #MUSTACHE
 MUSTACHE_DOWNLOAD="https://github.com/henryr/cpp-mustache/archive/b290952d8eb93d085214d8c8c9eab8559df9f606.zip"
 MUSTACHE_NAME="mustache-9df9f606.zip"
-MUSTACHE_SOURCE="mustache-9df9f606"
+MUSTACHE_SOURCE="cpp-mustache-b290952d8eb93d085214d8c8c9eab8559df9f606"
 MUSTACHE_MD5SUM="461ad0f237816d312c8a1fdee6f174b9"
 
 # all thirdparties which need to be downloaded is set in array TP_ARCHIVES

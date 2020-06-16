@@ -687,10 +687,14 @@ build_cctz() {
 
 #mustache
 build_mustache() {
-    check_if_source_exist $CCTZ_SOURCE
-    cd $TP_SOURCE_DIR/$CCTZ_SOURCE
+    check_if_source_exist $MUSTACHE_SOURCE
+    cd $TP_SOURCE_DIR/$MUSTACHE_SOURCE
     export PREFIX=$TP_INSTALL_DIR
-    make -j$PARALLEL && make install
+    # We add $PREFIX/include for boost and $PREFIX_COMMON/include for rapidjson.
+    ${CXX:-g++} $EXTRA_CXXFLAGS -I$PREFIX/include -I$PREFIX_COMMON/include -O3 -DNDEBUG -fPIC -c "mustache.cc"
+    ar rs libmustache.a mustache.o
+    cp libmustache.a $PREFIX/lib/
+    cp mustache.h $PREFIX/include/
 }
 
 # See https://github.com/apache/incubator-doris/issues/2910
