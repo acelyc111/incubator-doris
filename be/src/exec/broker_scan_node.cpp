@@ -101,7 +101,7 @@ Status BrokerScanNode::prepare(RuntimeState* state) {
         RETURN_IF_ERROR(Expr::prepare(
                 _partition_expr_ctxs, state, row_desc(), expr_mem_tracker().get()));
         for (auto iter : _partition_infos) {
-            RETURN_IF_ERROR(iter->prepare(state, row_desc(), expr_mem_tracker().get()));
+            RETURN_IF_ERROR(iter->prepare(state, row_desc(), expr_mem_tracker()));
         }
     }
 

@@ -398,7 +398,7 @@ Status DataStreamSender::prepare(RuntimeState* state) {
         RETURN_IF_ERROR(Expr::prepare(
                 _partition_expr_ctxs, state, _row_desc, _expr_mem_tracker.get()));
         for (auto iter : _partition_infos) {
-            RETURN_IF_ERROR(iter->prepare(state, _row_desc, _expr_mem_tracker.get()));
+            RETURN_IF_ERROR(iter->prepare(state, _row_desc, _expr_mem_tracker));
         }
     }
 

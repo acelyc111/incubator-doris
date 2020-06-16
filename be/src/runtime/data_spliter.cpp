@@ -92,11 +92,11 @@ Status DataSpliter::prepare(RuntimeState* state) {
     RETURN_IF_ERROR(Expr::prepare(
             _partition_expr_ctxs, state, _row_desc, _expr_mem_tracker.get()));
     for (auto& iter : _rollup_map) {
-        RETURN_IF_ERROR(iter.second->prepare(state, _row_desc, _expr_mem_tracker.get()));
+        RETURN_IF_ERROR(iter.second->prepare(state, _row_desc, _expr_mem_tracker));
     }
     _profile = state->obj_pool()->add(new RuntimeProfile(state->obj_pool(), title.str()));
     for (auto iter : _partition_infos) {
-        RETURN_IF_ERROR(iter->prepare(state, _row_desc, _expr_mem_tracker.get()));
+        RETURN_IF_ERROR(iter->prepare(state, _row_desc, _expr_mem_tracker));
     }
     return Status::OK();
 }
