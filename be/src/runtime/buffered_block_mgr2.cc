@@ -53,7 +53,7 @@ SpinLock BufferedBlockMgr2::_s_block_mgrs_lock;
 
 class BufferedBlockMgr2::Client {
 public:
-    Client(BufferedBlockMgr2* mgr, int num_reserved_buffers, std::shared_ptr<MemTracker> tracker,
+    Client(BufferedBlockMgr2* mgr, int num_reserved_buffers, const std::shared_ptr<MemTracker>& tracker,
             RuntimeState* state) :
             _mgr(mgr),
             _state(state),
@@ -1252,7 +1252,7 @@ string BufferedBlockMgr2::debug_internal() const {
 
 void BufferedBlockMgr2::init(
         DiskIoMgr* io_mgr, RuntimeProfile* parent_profile,
-        std::shared_ptr<MemTracker> parent_tracker, int64_t mem_limit) {
+        const std::shared_ptr<MemTracker>& parent_tracker, int64_t mem_limit) {
     unique_lock<mutex> l(_lock);
     if (_initialized) {
         return;

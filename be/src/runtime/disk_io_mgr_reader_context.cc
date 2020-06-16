@@ -162,7 +162,7 @@ void DiskIoMgr::RequestContext::reset(std::shared_ptr<MemTracker> tracker) {
     _disks_accessed_bitmap = NULL;
 
     _state = Active;
-    _mem_tracker = tracker;
+    _mem_tracker = std::move(tracker);
 
     _num_unstarted_scan_ranges = 0;
     _num_disks_with_ranges = 0;

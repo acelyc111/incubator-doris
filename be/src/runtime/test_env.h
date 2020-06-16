@@ -56,12 +56,6 @@ public:
     ExecEnv* exec_env() {
         return _exec_env.get();
     }
-    MemTracker* block_mgr_parent_tracker() {
-        return _block_mgr_parent_tracker.get();
-    }
-    MemTracker* io_mgr_tracker() {
-        return _io_mgr_tracker.get();
-    }
     MetricRegistry* metrics() {
         return _metrics.get();
     }

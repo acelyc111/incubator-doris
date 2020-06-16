@@ -118,8 +118,8 @@ BufferPool::BufferPool(int64_t min_buffer_len, int64_t buffer_bytes_limit,
 
 BufferPool::~BufferPool() {}
 
-Status BufferPool::RegisterClient(const string& name, //TmpFileMgr::FileGroup* file_group,
-    ReservationTracker* parent_reservation, MemTracker* mem_tracker,
+Status BufferPool::RegisterClient(const string& name,
+    ReservationTracker* parent_reservation, const std::shared_ptr<MemTracker>& mem_tracker,
     int64_t reservation_limit, RuntimeProfile* profile, ClientHandle* client) {
   DCHECK(!client->is_registered());
   DCHECK(parent_reservation != NULL);
@@ -375,7 +375,7 @@ void BufferPool::SubReservation::Close() {
 }
 
 BufferPool::Client::Client(BufferPool* pool, //TmpFileMgr::FileGroup* file_group,
-    const string& name, ReservationTracker* parent_reservation, MemTracker* mem_tracker,
+    const string& name, ReservationTracker* parent_reservation, const std::shared_ptr<MemTracker>& mem_tracker,
     int64_t reservation_limit, RuntimeProfile* profile)
   : pool_(pool),
     //file_group_(file_group),

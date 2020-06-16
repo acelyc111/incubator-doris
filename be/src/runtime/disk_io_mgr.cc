@@ -234,7 +234,7 @@ void DiskIoMgr::BufferDescriptor::set_mem_tracker(std::shared_ptr<MemTracker> tr
     if (_mem_tracker != nullptr) {
         _mem_tracker->Release(_buffer_len);
     }
-    _mem_tracker = tracker;
+    _mem_tracker = std::move(tracker);
     if (_mem_tracker != nullptr) {
         _mem_tracker->Consume(_buffer_len);
     }
@@ -407,7 +407,7 @@ Status DiskIoMgr::init(const std::shared_ptr<MemTracker>& process_mem_tracker) {
 Status DiskIoMgr::register_context(RequestContext** request_context, std::shared_ptr<MemTracker> mem_tracker) {
     DCHECK(_request_context_cache.get() != NULL) << "Must call init() first.";
     *request_context = _request_context_cache->get_new_context();
-    (*request_context)->reset(mem_tracker);
+    (*request_context)->reset(std:move(mem_tracker));
     return Status::OK();
 }
 

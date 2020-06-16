@@ -407,13 +407,13 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
     query_exec_finished_.store(1);
   }
 
-  static void update_limits(int64_t bytes, std::vector<MemTracker*>* trackers) {
-    for (auto& tracker : *trackers) {
+  static void update_limits(int64_t bytes, const std::vector<std::shared_ptr<MemTracker>>& trackers) {
+    for (auto& tracker : trackers) {
       tracker->Consume(bytes);
     }
   }
 
-  static bool limit_exceeded(const std::vector<MemTracker*>& trackers) {
+  static bool limit_exceeded(const std::vector<std::shared_ptr<MemTracker>>& trackers) {
     for (const auto& tracker : trackers) {
       if (tracker->limit_exceeded()) {
         // TODO: remove logging

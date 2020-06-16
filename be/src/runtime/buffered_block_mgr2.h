@@ -424,7 +424,7 @@ private:
 
     // Initializes the block mgr. Idempotent and thread-safe.
     void init(DiskIoMgr* io_mgr, RuntimeProfile* profile,
-              std::shared_ptr<MemTracker> parent_tracker, int64_t mem_limit);
+              const std::shared_ptr<MemTracker>& parent_tracker, int64_t mem_limit);
 
     // Initializes _tmp_files. This is initialized the first time we need to write to disk.
     // Must be called with _lock taken.

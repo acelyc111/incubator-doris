@@ -108,7 +108,7 @@ private:
     friend class DataStreamMgr;
     class SenderQueue;
 
-    DataStreamRecvr(DataStreamMgr* stream_mgr, MemTracker* parent_tracker,
+    DataStreamRecvr(DataStreamMgr* stream_mgr, const std::shared_ptr<MemTracker>& parent_tracker,
             const RowDescriptor& row_desc, const TUniqueId& fragment_instance_id,
             PlanNodeId dest_node_id, int num_senders, bool is_merging, 
             int total_buffer_limit, RuntimeProfile* profile, 

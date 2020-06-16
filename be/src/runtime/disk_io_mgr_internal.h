@@ -138,7 +138,6 @@ public:
     RequestContext(DiskIoMgr* parent, int num_disks);
 
     // Resets this object.
-    // void reset(MemTracker* tracker);
     void reset(std::shared_ptr<MemTracker> tracker);
 
     // Decrements the number of active disks for this reader.  If the disk count
