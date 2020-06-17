@@ -23,6 +23,7 @@
 #include <mustache.h>
 
 #include "common/config.h"
+#include "gutil/stl_util.h"
 #include "http/ev_http_server.h"
 #include "http/http_channel.h"
 #include "http/http_headers.h"
@@ -55,7 +56,7 @@ void WebPageHandler::register_page(const std::string& path, const PageHandlerCal
     if (map_iter == _page_map.end()) {
         // first time, register this to web server
         _http_server->register_handler(HttpMethod::GET, path, this);
-        _page_map.insert[path] = new PathHandler(true /* is_styled */, is_on_nav_bar, "", callback);
+        _page_map[path] = new PathHandler(true /* is_styled */, is_on_nav_bar, "", callback);
     }
 }
 
@@ -155,7 +156,7 @@ static const char* const kMainTemplate = R"(
 )";
 
 void WebPageHandler::RenderMainTemplate(const std::string& content, std::stringstream* output) {
-    static const std::string& footer = std::string("Version") + get_version_string(true);
+    static const std::string& footer = std::string("<pre>Version") + get_version_string(true) + std::string("</pre>");
 
     EasyJson ej;
     ej["static_pages_available"] = true;  // TODO(yingchun): static_pages_available();

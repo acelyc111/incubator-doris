@@ -58,7 +58,7 @@ private:
     class PathHandler {
     public:
         PathHandler(bool is_styled, bool is_on_nav_bar, std::string alias,
-                    PrerenderedPathHandlerCallback callback)
+                    PageHandlerCallback callback)
                 : is_styled_(is_styled),
                   is_on_nav_bar_(is_on_nav_bar),
                   alias_(std::move(alias)),
@@ -80,7 +80,7 @@ private:
         std::string alias_;
 
         // Callback to render output for this page.
-        PrerenderedPathHandlerCallback callback_;
+        PageHandlerCallback callback_;
     };
 
     EvHttpServer* _http_server;
