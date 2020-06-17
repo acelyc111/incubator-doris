@@ -214,6 +214,37 @@ int EvHttpServer::on_header(struct evhttp_request* ev_req) {
     }
     auto handler = _find_handler(request.get());
     if (handler == nullptr) {
+        if (request->method() == GET && Env::Default()->path_exists(request->raw_path()).ok()) {
+            // open src file
+            FileHandler src_file;
+            if (src_file.open(request->raw_path(), O_RDONLY) != OLAP_SUCCESS) {
+                evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
+                HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
+                return 0;
+            }
+
+            std::stringstream oss;
+            const int64_t BUF_SIZE = 8192;
+            char *buf = new char[BUF_SIZE];
+            DeferOp free_buf(std::bind<void>(std::default_delete<char[]>(), buf));
+            int64_t src_length = src_file.length();
+            int64_t offset = 0;
+            while (src_length > 0) {
+                int64_t to_read = BUF_SIZE < src_length ? BUF_SIZE : src_length;
+                if (OLAP_SUCCESS != (src_file.pread(buf, to_read, offset))) {
+                    evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
+                    HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
+                    return 0;
+                }
+                oss << buf;
+
+                offset += to_read;
+                src_length -= to_read;
+            }
+
+            HttpChannel::send_reply(request.get(), HttpStatus::OK, oss.str());
+            return 0;
+        }
         evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
         HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
         return 0;
