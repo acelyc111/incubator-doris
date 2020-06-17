@@ -129,6 +129,7 @@ void MemTracker::AddChildTracker(const std::shared_ptr<MemTracker>& tracker) {
 }
 
 void MemTracker::Close() {
+  LOG(INFO) << "before call Close(), closed_ is " << closed_;
   if (closed_) return;
   if (consumption_metric_ == nullptr) {
     DCHECK_EQ(consumption_->current_value(), 0) << label_ << "\n"
