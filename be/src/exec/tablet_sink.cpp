@@ -39,6 +39,9 @@ NodeChannel::NodeChannel(OlapTableSink* parent, int64_t index_id, int64_t node_i
         : _parent(parent), _index_id(index_id), _node_id(node_id), _schema_hash(schema_hash) {}
 
 NodeChannel::~NodeChannel() {
+    DCHECK(!_cur_batch);
+    DCHECK(_pending_batches.empty());
+
     if (_open_closure != nullptr) {
         if (_open_closure->unref()) {
             delete _open_closure;
@@ -237,6 +240,14 @@ Status NodeChannel::mark_close() {
 Status NodeChannel::close_wait(RuntimeState* state) {
     auto st = none_of({_cancelled, !_eos_is_produced});
     if (!st.ok()) {
+        // Beware of the destruct sequence. RowBatches will use mem_trackers(include ancestors).
+        // Delete RowBatches here is a better choice to reduce the potential of dtor errors.
+        {
+            std::lock_guard<std::mutex> lg(_pending_batches_lock);
+            std::queue<AddBatchReq> empty;
+            std::swap(_pending_batches, empty);
+            _cur_batch.reset();
+        }
         return st.clone_and_prepend("already stopped, skip waiting for close. cancelled/!eos: ");
     }
 
@@ -662,7 +673,7 @@ Status OlapTableSink::close(RuntimeState* state, Status close_status) {
             SCOPED_TIMER(_close_timer);
             for (auto index_channel : _channels) {
                 index_channel->for_each_node_channel(
-                        [](NodeChannel* ch) { WARN_IF_ERROR(ch->mark_close(), ""); });
+                        [](NodeChannel* ch) { WARN_IF_ERROR(ch->mark_close(), ch->name()); });
             }
 
             for (auto index_channel : _channels) {
