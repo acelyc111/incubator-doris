@@ -24,6 +24,7 @@
 
 #include "common/config.h"
 #include "gutil/stl_util.h"
+#include "gutil/strings/substitute.h"
 #include "http/ev_http_server.h"
 #include "http/http_channel.h"
 #include "http/http_headers.h"
@@ -36,27 +37,48 @@
 #include "util/easy_json.h"
 #include "util/mem_info.h"
 
+using strings::Substitute;
+
 namespace doris {
 
 static std::string s_html_content_type = "text/html";
 
 WebPageHandler::WebPageHandler(EvHttpServer* server) : _http_server(server) {
-    PageHandlerCallback default_callback =
+    TemplatePageHandlerCallback default_callback =
             boost::bind<void>(boost::mem_fn(&WebPageHandler::root_handler), this, _1, _2);
-    register_page("/", default_callback, false /* is_on_nav_bar */);
+    register_template_page("/", "Home", default_callback, false /* is_on_nav_bar */);
 }
 
 WebPageHandler::~WebPageHandler() {
     STLDeleteValues(&_page_map);
 }
 
-void WebPageHandler::register_page(const std::string& path, const PageHandlerCallback& callback, bool is_on_nav_bar) {
+void WebPageHandler::register_template_page(const std::string& path, const string& alias,
+                                            const TemplatePageHandlerCallback& callback, bool is_on_nav_bar) {
+    string render_path = (path == "/") ? "/home" : path;
+    auto wrapped_cb = [=](const ArgumentMap& args, std::stringstream* output) {
+        EasyJson ej;
+        callback(args, &ej);
+        Render(render_path, ej, true /* is_styled */, output);
+    };
+    register_page(path, alias, wrapped_cb, is_on_nav_bar);
+}
+
+void WebPageHandler::register_page(const std::string& path, const string& alias,
+                                   const PageHandlerCallback& callback, bool is_on_nav_bar) {
+    string render_path = (path == "/") ? "/home" : path;
+    auto wrapped_cb = [=](const ArgumentMap& args, std::stringstream* output) {
+        EasyJson ej;
+        callback(args, &resp);
+        Render(render_path, ej, config::www_path /* is_styled */, &output);
+    };
+
     boost::mutex::scoped_lock lock(_map_lock);
     auto map_iter = _page_map.find(path);
     if (map_iter == _page_map.end()) {
         // first time, register this to web server
         _http_server->register_handler(HttpMethod::GET, path, this);
-        _page_map[path] = new PathHandler(true /* is_styled */, is_on_nav_bar, "", callback);
+        _page_map[path] = new PathHandler(true /* is_styled */, is_on_nav_bar, alias, callback);
     }
 }
 
@@ -96,15 +118,9 @@ void WebPageHandler::handle(HttpRequest* req) {
 #endif
 }
 
-void WebPageHandler::root_handler(const ArgumentMap& args, std::stringstream* output) {
-    (*output) << "<h2>Version</h2>";
-    (*output) << "<pre>" << get_version_string(false) << "</pre>" << std::endl;
-    (*output) << "<h2>Hardware Info</h2>";
-    (*output) << "<pre>";
-    (*output) << CpuInfo::debug_string();
-    (*output) << MemInfo::debug_string();
-    (*output) << DiskInfo::debug_string();
-    (*output) << "</pre>";
+void WebPageHandler::root_handler(const ArgumentMap& args, EasyJson* output) {
+    (*output)["version"] = get_version_string(false);
+    (*output)["hardware"] = CpuInfo::debug_string() + MemInfo::debug_string() + DiskInfo::debug_string();
 }
 
 static const char* const kMainTemplate = R"(
@@ -155,6 +171,17 @@ static const char* const kMainTemplate = R"(
 </html>
 )";
 
+std::string WebPageHandler::MustachePartialTag(const std::string& path) const {
+    return Substitute("{{> $0.mustache}}", path);
+}
+
+bool WebPageHandler::MustacheTemplateAvailable(const std::string& path) const {
+    if (config::www_path.empty()) {
+        return false;
+    }
+    return true; //Env::Default()->FileExists(Substitute("$0$1.mustache", opts_.doc_root, path));
+}
+
 void WebPageHandler::RenderMainTemplate(const std::string& content, std::stringstream* output) {
     static const std::string& footer = std::string("<pre>Version") + get_version_string(true) + std::string("</pre>");
 
@@ -171,6 +198,17 @@ void WebPageHandler::RenderMainTemplate(const std::string& content, std::strings
         }
     }
     mustache::RenderTemplate(kMainTemplate, config::www_path, ej.value(), output);
+}
+
+void WebPageHandler::Render(const string& path, const EasyJson& ej, bool use_style,
+                            stringstream* output) {
+    if (MustacheTemplateAvailable(path)) {
+        mustache::RenderTemplate(MustachePartialTag(path), config::www_path, ej.value(), output);
+    } else if (use_style) {
+        (*output) << "<pre>" << ej.ToString() << "</pre>";
+    } else {
+        (*output) << ej.ToString();
+    }
 }
 
 } // namespace doris

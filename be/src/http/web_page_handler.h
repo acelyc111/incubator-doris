@@ -37,22 +37,41 @@ class EvHttpServer;
 class WebPageHandler : public HttpHandler {
 public:
     typedef std::map<std::string, std::string> ArgumentMap;
-    typedef boost::function<void (const ArgumentMap& args, std::stringstream* output)> 
+    typedef boost::function<void (const ArgumentMap& args, std::stringstream* output)>
             PageHandlerCallback;
+    typedef boost::function<void (const ArgumentMap& args, EasyJson* output)>
+            TemplatePageHandlerCallback;
+
     WebPageHandler(EvHttpServer* http_server);
     virtual ~WebPageHandler();
 
     void handle(HttpRequest *req) override;
 
-    // Just use old code
-    void register_page(const std::string& path, const PageHandlerCallback& callback, bool is_on_nav_bar);
+    void register_page(const std::string& path, const string& alias,
+                       const PageHandlerCallback& callback, bool is_on_nav_bar);
+
+    void register_template_page(const std::string& path, const string& alias,
+                                const TemplatePageHandlerCallback& callback, bool is_on_nav_bar);
 
 private:
-    void root_handler(const ArgumentMap& args, std::stringstream* output);
+    void root_handler(const ArgumentMap& args, EasyJson* output);
+
+    // Returns a mustache tag that renders the partial at path when
+    // passed to mustache::RenderTemplate.
+    std::string MustachePartialTag(const std::string& path) const;
+
+    // Returns whether or not a mustache template corresponding
+    // to the given path can be found.
+    bool MustacheTemplateAvailable(const std::string& path) const;
 
     // Renders the main HTML template with the pre-rendered string 'content'
     // in the main body of the page, into 'output'.
     void RenderMainTemplate(const std::string& content, std::stringstream* output);
+
+    // Renders the template corresponding to 'path' (if available), using
+    // fields in 'ej'.
+    void Render(const std::string& path, const EasyJson& ej, bool use_style,
+                std::stringstream* output);
 
     // Container class for a list of path handler callbacks for a single URL.
     class PathHandler {
