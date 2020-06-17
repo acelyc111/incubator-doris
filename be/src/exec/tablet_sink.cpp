@@ -39,8 +39,9 @@ NodeChannel::NodeChannel(OlapTableSink* parent, int64_t index_id, int64_t node_i
         : _parent(parent), _index_id(index_id), _node_id(node_id), _schema_hash(schema_hash) {}
 
 NodeChannel::~NodeChannel() {
-    DCHECK(!_cur_batch);
-    DCHECK(_pending_batches.empty());
+    // TODO(HW): remove after mem tracker shared
+    CHECK(!_cur_batch) << name();
+    CHECK(_pending_batches.empty()) << name();
 
     if (_open_closure != nullptr) {
         if (_open_closure->unref()) {
@@ -240,14 +241,6 @@ Status NodeChannel::mark_close() {
 Status NodeChannel::close_wait(RuntimeState* state) {
     auto st = none_of({_cancelled, !_eos_is_produced});
     if (!st.ok()) {
-        // Beware of the destruct sequence. RowBatches will use mem_trackers(include ancestors).
-        // Delete RowBatches here is a better choice to reduce the potential of dtor errors.
-        {
-            std::lock_guard<std::mutex> lg(_pending_batches_lock);
-            std::queue<AddBatchReq> empty;
-            std::swap(_pending_batches, empty);
-            _cur_batch.reset();
-        }
         return st.clone_and_prepend("already stopped, skip waiting for close. cancelled/!eos: ");
     }
 
@@ -260,13 +253,11 @@ Status NodeChannel::close_wait(RuntimeState* state) {
     timer.stop();
     VLOG(1) << name() << " close_wait cost: " << timer.elapsed_time() / 1000000 << " ms";
 
-    {
-        std::lock_guard<std::mutex> lg(_pending_batches_lock);
-        DCHECK(_pending_batches.empty());
-        DCHECK(_cur_batch == nullptr);
-    }
-
     if (_add_batches_finished) {
+        std::lock_guard<std::mutex> lg(_pending_batches_lock);
+        CHECK(_pending_batches.empty());
+        CHECK(_cur_batch == nullptr);
+
         state->tablet_commit_infos().insert(state->tablet_commit_infos().end(),
                                             std::make_move_iterator(_tablet_commit_infos.begin()),
                                             std::make_move_iterator(_tablet_commit_infos.end()));
@@ -292,15 +283,6 @@ void NodeChannel::cancel() {
     closure->cntl.set_timeout_ms(_rpc_timeout_ms);
     _stub->tablet_writer_cancel(&closure->cntl, &request, &closure->result, closure);
     request.release_id();
-
-    // Beware of the destruct sequence. RowBatches will use mem_trackers(include ancestors).
-    // Delete RowBatches here is a better choice to reduce the potential of dtor errors.
-    {
-        std::lock_guard<std::mutex> lg(_pending_batches_lock);
-        std::queue<AddBatchReq> empty;
-        std::swap(_pending_batches, empty);
-        _cur_batch.reset();
-    }
 }
 
 int NodeChannel::try_send_and_fetch_status() {
@@ -431,7 +413,10 @@ OlapTableSink::OlapTableSink(ObjectPool* pool, const RowDescriptor& row_desc,
     }
 }
 
-OlapTableSink::~OlapTableSink() {}
+OlapTableSink::~OlapTableSink() {
+    // TODO(HW): remove after shared
+    _mem_tracker->unregister_from_parent();
+}
 
 Status OlapTableSink::init(const TDataSink& t_sink) {
     DCHECK(t_sink.__isset.olap_table_sink);
@@ -730,6 +715,11 @@ Status OlapTableSink::close(RuntimeState* state, Status close_status) {
     // But there is no specific sequence required between sender join() & close_wait().
     if (_sender_thread.joinable()) {
         _sender_thread.join();
+    }
+
+    // TODO(HW): remove after mem tracker shared
+    for (auto channel : _channels) {
+        channel->for_each_node_channel([](NodeChannel* ch) { ch->clear_all_batches(); });
     }
 
     Expr::close(_output_expr_ctxs, state);

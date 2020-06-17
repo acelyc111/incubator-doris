@@ -186,6 +186,13 @@ public:
 
     Status none_of(std::initializer_list<bool> vars);
 
+    // TODO(HW): remove after mem tracker shared
+    void clear_all_batches() {
+        std::queue<AddBatchReq> empty;
+        std::swap(_pending_batches, empty);
+        _cur_batch.reset();
+    }
+
 private:
     OlapTableSink* _parent = nullptr;
     int64_t _index_id = -1;
