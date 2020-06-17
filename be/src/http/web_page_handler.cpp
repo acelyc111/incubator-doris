@@ -134,8 +134,8 @@ static const char* const kMainTemplate = R"(
     <script src='/jquery-3.2.1.min.js' defer></script>
     <script src='/bootstrap/js/bootstrap.min.js' defer></script>
     <script src='/bootstrap/js/bootstrap-table.min.js' defer></script>
-    <script src='/kudu.js' defer></script>
-    <link href='/kudu.css' rel='stylesheet' />
+    <script src='/doris.js' defer></script>
+    <link href='/doris.css' rel='stylesheet' />
   </head>
   <body>
 
@@ -143,7 +143,7 @@ static const char* const kMainTemplate = R"(
       <div class="container-fluid">
         <div class="navbar-header">
           <a class="navbar-brand" style="padding-top: 5px;" href="/">
-            <img src="/doris-logo.png" width='61' height='45' alt="Doris" />
+            <img src="/logo.png" width='61' height='45' alt="Doris" />
           </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
