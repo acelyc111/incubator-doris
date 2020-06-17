@@ -352,6 +352,12 @@ Status NodeChannel::none_of(std::initializer_list<bool> vars) {
     return st;
 }
 
+void NodeChannel::clear_all_batches() {
+    std::queue<AddBatchReq> empty;
+    std::swap(_pending_batches, empty);
+    _cur_batch.reset();
+}
+
 IndexChannel::~IndexChannel() {}
 
 Status IndexChannel::init(RuntimeState* state, const std::vector<TTabletWithPartition>& tablets) {
@@ -413,10 +419,7 @@ OlapTableSink::OlapTableSink(ObjectPool* pool, const RowDescriptor& row_desc,
     }
 }
 
-OlapTableSink::~OlapTableSink() {
-    // TODO(HW): remove after shared
-    _mem_tracker->unregister_from_parent();
-}
+OlapTableSink::~OlapTableSink() {}
 
 Status OlapTableSink::init(const TDataSink& t_sink) {
     DCHECK(t_sink.__isset.olap_table_sink);
