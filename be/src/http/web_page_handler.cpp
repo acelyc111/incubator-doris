@@ -34,7 +34,6 @@
 #include "util/cpu_info.h"
 #include "util/debug_util.h"
 #include "util/disk_info.h"
-#include "util/easy_json.h"
 #include "util/mem_info.h"
 
 using strings::Substitute;
@@ -66,13 +65,6 @@ void WebPageHandler::register_template_page(const std::string& path, const strin
 
 void WebPageHandler::register_page(const std::string& path, const string& alias,
                                    const PageHandlerCallback& callback, bool is_on_nav_bar) {
-    string render_path = (path == "/") ? "/home" : path;
-    auto wrapped_cb = [=](const ArgumentMap& args, std::stringstream* output) {
-        EasyJson ej;
-        callback(args, &resp);
-        Render(render_path, ej, config::www_path /* is_styled */, &output);
-    };
-
     boost::mutex::scoped_lock lock(_map_lock);
     auto map_iter = _page_map.find(path);
     if (map_iter == _page_map.end()) {
@@ -201,7 +193,7 @@ void WebPageHandler::RenderMainTemplate(const std::string& content, std::strings
 }
 
 void WebPageHandler::Render(const string& path, const EasyJson& ej, bool use_style,
-                            stringstream* output) {
+                            std::stringstream* output) {
     if (MustacheTemplateAvailable(path)) {
         mustache::RenderTemplate(MustachePartialTag(path), config::www_path, ej.value(), output);
     } else if (use_style) {

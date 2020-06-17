@@ -27,6 +27,7 @@
 #include <boost/thread/mutex.hpp>
 
 #include "http/http_handler.h"
+#include "util/easy_json.h"
 
 namespace doris {
 
@@ -47,10 +48,10 @@ public:
 
     void handle(HttpRequest *req) override;
 
-    void register_page(const std::string& path, const string& alias,
+    void register_page(const std::string& path, const std::string& alias,
                        const PageHandlerCallback& callback, bool is_on_nav_bar);
 
-    void register_template_page(const std::string& path, const string& alias,
+    void register_template_page(const std::string& path, const std::string& alias,
                                 const TemplatePageHandlerCallback& callback, bool is_on_nav_bar);
 
 private:
