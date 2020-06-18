@@ -28,7 +28,6 @@
 
 #include "http/http_handler.h"
 #include "util/easy_json.h"
-#include "base_web_handler.h"
 
 namespace doris {
 
@@ -36,7 +35,7 @@ class EvHttpServer;
 
 // This a handler for webpage request
 // and this handler manage all the page handler
-class WebPageHandler : public HttpHandler, public BaseWebHandler {
+class WebPageHandler : public HttpHandler {
 public:
     typedef std::map<std::string, std::string> ArgumentMap;
     typedef boost::function<void (const ArgumentMap& args, std::stringstream* output)>

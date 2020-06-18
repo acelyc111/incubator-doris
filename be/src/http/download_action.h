@@ -22,7 +22,6 @@
 #include "exec/scan_node.h"
 #include "runtime/descriptors.h"
 #include "http/http_handler.h"
-#include "base_web_handler.h"
 
 namespace doris {
 
@@ -33,7 +32,7 @@ class ExecEnv;
 // TODO(lingbin): implements two useful header ('If-Modified-Since' and 'RANGE') to reduce
 // transmission consumption.
 // We use parameter named 'file' to specify the static resource path, it is an absolute path.
-class DownloadAction : public HttpHandler, public BaseWebHandler {
+class DownloadAction : public HttpHandler {
 public:
     DownloadAction(ExecEnv* exec_env, const std::vector<std::string>& allow_dirs);
 
