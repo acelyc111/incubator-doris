@@ -134,27 +134,6 @@ void DownloadAction::handle(HttpRequest *req) {
     LOG(INFO) << "deal with download requesst finished! ";
 }
 
-void DownloadAction::do_dir_response(
-        const std::string& dir_path, HttpRequest *req) {
-    std::vector<std::string> files;
-    Status status = FileUtils::list_files(Env::Default(), dir_path, &files);
-    if (!status.ok()) {
-        LOG(WARNING) << "Failed to scan dir. dir=" << dir_path;
-        HttpChannel::send_error(req, HttpStatus::INTERNAL_SERVER_ERROR);
-    }
-
-    const std::string FILE_DELIMETER_IN_DIR_RESPONSE = "\n";
-
-    std::stringstream result;
-    for (const std::string& file_name : files) {
-        result << file_name << FILE_DELIMETER_IN_DIR_RESPONSE;
-    }
-
-    std::string result_str = result.str();
-    HttpChannel::send_reply(req, result_str);
-    return;
-}
-
 Status DownloadAction::check_token(HttpRequest *req) {
     const std::string& token_str = req->param(TOKEN_PARAMETER);
     if (token_str.empty()) {

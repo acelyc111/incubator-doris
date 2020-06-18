@@ -17,6 +17,15 @@
 
 #include "http/base_web_handler.h"
 
+#include <fcntl.h>
+#include <sys/stat.h>
+
+#include "common/status.h"
+#include "env/env.h"
+#include "http/http_channel.h"
+#include "util/file_utils.h"
+#include "util/path_util.h"
+
 namespace doris {
 
 // Do a simple decision, only deal a few type
@@ -32,6 +41,9 @@ std::string BaseWebHandler::get_content_type(const std::string& file_name) {
         return std::string("text/css; charset=utf-8");
     } else if (file_ext == std::string(".txt")) {
         return std::string("text/plain; charset=utf-8");
+    } else if (file_ext == std::string(".png")) {
+        return std::string("image/png");
+
     } else {
         return "text/plain; charset=utf-8";
     }
@@ -39,6 +51,12 @@ std::string BaseWebHandler::get_content_type(const std::string& file_name) {
 }
 
 void BaseWebHandler::do_file_response(const std::string& file_path, HttpRequest *req) {
+    if (file_path.find("..") != std::string::npos) {
+        LOG(WARNING) << "Not allowed to read relative path: " << file_path;
+        HttpChannel::send_error(req, HttpStatus::FORBIDDEN);
+        return;
+    }
+
     // read file content and send response
     int fd = open(file_path.c_str(), O_RDONLY);
     if (fd < 0) {
@@ -74,6 +92,27 @@ void BaseWebHandler::do_file_response(const std::string& file_path, HttpRequest 
     }
 
     HttpChannel::send_file(req, fd, 0, file_size);
+}
+
+void BaseWebHandler::do_dir_response(
+        const std::string& dir_path, HttpRequest *req) {
+    std::vector<std::string> files;
+    Status status = FileUtils::list_files(Env::Default(), dir_path, &files);
+    if (!status.ok()) {
+        LOG(WARNING) << "Failed to scan dir. dir=" << dir_path;
+        HttpChannel::send_error(req, HttpStatus::INTERNAL_SERVER_ERROR);
+    }
+
+    const std::string FILE_DELIMETER_IN_DIR_RESPONSE = "\n";
+
+    std::stringstream result;
+    for (const std::string& file_name : files) {
+        result << file_name << FILE_DELIMETER_IN_DIR_RESPONSE;
+    }
+
+    std::string result_str = result.str();
+    HttpChannel::send_reply(req, result_str);
+    return;
 }
 
 } // namespace doris

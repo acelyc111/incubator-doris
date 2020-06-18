@@ -19,9 +19,12 @@
 
 #include <string>
 
+#include "http/http_request.h"
+
 namespace doris {
 
 class BaseWebHandler {
+public:
     void do_file_response(const std::string& dir_path, HttpRequest *req);
     void do_dir_response(const std::string& dir_path, HttpRequest *req);
 

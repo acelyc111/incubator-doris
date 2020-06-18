@@ -22,6 +22,7 @@
 #include "exec/scan_node.h"
 #include "runtime/descriptors.h"
 #include "http/http_handler.h"
+#include "base_web_handler.h"
 
 namespace doris {
 

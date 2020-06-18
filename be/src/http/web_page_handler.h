@@ -28,6 +28,7 @@
 
 #include "http/http_handler.h"
 #include "util/easy_json.h"
+#include "base_web_handler.h"
 
 namespace doris {
 

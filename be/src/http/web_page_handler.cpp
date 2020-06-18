@@ -95,7 +95,7 @@ void WebPageHandler::handle(HttpRequest* req) {
         if (iter != _page_map.end()) {
             iter->second->callback()(*req->params(), &content);
         } else {
-            do_file_response(req->raw_path(), req);
+            do_file_response(config::www_path + req->raw_path(), req);
             return;
         }
     }
@@ -120,28 +120,6 @@ void WebPageHandler::handle(HttpRequest* req) {
 void WebPageHandler::root_handler(const ArgumentMap& args, EasyJson* output) {
     (*output)["version"] = get_version_string(false);
     (*output)["hardware"] = CpuInfo::debug_string() + MemInfo::debug_string() + DiskInfo::debug_string();
-}
-
-std::map<std::string, std::string> extension_to_content_type({
-    { "css", "text/css" },
-    { "html", "text/html" },
-    { "png", "image/png" }
-    });
-
-/* Try to guess a good content-type for 'path' */
-const std::string& guess_content_type(const std::string& path) {
-    size_t pos = path.find_last_of('.');
-    if (pos == std::string:npos) {
-        return "application/misc";
-    }
-
-    std::string extension = path.substr(pos);
-    auto iter = extension_to_content_type.find(extension);
-    if (iter == extension_to_content_type.end()) {
-        return "application/misc";
-    }
-
-    return iter->second;
 }
 
 static const char* const kMainTemplate = R"(
