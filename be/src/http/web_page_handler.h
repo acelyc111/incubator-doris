@@ -35,7 +35,7 @@ class EvHttpServer;
 
 // This a handler for webpage request
 // and this handler manage all the page handler
-class WebPageHandler : public HttpHandler {
+class WebPageHandler : public HttpHandler, public BaseWebHandler {
 public:
     typedef std::map<std::string, std::string> ArgumentMap;
     typedef boost::function<void (const ArgumentMap& args, std::stringstream* output)>

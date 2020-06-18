@@ -155,63 +155,6 @@ void DownloadAction::do_dir_response(
     return;
 }
 
-void DownloadAction::do_file_response(const std::string& file_path, HttpRequest *req) {
-    // read file content and send response
-    int fd = open(file_path.c_str(), O_RDONLY);
-    if (fd < 0) {
-        LOG(WARNING) << "Failed to open file: " << file_path;
-        HttpChannel::send_error(req, HttpStatus::NOT_FOUND);
-        return;
-    }
-    struct stat st;
-    auto res = fstat(fd, &st);
-    if (res < 0) {
-        close(fd);
-        LOG(WARNING) << "Failed to open file: " << file_path;
-        HttpChannel::send_error(req, HttpStatus::NOT_FOUND);
-        return;
-    }
-
-    int64_t file_size = st.st_size;
-
-    // TODO(lingbin): process "IF_MODIFIED_SINCE" header
-    // TODO(lingbin): process "RANGE" header
-    const std::string& range_header = req->header(HttpHeaders::RANGE);
-    if (!range_header.empty()) {
-        // analyse range header
-    }
-
-    req->add_output_header(HttpHeaders::CONTENT_TYPE, get_content_type(file_path).c_str());
-
-    if (req->method() == HttpMethod::HEAD) {
-        close(fd);
-        req->add_output_header(HttpHeaders::CONTENT_LENGTH, std::to_string(file_size).c_str());
-        HttpChannel::send_reply(req);
-        return;
-    }
-
-    HttpChannel::send_file(req, fd, 0, file_size);
-}
-
-// Do a simple decision, only deal a few type
-std::string DownloadAction::get_content_type(const std::string& file_name) {
-    std::string file_ext = path_util::file_extension(file_name);
-    LOG(INFO) << "file_name: " << file_name << "; file extension: [" << file_ext << "]";
-    if (file_ext == std::string(".html")
-            || file_ext == std::string(".htm")) {
-        return std::string("text/html; charset=utf-8");
-    } else if (file_ext == std::string(".js")) {
-        return std::string("application/javascript; charset=utf-8");
-    } else if (file_ext == std::string(".css")) {
-        return std::string("text/css; charset=utf-8");
-    } else if (file_ext == std::string(".txt")) {
-        return std::string("text/plain; charset=utf-8");
-    } else {
-        return "text/plain; charset=utf-8";
-    }
-    return "";
-}
-
 Status DownloadAction::check_token(HttpRequest *req) {
     const std::string& token_str = req->param(TOKEN_PARAMETER);
     if (token_str.empty()) {

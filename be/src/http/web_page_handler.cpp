@@ -23,6 +23,7 @@
 #include <mustache.h>
 
 #include "common/config.h"
+#include "env/env.h"
 #include "gutil/stl_util.h"
 #include "gutil/strings/substitute.h"
 #include "http/ev_http_server.h"
@@ -31,6 +32,7 @@
 #include "http/http_request.h"
 #include "http/http_response.h"
 #include "http/http_status.h"
+#include "olap/file_helper.h"
 #include "util/cpu_info.h"
 #include "util/debug_util.h"
 #include "util/disk_info.h"
@@ -43,9 +45,11 @@ namespace doris {
 static std::string s_html_content_type = "text/html";
 
 WebPageHandler::WebPageHandler(EvHttpServer* server) : _http_server(server) {
-    TemplatePageHandlerCallback default_callback =
+    _http_server->register_static_file_handler(this);
+
+    TemplatePageHandlerCallback root_callback =
             boost::bind<void>(boost::mem_fn(&WebPageHandler::root_handler), this, _1, _2);
-    register_template_page("/", "Home", default_callback, false /* is_on_nav_bar */);
+    register_template_page("/", "Home", root_callback, false /* is_on_nav_bar */);
 }
 
 WebPageHandler::~WebPageHandler() {
@@ -90,6 +94,9 @@ void WebPageHandler::handle(HttpRequest* req) {
         auto iter = _page_map.find(req->raw_path());
         if (iter != _page_map.end()) {
             iter->second->callback()(*req->params(), &content);
+        } else {
+            do_file_response(req->raw_path(), req);
+            return;
         }
     }
 
@@ -113,6 +120,28 @@ void WebPageHandler::handle(HttpRequest* req) {
 void WebPageHandler::root_handler(const ArgumentMap& args, EasyJson* output) {
     (*output)["version"] = get_version_string(false);
     (*output)["hardware"] = CpuInfo::debug_string() + MemInfo::debug_string() + DiskInfo::debug_string();
+}
+
+std::map<std::string, std::string> extension_to_content_type({
+    { "css", "text/css" },
+    { "html", "text/html" },
+    { "png", "image/png" }
+    });
+
+/* Try to guess a good content-type for 'path' */
+const std::string& guess_content_type(const std::string& path) {
+    size_t pos = path.find_last_of('.');
+    if (pos == std::string:npos) {
+        return "application/misc";
+    }
+
+    std::string extension = path.substr(pos);
+    auto iter = extension_to_content_type.find(extension);
+    if (iter == extension_to_content_type.end()) {
+        return "application/misc";
+    }
+
+    return iter->second;
 }
 
 static const char* const kMainTemplate = R"(

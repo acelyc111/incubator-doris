@@ -27,10 +27,7 @@
 #include <event2/http_struct.h>
 #include <event2/keyvalq_struct.h>
 
-#include "common/config.h"
 #include "common/logging.h"
-#include "env/env.h"
-#include "olap/file_helper.h"
 #include "service/brpc.h"
 #include "http/http_request.h"
 #include "http/http_handler.h"
@@ -210,6 +207,14 @@ bool EvHttpServer::register_handler(
     return result;
 }
 
+void EvHttpServer::register_static_file_handler(HttpHandler* handler) {
+    DCHECK(handler != nullptr);
+    DCHECK(_static_file_handler == nullptr);
+    pthread_rwlock_wrlock(&_rw_lock);
+    _static_file_handler = handler;
+    pthread_rwlock_unlock(&_rw_lock);
+}
+
 int EvHttpServer::on_header(struct evhttp_request* ev_req) {
     std::unique_ptr<HttpRequest> request(new HttpRequest(ev_req));
     auto res = request->init_from_evhttp();
@@ -218,41 +223,6 @@ int EvHttpServer::on_header(struct evhttp_request* ev_req) {
     }
     auto handler = _find_handler(request.get());
     if (handler == nullptr) {
-        LOG(WARNING) << request->method() << "  " << config::www_path << request->raw_path();
-        if (request->method() == GET && Env::Default()->path_exists(config::www_path + request->raw_path()).ok()) {
-            // open src file
-            FileHandler src_file;
-            if (src_file.open(config::www_path + request->raw_path(), O_RDONLY) != OLAP_SUCCESS) {
-                evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
-                HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
-                LOG(WARNING) << request->raw_path() << "not found";
-                return 0;
-            }
-
-            std::stringstream oss;
-            const int64_t BUF_SIZE = 8192;
-            char *buf = new char[BUF_SIZE];
-            DeferOp free_buf(std::bind<void>(std::default_delete<char[]>(), buf));
-            int64_t src_length = src_file.length();
-            int64_t offset = 0;
-            while (src_length > 0) {
-                int64_t to_read = BUF_SIZE < src_length ? BUF_SIZE : src_length;
-                if (OLAP_SUCCESS != (src_file.pread(buf, to_read, offset))) {
-                    evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
-                    HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
-                    LOG(WARNING) << request->raw_path() << "not found";
-                    return 0;
-                }
-                oss << buf;
-
-                offset += to_read;
-                src_length -= to_read;
-            }
-
-            request->add_output_header(HttpHeaders::CONTENT_TYPE, "text/css");
-            HttpChannel::send_reply(request.get(), HttpStatus::OK, oss.str());
-            return 0;
-        }
         evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
         HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
         LOG(WARNING) << request->raw_path() << "not found";
@@ -287,6 +257,10 @@ HttpHandler* EvHttpServer::_find_handler(HttpRequest* req) {
     switch (req->method()) {
     case GET:
         _get_handlers.retrieve(path, &handler, req->params());
+        // Static file handler is a fallback handler
+        if (handler == nullptr) {
+            handler = _static_file_handler;
+        }
         break;
     case PUT:
         _put_handlers.retrieve(path, &handler, req->params());
