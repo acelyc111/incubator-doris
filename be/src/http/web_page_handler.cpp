@@ -141,7 +141,9 @@ static const char* const kMainTemplate = R"(
     <nav class="navbar navbar-default">
       <div class="container-fluid">
         <div class="navbar-header">
-          <a class="navbar-brand" href="/">Doris</a>
+          <a class="navbar-brand" style="padding-top: 5px;" href="/">
+            <img src="/logo.png" width='40' height='40' alt="Doris" />
+          </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">

@@ -43,7 +43,8 @@ std::string BaseWebHandler::get_content_type(const std::string& file_name) {
         return std::string("text/plain; charset=utf-8");
     } else if (file_ext == std::string(".png")) {
         return std::string("image/png");
-
+    } else if (file_ext == std::string(".ico")) {
+        return std::string("image/x-icon");
     } else {
         return "text/plain; charset=utf-8";
     }
