@@ -27,13 +27,17 @@
 #include <event2/http_struct.h>
 #include <event2/keyvalq_struct.h>
 
+#include "common/config.h"
 #include "common/logging.h"
+#include "env/env.h"
+#include "olap/file_helper.h"
 #include "service/brpc.h"
 #include "http/http_request.h"
 #include "http/http_handler.h"
 #include "http/http_headers.h"
 #include "http/http_channel.h"
 #include "util/debug_util.h"
+#include "util/defer_op.h"
 
 namespace doris {
 
@@ -214,12 +218,14 @@ int EvHttpServer::on_header(struct evhttp_request* ev_req) {
     }
     auto handler = _find_handler(request.get());
     if (handler == nullptr) {
-        if (request->method() == GET && Env::Default()->path_exists(request->raw_path()).ok()) {
+        LOG(WARNING) << request->method() << "  " << config::www_path << request->raw_path();
+        if (request->method() == GET && Env::Default()->path_exists(config::www_path + request->raw_path()).ok()) {
             // open src file
             FileHandler src_file;
-            if (src_file.open(request->raw_path(), O_RDONLY) != OLAP_SUCCESS) {
+            if (src_file.open(config::www_path + request->raw_path(), O_RDONLY) != OLAP_SUCCESS) {
                 evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
                 HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
+                LOG(WARNING) << request->raw_path() << "not found";
                 return 0;
             }
 
@@ -234,6 +240,7 @@ int EvHttpServer::on_header(struct evhttp_request* ev_req) {
                 if (OLAP_SUCCESS != (src_file.pread(buf, to_read, offset))) {
                     evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
                     HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
+                    LOG(WARNING) << request->raw_path() << "not found";
                     return 0;
                 }
                 oss << buf;
@@ -242,11 +249,13 @@ int EvHttpServer::on_header(struct evhttp_request* ev_req) {
                 src_length -= to_read;
             }
 
+            request->add_output_header(HttpHeaders::CONTENT_TYPE, "text/css");
             HttpChannel::send_reply(request.get(), HttpStatus::OK, oss.str());
             return 0;
         }
         evhttp_remove_header(evhttp_request_get_input_headers(ev_req), HttpHeaders::EXPECT);
         HttpChannel::send_reply(request.get(), HttpStatus::NOT_FOUND, "Not Found");
+        LOG(WARNING) << request->raw_path() << "not found";
         return 0;
     }
     // set handler before call on_header, because handler_ctx will set in on_header
