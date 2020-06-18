@@ -30,6 +30,7 @@
 #include "http/http_request.h"
 #include "http/http_response.h"
 #include "http/http_status.h"
+#include "http/utils.h"
 #include "runtime/exec_env.h"
 #include "util/file_utils.h"
 #include "util/filesystem_util.h"
