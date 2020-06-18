@@ -48,11 +48,16 @@ public:
 
     void handle(HttpRequest *req) override;
 
-    void register_page(const std::string& path, const std::string& alias,
-                       const PageHandlerCallback& callback, bool is_on_nav_bar);
-
+    // Register a route 'path' to be rendered via template.
+    // The appropriate template to use is determined by 'path'.
+    // If 'is_on_nav_bar' is true, a link to the page will be placed on the navbar
+    // in the header of styled pages. The link text is given by 'alias'.
     void register_template_page(const std::string& path, const std::string& alias,
                                 const TemplatePageHandlerCallback& callback, bool is_on_nav_bar);
+
+    // Register a route 'path'. See the register_template_page for details.
+    void register_page(const std::string& path, const std::string& alias,
+                       const PageHandlerCallback& callback, bool is_on_nav_bar);
 
 private:
     void root_handler(const ArgumentMap& args, EasyJson* output);
@@ -73,6 +78,8 @@ private:
     // fields in 'ej'.
     void Render(const std::string& path, const EasyJson& ej, bool use_style,
                 std::stringstream* output);
+
+    bool static_pages_available() const;
 
     // Container class for a list of path handler callbacks for a single URL.
     class PathHandler {

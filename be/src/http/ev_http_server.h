@@ -40,8 +40,6 @@ public:
     bool register_handler(
         const HttpMethod& method, const std::string& path, HttpHandler* handler);
 
-    void register_static_file_handler(HttpHandler* handler);
-
     Status start();
     void stop();
     void join();
@@ -72,7 +70,6 @@ private:
     pthread_rwlock_t _rw_lock;
 
     PathTrie<HttpHandler*> _get_handlers;
-    HttpHandler* _static_file_handler = nullptr;
     PathTrie<HttpHandler*> _put_handlers;
     PathTrie<HttpHandler*> _post_handlers;
     PathTrie<HttpHandler*> _delete_handlers;

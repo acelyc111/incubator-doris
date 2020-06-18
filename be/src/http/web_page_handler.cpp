@@ -112,10 +112,6 @@ void WebPageHandler::handle(HttpRequest* req) {
 
     req->add_output_header(HttpHeaders::CONTENT_TYPE, s_html_content_type.c_str());
     HttpChannel::send_reply(req, HttpStatus::OK, output);
-#if 0
-    HttpResponse response(HttpStatus::OK, s_html_content_type, &str);
-    channel->send_response(response);
-#endif
 }
 
 void WebPageHandler::root_handler(const ArgumentMap& args, EasyJson* output) {
@@ -176,17 +172,17 @@ std::string WebPageHandler::MustachePartialTag(const std::string& path) const {
 }
 
 bool WebPageHandler::MustacheTemplateAvailable(const std::string& path) const {
-    if (config::www_path.empty()) {
+    if (!static_pages_available()) {
         return false;
     }
-    return true; //Env::Default()->FileExists(Substitute("$0$1.mustache", opts_.doc_root, path));
+    return Env::Default()->path_exists(Substitute("$0/$1.mustache", config::www_path, path));
 }
 
 void WebPageHandler::RenderMainTemplate(const std::string& content, std::stringstream* output) {
-    static const std::string& footer = std::string("<pre>Version") + get_version_string(true) + std::string("</pre>");
+    static const std::string& footer = std::string("<pre>") + get_version_string(true) + std::string("</pre>");
 
     EasyJson ej;
-    ej["static_pages_available"] = true;  // TODO(yingchun): static_pages_available();
+    ej["static_pages_available"] = static_pages_available();
     ej["content"] = content;
     ej["footer_html"] = footer;
     EasyJson path_handlers = ej.Set("path_handlers", EasyJson::kArray);
@@ -209,6 +205,11 @@ void WebPageHandler::Render(const string& path, const EasyJson& ej, bool use_sty
     } else {
         (*output) << ej.ToString();
     }
+}
+
+bool Webserver::static_pages_available() const {
+    bool is_dir = false;
+    return !config::www_path.empty() && Env::Default()->is_directory(config::www_path, &is_dir).ok() && is_dir;
 }
 
 } // namespace doris
