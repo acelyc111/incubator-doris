@@ -153,7 +153,7 @@ static const char* const kMainTemplate = R"(
     </nav>
       {{^static_pages_available}}
       <div style="color: red">
-        <strong>Static pages not available. Configure DORIS_HOME to fix page styling.</strong>
+        <strong>Static pages not available. Configure DORIS_HOME and www_path in be.conf to fix page styling.</strong>
       </div>
       {{/static_pages_available}}
       {{{content}}}
@@ -175,7 +175,7 @@ bool WebPageHandler::MustacheTemplateAvailable(const std::string& path) const {
     if (!static_pages_available()) {
         return false;
     }
-    return Env::Default()->path_exists(Substitute("$0/$1.mustache", config::www_path, path));
+    return Env::Default()->path_exists(Substitute("$0/$1.mustache", config::www_path, path)).ok();
 }
 
 void WebPageHandler::RenderMainTemplate(const std::string& content, std::stringstream* output) {
@@ -207,7 +207,7 @@ void WebPageHandler::Render(const string& path, const EasyJson& ej, bool use_sty
     }
 }
 
-bool Webserver::static_pages_available() const {
+bool WebPageHandler::static_pages_available() const {
     bool is_dir = false;
     return !config::www_path.empty() && Env::Default()->is_directory(config::www_path, &is_dir).ok() && is_dir;
 }
