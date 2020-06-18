@@ -574,3 +574,7 @@ install(FILES
     ${BASE_DIR}/../conf/be.conf
     DESTINATION ${OUTPUT_DIR}/conf)
 
+install(DIRECTORY
+    ${BASE_DIR}/src/www
+    DESTINATION ${OUTPUT_DIR})
+
