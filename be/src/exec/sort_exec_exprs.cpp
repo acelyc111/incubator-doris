@@ -50,13 +50,13 @@ Status SortExecExprs::init(const std::vector<ExprContext*>& lhs_ordering_expr_ct
 
 Status SortExecExprs::prepare(RuntimeState* state, const RowDescriptor& child_row_desc,
                               const RowDescriptor& output_row_desc,
-                              MemTracker* expr_mem_tracker) {
+                              std::shared_ptr<MemTracker> expr_mem_tracker) {
     if (_materialize_tuple) {
         RETURN_IF_ERROR(Expr::prepare(
-                _sort_tuple_slot_expr_ctxs, state, child_row_desc, expr_mem_tracker));
+                _sort_tuple_slot_expr_ctxs, state, child_row_desc, expr_mem_tracker.get()));
     }
     RETURN_IF_ERROR(Expr::prepare(
-            _lhs_ordering_expr_ctxs, state, output_row_desc, expr_mem_tracker));
+            _lhs_ordering_expr_ctxs, state, output_row_desc, expr_mem_tracker.get()));
     return Status::OK();
 }
 

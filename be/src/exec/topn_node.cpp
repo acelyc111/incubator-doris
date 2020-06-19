@@ -64,7 +64,7 @@ Status TopNNode::prepare(RuntimeState* state) {
     RETURN_IF_ERROR(ExecNode::prepare(state));
     _tuple_pool.reset(new MemPool(mem_tracker().get()));
     RETURN_IF_ERROR(_sort_exec_exprs.prepare(
-            state, child(0)->row_desc(), _row_descriptor, expr_mem_tracker().get()));
+            state, child(0)->row_desc(), _row_descriptor, expr_mem_tracker()));
     // AddExprCtxsToFree(_sort_exec_exprs);
 
     _tuple_row_less_than.reset(

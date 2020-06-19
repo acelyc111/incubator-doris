@@ -73,7 +73,7 @@ Status ExchangeNode::prepare(RuntimeState* state) {
             state->runtime_profile(), _is_merging, _sub_plan_query_statistics_recvr);
     if (_is_merging) {
         RETURN_IF_ERROR(_sort_exec_exprs.prepare(
-                    state, _row_descriptor, _row_descriptor, expr_mem_tracker().get()));
+                    state, _row_descriptor, _row_descriptor, expr_mem_tracker()));
         // AddExprCtxsToFree(_sort_exec_exprs);
     }
     return Status::OK();
