@@ -128,22 +128,6 @@ void MemTracker::AddChildTracker(const std::shared_ptr<MemTracker>& tracker) {
   tracker->child_tracker_it_ = child_trackers_.insert(child_trackers_.end(), tracker);
 }
 
-void MemTracker::Close() {
-  LOG(INFO) << "before call Close(), closed_ is " << closed_;
-  if (closed_) return;
-  if (consumption_metric_ == nullptr) {
-    DCHECK_EQ(consumption_->current_value(), 0) << label_ << "\n"
-                                                //<< GetStackTrace() << "\n"
-                                                << LogUsage(UNLIMITED_DEPTH);
-  }
-  closed_ = true;
-}
-
-void MemTracker::CloseAndUnregisterFromParent() {
-  Close();
-  unregister_from_parent();
-}
-
 void MemTracker::EnableReservationReporting(const ReservationTrackerCounters& counters) {
   delete reservation_counters_.swap(new ReservationTrackerCounters(counters));
 }
@@ -240,10 +224,6 @@ MemTracker* MemTracker::CreateQueryMemTracker(const TUniqueId& id,
 }
 
 MemTracker::~MemTracker() {
-  // We should explicitly close MemTrackers in the context of a daemon process.
-  // It is ok if backend tests don't call Close() to make tests more concise.
-  // if (TestInfo::is_test()) Close();
-  DCHECK(closed_) << label_;
   delete reservation_counters_.load();
 
   if (parent()) {

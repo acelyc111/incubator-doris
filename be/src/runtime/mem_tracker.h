@@ -115,12 +115,6 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
       child_tracker_it_ = parent_->child_trackers_.end();
   }
 
-  /// Closes the MemTracker and deregisters it from its parent. Can be called before
-  /// destruction to prevent other threads from getting a reference to the MemTracker
-  /// via its parent. Only used to deregister the query-level MemTracker from the
-  /// global hierarchy.
-  void CloseAndUnregisterFromParent();
-
   /// Include counters from a ReservationTracker in logs and other diagnostics.
   /// The counters should be owned by the fragment's RuntimeProfile.
   void EnableReservationReporting(const ReservationTrackerCounters& counters);
@@ -134,7 +128,6 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// Increases consumption of this tracker and its ancestors by 'bytes'.
   void Consume(int64_t bytes) {
     // DCHECK_GE(bytes, 0);
-    DCHECK(!closed_) << label_;
     if (bytes < 0) {
       Release(-bytes);
       return;
@@ -182,7 +175,6 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   WARN_UNUSED_RESULT
   bool TryConsume(int64_t bytes, MemLimit mode = MemLimit::HARD) {
     // DCHECK_GE(bytes, 0);
-    DCHECK(!closed_) << label_;
     if (bytes <= 0) {
         Release(-bytes);
         return true;
@@ -229,7 +221,6 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// Decreases consumption of this tracker and its ancestors by 'bytes'.
   void Release(int64_t bytes) {
     // DCHECK_GE(bytes, 0);
-    DCHECK(!closed_) << label_;
     if (bytes < 0) {
       Consume(-bytes);
       return;
@@ -488,12 +479,10 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// Increases/Decreases the consumption of this tracker and the ancestors up to (but
   /// not including) end_tracker.
   void ChangeConsumption(int64_t bytes, MemTracker* end_tracker) {
-    DCHECK(!closed_) << label_;
     DCHECK(consumption_metric_ == nullptr) << "Should not be called on root.";
     for (MemTracker* tracker : all_trackers_) {
       if (tracker == end_tracker) return;
       DCHECK(!tracker->has_limit());
-      DCHECK(!tracker->closed_) << tracker->label_;
       tracker->consumption_->add(bytes);
     }
     DCHECK(false) << "end_tracker is not an ancestor";
@@ -567,8 +556,6 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// If false, this tracker (and its children) will not be included in LogUsage() output
   /// if consumption is 0.
   bool log_usage_if_zero_;
-
-  bool closed_ = false;
 
   /// The number of times the GcFunctions were called.
   IntCounter* num_gcs_metric_;

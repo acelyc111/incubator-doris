@@ -69,26 +69,23 @@ TEST_F(ArrowRowBatchTest, PrettyPrint) {
     RowDescriptor* row_desc;
     auto doris_st = convert_to_row_desc(&obj_pool, *record_batch->schema(), &row_desc);
     ASSERT_TRUE(doris_st.ok());
-    std::shared_ptr<MemTracker> tracker(new MemTracker(-1, "PrettyPrintTest"), [](MemTracker* p) {
-        p->Close();
-        delete p;
-    });
-    // std::shared_ptr<RowBatch> row_batch;
-    // doris_st = convert_to_row_batch(*record_batch, *row_desc, tracker, &row_batch);
-    // ASSERT_TRUE(doris_st.ok());
+    std::shared_ptr<MemTracker> tracker(new MemTracker(-1, "PrettyPrintTest"));
+    std::shared_ptr<RowBatch> row_batch;
+    doris_st = convert_to_row_batch(*record_batch, *row_desc, tracker, &row_batch);
+    ASSERT_TRUE(doris_st.ok());
 
-    // {
-    //     std::shared_ptr<arrow::Schema> check_schema;
-    //     doris_st = convert_to_arrow_schema(*row_desc, &check_schema);
-    //     ASSERT_TRUE(doris_st.ok());
+    {
+        std::shared_ptr<arrow::Schema> check_schema;
+        doris_st = convert_to_arrow_schema(*row_desc, &check_schema);
+        ASSERT_TRUE(doris_st.ok());
 
-    //     arrow::MemoryPool* pool = arrow::default_memory_pool();
-    //     std::shared_ptr<arrow::RecordBatch> check_batch;
-    //     doris_st = convert_to_arrow_batch(*row_batch, check_schema, pool, &check_batch);
-    //     ASSERT_TRUE(doris_st.ok());
-    //     ASSERT_EQ(3, check_batch->num_rows());
-    //     ASSERT_TRUE(record_batch->Equals(*check_batch));
-    // }
+        arrow::MemoryPool* pool = arrow::default_memory_pool();
+        std::shared_ptr<arrow::RecordBatch> check_batch;
+        doris_st = convert_to_arrow_batch(*row_batch, check_schema, pool, &check_batch);
+        ASSERT_TRUE(doris_st.ok());
+        ASSERT_EQ(3, check_batch->num_rows());
+        ASSERT_TRUE(record_batch->Equals(*check_batch));
+    }
 }
 
 } // namespace doris

@@ -72,25 +72,23 @@ TEST_F(ArrowRowBlockTest, Normal) {
     auto doris_st = convert_to_doris_schema(*record_batch->schema(), &schema);
     ASSERT_TRUE(doris_st.ok());
 
-    // TODO fix later
-    // std::shared_ptr<RowBlockV2> row_block;
-    // doris_st = convert_to_row_block(*record_batch, *schema, &row_block);
-    // LOG(INFO) << "TEST";
-    // ASSERT_TRUE(doris_st.ok());
+    std::shared_ptr<RowBlockV2> row_block;
+    doris_st = convert_to_row_block(*record_batch, *schema, &row_block);
+    ASSERT_TRUE(doris_st.ok());
 
-    // {
-    //     std::shared_ptr<arrow::Schema> check_schema;
-    //     doris_st = convert_to_arrow_schema(*schema, &check_schema);
-    //     ASSERT_TRUE(doris_st.ok());
-    //     LOG(INFO) << "TEST";
-    //     arrow::MemoryPool* pool = arrow::default_memory_pool();
-    //     std::shared_ptr<arrow::RecordBatch> check_batch;
-    //     doris_st = convert_to_arrow_batch(*row_block, check_schema, pool, &check_batch);
-    //     ASSERT_TRUE(doris_st.ok());
-    //     ASSERT_EQ(3, check_batch->num_rows());
-    //     ASSERT_TRUE(record_batch->Equals(*check_batch));
-    //     LOG(INFO) << "TEST";
-    // }
+    {
+        std::shared_ptr<arrow::Schema> check_schema;
+        doris_st = convert_to_arrow_schema(*schema, &check_schema);
+        ASSERT_TRUE(doris_st.ok());
+        LOG(INFO) << "TEST";
+        arrow::MemoryPool* pool = arrow::default_memory_pool();
+        std::shared_ptr<arrow::RecordBatch> check_batch;
+        doris_st = convert_to_arrow_batch(*row_block, check_schema, pool, &check_batch);
+        ASSERT_TRUE(doris_st.ok());
+        ASSERT_EQ(3, check_batch->num_rows());
+        ASSERT_TRUE(record_batch->Equals(*check_batch));
+        LOG(INFO) << "TEST";
+    }
 }
 
 } // namespace doris
