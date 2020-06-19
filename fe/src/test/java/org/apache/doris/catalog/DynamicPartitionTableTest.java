@@ -65,7 +65,7 @@ public class DynamicPartitionTableTest {
     private List<String> columnNames = Lists.newArrayList();
     private List<ColumnDef> columnDefs = Lists.newArrayList();
 
-    private Catalog catalog = Catalog.getInstance();
+    private Catalog catalog = Catalog.getCurrentCatalog();
     private Database db = new Database();
     private Analyzer analyzer;
 
