@@ -121,7 +121,9 @@ void WebPageHandler::handle(HttpRequest* req) {
 
 void WebPageHandler::root_handler(const ArgumentMap& args, EasyJson* output) {
     (*output)["version"] = get_version_string(false);
-    (*output)["hardware"] = CpuInfo::debug_string() + MemInfo::debug_string() + DiskInfo::debug_string();
+    (*output)["cpuinfo"] = CpuInfo::debug_string();
+    (*output)["meminfo"] = MemInfo::debug_string();
+    (*output)["diskinfo"] = DiskInfo::debug_string();
 }
 
 static const char* const kMainTemplate = R"(
