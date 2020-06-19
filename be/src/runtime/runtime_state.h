@@ -161,15 +161,11 @@ public:
     const std::vector<std::shared_ptr<MemTracker>>& mem_trackers() {
         return _mem_trackers;
     }
-    MemTracker* fragment_mem_tracker() {
-        return _fragment_mem_tracker.get();
+   std::shared_ptr<MemTracker> fragment_mem_tracker() {
+        return _fragment_mem_tracker;
     }
-    // TODO(yingchun): should remove later
-    MemTracker* instance_mem_tracker() {
-        return _instance_mem_tracker.get();
-    }
-    // TODO(yingchun): should rename later
-    std::shared_ptr<MemTracker> instance_mem_tracker_shared_ptr() {
+
+    std::shared_ptr<MemTracker> instance_mem_tracker() {
         return _instance_mem_tracker;
     }
     ThreadResourceMgr::ResourcePool* resource_pool() {

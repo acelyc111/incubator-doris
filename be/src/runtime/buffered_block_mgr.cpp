@@ -45,7 +45,7 @@ Status BufferedBlockMgr::create(RuntimeState* state,
 
 void BufferedBlockMgr::init(RuntimeState* state) {
     _state = state;
-    _tuple_pool.reset(new MemPool(state->instance_mem_tracker()));
+    _tuple_pool.reset(new MemPool(state->instance_mem_tracker().get()));
 }
 
 void BufferedBlockMgr::Block::init() {

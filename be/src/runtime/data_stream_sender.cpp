@@ -384,7 +384,7 @@ Status DataStreamSender::prepare(RuntimeState* state) {
     _profile = _pool->add(new RuntimeProfile(_pool, title.str()));
     SCOPED_TIMER(_profile->total_time_counter());
     _mem_tracker.reset(
-            new MemTracker(_profile, -1, "DataStreamSender", state->instance_mem_tracker()));
+            new MemTracker(_profile, -1, "DataStreamSender", state->instance_mem_tracker().get()));
 
     if (_part_type == TPartitionType::UNPARTITIONED 
             || _part_type == TPartitionType::RANDOM) {

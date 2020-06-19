@@ -176,7 +176,7 @@ Status ExecNode::prepare(RuntimeState* state) {
                                                    _rows_returned_counter,
                                                    runtime_profile()->total_time_counter()),
                               "");
-    _mem_tracker.reset(new MemTracker(_runtime_profile.get(), -1, "ExecNode "+ _runtime_profile->name(), state->instance_mem_tracker()));
+    _mem_tracker.reset(new MemTracker(_runtime_profile.get(), -1, "ExecNode "+ _runtime_profile->name(), state->instance_mem_tracker().get()));
     _expr_mem_tracker.reset(new MemTracker(-1, "ExecNode Exprs", _mem_tracker.get()));
     _expr_mem_pool.reset(new MemPool(_expr_mem_tracker.get()));
     // TODO chenhao
