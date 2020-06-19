@@ -115,7 +115,7 @@ Status ZoneMapIndexReader::load(bool use_page_cache, bool kept_in_memory) {
     RETURN_IF_ERROR(reader.load(use_page_cache, kept_in_memory));
     IndexedColumnIterator iter(&reader);
 
-    std::shared_ptr<MemTracker> tracker;
+    auto tracker = std::make_shared<MemTracker>(-1, "temp in ZoneMapIndexReader");
     MemPool pool(tracker.get());
     _page_zone_maps.resize(reader.num_values());
 
