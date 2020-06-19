@@ -46,6 +46,7 @@ namespace doris {
 static std::string s_html_content_type = "text/html";
 
 WebPageHandler::WebPageHandler(EvHttpServer* server) : _http_server(server) {
+    // Make WebPageHandler to be static file handler, static files, e.g. css, png, will be handled by WebPageHandler.
     _http_server->register_static_file_handler(this);
 
     TemplatePageHandlerCallback root_callback =
@@ -59,6 +60,7 @@ WebPageHandler::~WebPageHandler() {
 
 void WebPageHandler::register_template_page(const std::string& path, const string& alias,
                                             const TemplatePageHandlerCallback& callback, bool is_on_nav_bar) {
+    // Relative path which will be used to find .mustache file in config::www_path
     string render_path = (path == "/") ? "/home" : path;
     auto wrapped_cb = [=](const ArgumentMap& args, std::stringstream* output) {
         EasyJson ej;
@@ -71,35 +73,38 @@ void WebPageHandler::register_template_page(const std::string& path, const strin
 void WebPageHandler::register_page(const std::string& path, const string& alias,
                                    const PageHandlerCallback& callback, bool is_on_nav_bar) {
     boost::mutex::scoped_lock lock(_map_lock);
-    auto map_iter = _page_map.find(path);
-    if (map_iter == _page_map.end()) {
-        // first time, register this to web server
-        _http_server->register_handler(HttpMethod::GET, path, this);
-        _page_map[path] = new PathHandler(true /* is_styled */, is_on_nav_bar, alias, callback);
-    }
+    CHECK(_page_map.find(path) == _page_map.end());
+    // first time, register this to web server
+    _http_server->register_handler(HttpMethod::GET, path, this);
+    _page_map[path] = new PathHandler(true /* is_styled */, is_on_nav_bar, alias, callback);
 }
 
 void WebPageHandler::handle(HttpRequest* req) {
     LOG(INFO) << req->debug_string();
 
-    // Should we render with css styles?
-    bool use_style = true;
-    const auto& params = *req->params();
-    if (params.find("raw") != params.end()) {
-        use_style = false;
-    }
-
-    std::stringstream content;
+    PathHandler* handler = nullptr;
     {
         boost::mutex::scoped_lock lock(_map_lock);
         auto iter = _page_map.find(req->raw_path());
         if (iter != _page_map.end()) {
-            iter->second->callback()(*req->params(), &content);
-        } else {
-            do_file_response(config::www_path + req->raw_path(), req);
-            return;
+            handler = iter->second;
         }
     }
+
+    if (handler == nullptr) {
+        // Try to handle static file request
+        do_file_response(config::www_path + req->raw_path(), req);
+        // Has replied in do_file_response, so we return here.
+        return;
+    }
+
+    const auto& params = *req->params();
+
+    // Should we render with css styles?
+    bool use_style = (params.find("raw") == params.end());
+
+    std::stringstream content;
+    handler->callback()(params(), &content);
 
     std::string output;
     if (use_style) {
