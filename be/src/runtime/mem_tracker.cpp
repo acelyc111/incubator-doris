@@ -195,7 +195,7 @@ MemTracker* PoolMemTrackerRegistry::GetRequestPoolMemTracker(
   // First time this pool_name registered, make a new object.
   MemTracker* tracker =
       new MemTracker(-1, Substitute(REQUEST_POOL_MEM_TRACKER_LABEL_FORMAT, pool_name),
-          ExecEnv::GetInstance()->process_mem_tracker());
+          ExecEnv::GetInstance()->instance_mem_tracker().get());
   tracker->pool_name_ = pool_name;
   pool_to_mem_trackers_.emplace(pool_name, std::unique_ptr<MemTracker>(tracker));
   return tracker;
@@ -425,7 +425,7 @@ Status MemTracker::MemLimitExceeded(MemTracker* mtracker, RuntimeState* state,
   if (state != nullptr) ss << " by fragment " << print_id(state->fragment_instance_id());
   ss << endl;
   ExecEnv* exec_env = ExecEnv::GetInstance();
-  MemTracker* process_tracker = exec_env->process_mem_tracker();
+  MemTracker* process_tracker = exec_env->instance_mem_tracker().get();
   const int64_t process_capacity = process_tracker->SpareCapacity(MemLimit::HARD);
   ss << "Memory left in process limit: "
      << PrettyPrinter::print(process_capacity, TUnit::BYTES) << endl;

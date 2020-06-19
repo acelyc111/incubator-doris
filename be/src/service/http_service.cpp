@@ -51,7 +51,7 @@ HttpService::~HttpService() {
 }
 
 Status HttpService::start() {
-    add_default_path_handlers(_web_page_handler.get(), _env->process_mem_tracker());
+    add_default_path_handlers(_web_page_handler.get(), _env->instance_mem_tracker().get());
 
     // register load
     _ev_http_server->register_handler(

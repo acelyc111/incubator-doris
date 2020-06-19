@@ -103,7 +103,7 @@ public:
     template<typename T>
     ClientCache<T>* get_client_cache() { return nullptr; }
 
-    MemTracker* process_mem_tracker() { return _mem_tracker.get(); }
+    std::shared_ptr<MemTracker> process_mem_tracker() { return _mem_tracker; }
     PoolMemTrackerRegistry* pool_mem_trackers() { return _pool_mem_trackers; }
     ThreadResourceMgr* thread_mgr() { return _thread_mgr; }
     PriorityThreadPool* thread_pool() { return _thread_pool; }
