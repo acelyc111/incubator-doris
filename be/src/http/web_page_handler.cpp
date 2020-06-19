@@ -104,7 +104,7 @@ void WebPageHandler::handle(HttpRequest* req) {
     bool use_style = (params.find("raw") == params.end());
 
     std::stringstream content;
-    handler->callback()(params(), &content);
+    handler->callback()(params, &content);
 
     std::string output;
     if (use_style) {
