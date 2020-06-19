@@ -134,9 +134,9 @@ Status MergeJoinNode::prepare(RuntimeState* state) {
     }
 
     _left_child_ctx.reset(
-            new ChildReaderContext(row_desc(), state->batch_size(), state->instance_mem_tracker().get()));
+            new ChildReaderContext(row_desc(), state->batch_size(), state->instance_mem_tracker()));
     _right_child_ctx.reset(
-            new ChildReaderContext(row_desc(), state->batch_size(), state->instance_mem_tracker().get()));
+            new ChildReaderContext(row_desc(), state->batch_size(), state->instance_mem_tracker()));
 
     return Status::OK();
 }
@@ -303,14 +303,14 @@ Status MergeJoinNode::get_input_row(RuntimeState* state, int child_idx) {
                     new ChildReaderContext(
                             child(child_idx)->row_desc(),
                             state->batch_size(),
-                            state->instance_mem_tracker().get()));
+                            state->instance_mem_tracker()));
             ctx = _left_child_ctx.get();
         } else {
             _right_child_ctx.reset(
                     new ChildReaderContext(
                             child(child_idx)->row_desc(),
                             state->batch_size(),
-                            state->instance_mem_tracker().get()));
+                            state->instance_mem_tracker()));
             ctx = _right_child_ctx.get();
         }
 
