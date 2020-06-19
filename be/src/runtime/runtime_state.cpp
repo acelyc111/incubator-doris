@@ -231,7 +231,7 @@ Status RuntimeState::init_mem_trackers(const TUniqueId& query_id) {
     mem_tracker_counter->set(bytes_limit);
 
     _query_mem_tracker.reset(
-            new MemTracker(bytes_limit, std::string("RuntimeState: query ") + runtime_profile()->name(), _exec_env->instance_mem_tracker().get()));
+            new MemTracker(bytes_limit, std::string("RuntimeState: query ") + runtime_profile()->name(), _exec_env->process_mem_tracker().get()));
     _instance_mem_tracker.reset(
             new MemTracker(&_profile, -1, std::string("RuntimeState: instance ") + runtime_profile()->name(), _query_mem_tracker.get()));
 
