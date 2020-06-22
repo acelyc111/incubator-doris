@@ -157,7 +157,7 @@ Status PartitionedAggregationNode::init(const TPlanNode& tnode, RuntimeState* st
 
   const RowDescriptor& row_desc = child(0)->row_desc();
   RETURN_IF_ERROR(Expr::create(tnode.agg_node.grouping_exprs, row_desc,
-      state, &grouping_exprs_, mem_tracker().get()));
+      state, &grouping_exprs_, mem_tracker()));
   // Construct build exprs from intermediate_row_desc_
   for (int i = 0; i < grouping_exprs_.size(); ++i) {
     SlotDescriptor* desc = intermediate_tuple_desc_->slots()[i];

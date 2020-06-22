@@ -248,7 +248,7 @@ void TopNNode::push_down_predicate(
         if ((*iter)->root()->is_bound(&_tuple_ids)) {
             // LOG(INFO) << "push down success expr is " << (*iter)->debug_string();
             // (*iter)->get_child(0)->prepare(state, row_desc());
-            (*iter)->prepare(state, row_desc(), _expr_mem_tracker.get());
+            (*iter)->prepare(state, row_desc(), _expr_mem_tracker);
             (*iter)->open(state);
             _conjunct_ctxs.push_back(*iter);
             iter = expr_ctxs->erase(iter);

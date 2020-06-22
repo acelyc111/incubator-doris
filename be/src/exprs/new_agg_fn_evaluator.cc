@@ -131,7 +131,7 @@ Status NewAggFnEvaluator::Create(const AggFn& agg_fn, RuntimeState* state, Objec
     // TODO chenhao replace ExprContext with ScalarFnEvaluator
     ExprContext* input_eval = pool->add(new ExprContext(input_expr));
     if (input_eval == nullptr) goto cleanup;
-    input_eval->prepare(state, row_desc, tracker.get());
+    input_eval->prepare(state, row_desc, tracker);
     agg_fn_eval->input_evals_.push_back(input_eval);
     Expr* root = input_eval->root();
     DCHECK(root == input_expr);

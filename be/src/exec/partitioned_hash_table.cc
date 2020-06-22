@@ -121,7 +121,7 @@ Status PartitionedHashTableCtx::Init(ObjectPool* pool, RuntimeState* state, int 
   // TODO chenhao replace ExprContext with ScalarFnEvaluator
   for (int i = 0; i < build_exprs_.size(); i++) {
       ExprContext* context = pool->add(new ExprContext(build_exprs_[i]));
-      context->prepare(state, row_desc, tracker.get()); 
+      context->prepare(state, row_desc, tracker); 
       if (context == nullptr) {
           return Status::InternalError("Hashtable init error.");
       }
@@ -131,7 +131,7 @@ Status PartitionedHashTableCtx::Init(ObjectPool* pool, RuntimeState* state, int 
   
   for (int i = 0; i < probe_exprs_.size(); i++) {
       ExprContext* context = pool->add(new ExprContext(probe_exprs_[i]));
-      context->prepare(state, row_desc_probe, tracker.get());
+      context->prepare(state, row_desc_probe, tracker);
       if (context == nullptr) {
           return Status::InternalError("Hashtable init error.");
       }

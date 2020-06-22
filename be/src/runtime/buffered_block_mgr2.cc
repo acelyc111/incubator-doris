@@ -62,7 +62,7 @@ public:
               _num_reserved_buffers(num_reserved_buffers),
               _num_tmp_reserved_buffers(0),
               _num_pinned_buffers(0) {
-        DCHECK(tracker != NULL);
+        DCHECK(tracker != nullptr);
     }
 
     // A null dtor to pass codestyle check
