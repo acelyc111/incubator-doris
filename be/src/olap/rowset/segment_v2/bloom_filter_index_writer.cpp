@@ -71,9 +71,13 @@ public:
     using ValueDict = typename BloomFilterTraits<CppType>::ValueDict;
 
     explicit BloomFilterIndexWriterImpl(const BloomFilterOptions& bf_options,
-            const TypeInfo* typeinfo)
-        : _bf_options(bf_options), _typeinfo(typeinfo),
-          _tracker(new MemTracker()), _pool(_tracker.get()), _has_null(false), _bf_buffer_size(0) { }
+                                        const TypeInfo* typeinfo)
+            : _bf_options(bf_options),
+              _typeinfo(typeinfo),
+              _tracker(new MemTracker(-1, "BloomFilterIndexWriterImpl")),
+              _pool(_tracker.get()),
+              _has_null(false),
+              _bf_buffer_size(0) {}
 
     ~BloomFilterIndexWriterImpl() = default;
 

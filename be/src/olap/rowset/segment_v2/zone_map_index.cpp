@@ -32,7 +32,7 @@ namespace doris {
 namespace segment_v2 {
 
 ZoneMapIndexWriter::ZoneMapIndexWriter(Field* field)
-        : _field(field), _tracker(new MemTracker()), _pool(_tracker.get()) {
+        : _field(field), _tracker(new MemTracker(-1, "ZoneMapIndexWriter")), _pool(_tracker.get()) {
     _page_zone_map.min_value = _field->allocate_value(&_pool);
     _page_zone_map.max_value = _field->allocate_value(&_pool);
     _reset_zone_map(&_page_zone_map);

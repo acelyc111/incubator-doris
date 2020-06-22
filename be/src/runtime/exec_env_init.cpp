@@ -177,7 +177,7 @@ Status ExecEnv::_init_mem_tracker() {
         return Status::InternalError(ss.str());
     }
 
-    _mem_tracker.reset(new MemTracker(bytes_limit, "ExecEnv root"));
+    _mem_tracker.reset(new MemTracker(bytes_limit, "ExecEnv root", MemTracker::GetRootTracker()));
 
     LOG(INFO) << "Using global memory limit: " << PrettyPrinter::print(bytes_limit, TUnit::BYTES);
     RETURN_IF_ERROR(_disk_io_mgr->init(_mem_tracker));

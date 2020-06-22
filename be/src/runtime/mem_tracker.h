@@ -91,25 +91,26 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// included
   /// in LogUsage() output if consumption is 0.
   MemTracker(int64_t byte_limit = -1, const std::string& label = std::string(),
-             MemTracker* parent = nullptr, bool auto_unregister = false, bool log_usage_if_zero = true);
+             const std::shared_ptr<MemTracker>& parent = std::shared_ptr<MemTracker>(),
+             bool auto_unregister = false, bool log_usage_if_zero = true);
 
   /// C'tor for tracker for which consumption counter is created as part of a profile.
   /// The counter is created with name COUNTER_NAME.
   MemTracker(RuntimeProfile* profile, int64_t byte_limit,
-      const std::string& label = std::string(), MemTracker* parent = nullptr);
+      const std::string& label = std::string(), const std::shared_ptr<MemTracker>& parent = std::shared_ptr<MemTracker>());
 
   /// C'tor for tracker that uses consumption_metric as the consumption value.
   /// Consume()/Release() can still be called. This is used for the root process tracker
   /// (if 'parent' is NULL). It is also to report on other categories of memory under the
   /// process tracker, e.g. buffer pool free buffers (if 'parent - non-NULL).
   MemTracker(IntGauge* consumption_metric, int64_t byte_limit = -1,
-      const std::string& label = std::string(), MemTracker* parent = nullptr);
+      const std::string& label = std::string(), const std::shared_ptr<MemTracker>& parent = std::shared_ptr<MemTracker>());
 
   ~MemTracker();
 
   // Removes this tracker from parent_->child_trackers_.
   void unregister_from_parent() {
-      DCHECK(parent_ != NULL);
+      DCHECK(parent_ != nullptr);
       std::lock_guard<SpinLock> l(parent_->child_trackers_lock_);
       parent_->child_trackers_.erase(child_tracker_it_);
       child_tracker_it_ = parent_->child_trackers_.end();
@@ -119,11 +120,10 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// The counters should be owned by the fragment's RuntimeProfile.
   void EnableReservationReporting(const ReservationTrackerCounters& counters);
 
-  /// Construct a MemTracker object for query 'id' with 'mem_limit' as the memory limit.
-  /// The MemTracker is a child of the request pool MemTracker for 'pool_name', which is
-  /// created if needed. The returned MemTracker is owned by 'obj_pool'.
-  static MemTracker* CreateQueryMemTracker(const TUniqueId& id, int64_t mem_limit,
-      const std::string& pool_name, ObjectPool* obj_pool);
+  // Gets a shared_ptr to the "root" tracker, creating it if necessary.
+  static std::shared_ptr<MemTracker> GetRootTracker();
+
+  // delete static CreateQueryMemTracker(), cuz it cannot use shared tracker
 
   /// Increases consumption of this tracker and its ancestors by 'bytes'.
   void Consume(int64_t bytes) {
@@ -330,8 +330,7 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
   /// consumption_metric_ has ever reached.
   int64_t peak_consumption() const { return consumption_->value(); }
 
-  // TODO(HW): return shared later
-  MemTracker* parent() const { return parent_; }
+  std::shared_ptr<MemTracker> parent() const { return parent_; }
 
   /// Signature for function that can be called to free some memory after limit is
   /// reached. The function should try to free at least 'bytes_to_free' bytes of
@@ -418,7 +417,7 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
         << "label: " << label_ << "; "
         << "all tracker size: " << all_trackers_.size() << "; "
         << "limit trackers size: " << limit_trackers_.size() << "; "
-        << "parent is null: " << ((parent_ == NULL) ? "true" : "false") << "; ";
+        << "parent is null: " << ((parent_ == nullptr) ? "true" : "false") << "; ";
     return msg.str();
   }
 
@@ -488,6 +487,9 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
     DCHECK(false) << "end_tracker is not an ancestor";
   }
 
+  // Creates the root tracker.
+  static void CreateRootTracker();
+
   /// Lock to protect GcMemory(). This prevents many GCs from occurring at once.
   std::mutex gc_lock_;
 
@@ -518,8 +520,7 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
 
   /// The parent of this tracker. The pointer is never modified, even after this tracker
   /// is unregistered.
-  // TODO(HW): std::shared_ptr<MemTracker> parent_;
-  MemTracker* parent_;
+  std::shared_ptr<MemTracker> parent_;
 
   /// in bytes; not owned
   RuntimeProfile::HighWaterMarkCounter* consumption_;

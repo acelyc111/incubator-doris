@@ -154,7 +154,7 @@ Status DataSink::init(const TDataSink& thrift_sink) {
 Status DataSink::prepare(RuntimeState* state) {
     _expr_mem_tracker.reset(
             new MemTracker(-1, std::string("DataSink:") + std::to_string(state->load_job_id()),
-                           state->instance_mem_tracker().get()));
+                           state->instance_mem_tracker()));
     return Status::OK();
 }
 

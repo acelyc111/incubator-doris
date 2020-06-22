@@ -1279,7 +1279,7 @@ void BufferedBlockMgr2::init(
     // Create a new mem_tracker and allocate buffers.
     // _mem_tracker.reset(new MemTracker(
     //             profile(), mem_limit, -1, "Block Manager", parent_tracker));
-    _mem_tracker.reset(new MemTracker(mem_limit, "Block Manager2", parent_tracker.get()));
+    _mem_tracker.reset(new MemTracker(mem_limit, "Block Manager2", parent_tracker));
 
     _initialized = true;
 }

@@ -75,7 +75,7 @@ void ReservationTracker::InitChildTracker(RuntimeProfile* profile,
     MemTracker* parent_mem_tracker = GetParentMemTracker();
     if (parent_mem_tracker != nullptr) {
       // Make sure the parent links of the MemTrackers correspond to our parent links.
-      DCHECK_EQ(parent_mem_tracker, mem_tracker_->parent()); // TODO(HW)
+      DCHECK_EQ(parent_mem_tracker, mem_tracker_->parent().get());
       // Make sure we don't have a lower limit than the ancestor, since we don't enforce
       // limits at lower links.
       DCHECK_EQ(mem_tracker_->GetLowestLimit(MemLimit::HARD), parent_mem_tracker->GetLowestLimit(MemLimit::HARD));

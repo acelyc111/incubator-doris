@@ -45,7 +45,7 @@ EsHttpScanner::EsHttpScanner(RuntimeState* state, RuntimeProfile* profile, Tuple
 #if BE_TEST
           _mem_tracker(new MemTracker()),
 #else
-          _mem_tracker(new MemTracker(-1, "EsHttp Scanner", state->instance_mem_tracker().get())),
+          _mem_tracker(new MemTracker(-1, "EsHttp Scanner", state->instance_mem_tracker())),
 #endif
           _mem_pool(_mem_tracker.get()),
           _tuple_desc(nullptr),
