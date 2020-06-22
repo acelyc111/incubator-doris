@@ -417,7 +417,6 @@ set(DORIS_DEPENDENCIES
     parquet
     orc
     cctz
-    mustache
     ${WL_END_GROUP}
 )
 
@@ -572,6 +571,6 @@ install(FILES
     DESTINATION ${OUTPUT_DIR}/conf)
 
 install(DIRECTORY
-    PATTERN ${BASE_DIR}/../webroot/be/*
+    ${BASE_DIR}/../webroot/be/
     DESTINATION ${OUTPUT_DIR}/www)
 
