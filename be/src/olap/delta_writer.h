@@ -56,7 +56,7 @@ struct WriteRequest {
 // This class is NOT thread-safe, external synchronization is required.
 class DeltaWriter {
 public:
-    static OLAPStatus open(WriteRequest* req, MemTracker* parent, DeltaWriter** writer);
+    static OLAPStatus open(WriteRequest* req, std::shared_ptr<MemTracker> parent, DeltaWriter** writer);
 
     ~DeltaWriter();
 
@@ -83,7 +83,7 @@ public:
     int64_t mem_consumption() const;
 
 private:
-    DeltaWriter(WriteRequest* req, MemTracker* parent, StorageEngine* storage_engine);
+    DeltaWriter(WriteRequest* req, std::shared_ptr<MemTracker> parent, StorageEngine* storage_engine);
 
     // push a full memtable to flush executor
     OLAPStatus _flush_memtable_async();

@@ -27,12 +27,12 @@
 
 namespace doris {
 
-OLAPStatus DeltaWriter::open(WriteRequest* req, MemTracker* parent, DeltaWriter** writer) {
+OLAPStatus DeltaWriter::open(WriteRequest* req, std::shared_ptr<MemTracker> parent, DeltaWriter** writer) {
     *writer = new DeltaWriter(req, parent, StorageEngine::instance());
     return OLAP_SUCCESS;
 }
 
-DeltaWriter::DeltaWriter(WriteRequest* req, MemTracker* parent, StorageEngine* storage_engine)
+DeltaWriter::DeltaWriter(WriteRequest* req, std::shared_ptr<MemTracker> parent, StorageEngine* storage_engine)
         : _req(*req),
           _tablet(nullptr),
           _cur_rowset(nullptr),
@@ -42,7 +42,7 @@ DeltaWriter::DeltaWriter(WriteRequest* req, MemTracker* parent, StorageEngine* s
           _tablet_schema(nullptr),
           _delta_written_success(false),
           _storage_engine(storage_engine),
-          _mem_tracker(new MemTracker(-1, "DeltaWriter", parent)) {}
+          _mem_tracker(new MemTracker(-1, "DeltaWriter", parent.get())) {}
 
 DeltaWriter::~DeltaWriter() {
     if (_is_init && !_delta_written_success) {
