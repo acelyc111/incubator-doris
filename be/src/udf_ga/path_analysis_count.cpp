@@ -42,7 +42,7 @@ StringVal doris_udf::PathAnalysisCountFinalize(FunctionContext* context,
     std::pair<std::string, long> tmp;
     for (const auto& path : paths) {
         std::string::size_type splitIdx = path.find(timesConnector);
-        if (splitIdx == std::__cxx11::basic_string<char>::npos) {
+        if (splitIdx == std::string::npos) {
             continue;
         }
         try {
