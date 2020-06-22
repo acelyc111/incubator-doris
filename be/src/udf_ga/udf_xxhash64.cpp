@@ -6,7 +6,7 @@ static const uint64_t DEFAULT_SEED = 4870177450012600283ULL;
 
 BigIntVal xxhash64(FunctionContext* context, const StringVal& arg) {
     if (arg.is_null) {
-        return BigIntVal::null();
+	return 0L;
     }
     return XXHash64::hash(arg.ptr, arg.len, DEFAULT_SEED);
 }
