@@ -29,16 +29,14 @@ namespace doris {
 
 class SystemMetricsTest : public testing::Test {
 public:
-    SystemMetricsTest() { }
-    virtual ~SystemMetricsTest() {
-    }
+    SystemMetricsTest() {}
+    virtual ~SystemMetricsTest() {}
 };
 
 class TestMetricsVisitor : public MetricsVisitor {
 public:
-    virtual ~TestMetricsVisitor() { }
-    void visit(const std::string& prefix, const std::string& name,
-               MetricCollector* collector) {
+    virtual ~TestMetricsVisitor() {}
+    void visit(const std::string& prefix, const std::string& name, MetricCollector* collector) {
         for (auto& it : collector->metrics()) {
             Metric* metric = it.second;
             auto& labels = it.first;
@@ -73,9 +71,8 @@ public:
             }
         }
     }
-    std::string to_string() {
-        return _ss.str();
-    }
+    std::string to_string() { return _ss.str(); }
+
 private:
     std::stringstream _ss;
 };
@@ -86,25 +83,25 @@ extern const char* k_ut_net_dev_path;
 extern const char* k_ut_fd_path;
 
 TEST_F(SystemMetricsTest, normal) {
+    char buf[1024];
+    readlink("/proc/self/exe", buf, 1023);
+    char* dir_path = dirname(buf);
+    std::string stat_path(dir_path);
+    stat_path += "/test_data/stat_normal";
+    LOG(INFO) << stat_path;
+    k_ut_stat_path = stat_path.c_str();
+    std::string diskstats_path(dir_path);
+    diskstats_path += "/test_data/diskstats_normal";
+    k_ut_diskstats_path = diskstats_path.c_str();
+    std::string net_dev_path(dir_path);
+    net_dev_path += "/test_data/net_dev_normal";
+    k_ut_net_dev_path = net_dev_path.c_str();
+    std::string fd_path(dir_path);
+    fd_path += "/test_data/fd_file_nr";
+    k_ut_fd_path = fd_path.c_str();
+
     MetricRegistry registry("test");
     {
-        char buf[1024];
-        readlink("/proc/self/exe", buf, 1023);
-        char* dir_path = dirname(buf);
-        std::string stat_path(dir_path);
-        stat_path += "/test_data/stat_normal";
-        LOG(INFO) << stat_path;
-        k_ut_stat_path = stat_path.c_str();
-        std::string diskstats_path(dir_path);
-        diskstats_path += "/test_data/diskstats_normal";
-        k_ut_diskstats_path = diskstats_path.c_str();
-        std::string net_dev_path(dir_path);
-        net_dev_path += "/test_data/net_dev_normal";
-        k_ut_net_dev_path = net_dev_path.c_str();
-        std::string fd_path(dir_path);
-        fd_path += "/test_data/fd_file_nr";
-        k_ut_fd_path = fd_path.c_str();
-
         std::set<std::string> disk_devices;
         disk_devices.emplace("sda");
         std::vector<std::string> network_interfaces;
@@ -235,22 +232,23 @@ TEST_F(SystemMetricsTest, normal) {
 }
 
 TEST_F(SystemMetricsTest, no_proc_file) {
+    char buf[1024];
+    readlink("/proc/self/exe", buf, 1023);
+    char* dir_path = dirname(buf);
+    std::string stat_path(dir_path);
+    stat_path += "/test_data/no_stat_normal";
+    LOG(INFO) << stat_path;
+    k_ut_stat_path = stat_path.c_str();
+    std::string diskstats_path(dir_path);
+    diskstats_path += "/test_data/no_diskstats_normal";
+    k_ut_diskstats_path = diskstats_path.c_str();
+    std::string net_dev_path(dir_path);
+    net_dev_path += "/test_data/no_net_dev_normal";
+    k_ut_net_dev_path = net_dev_path.c_str();
+    k_ut_fd_path = "";
+
     MetricRegistry registry("test");
     {
-        char buf[1024];
-        readlink("/proc/self/exe", buf, 1023);
-        char* dir_path = dirname(buf);
-        std::string stat_path(dir_path);
-        stat_path += "/test_data/no_stat_normal";
-        LOG(INFO) << stat_path;
-        k_ut_stat_path = stat_path.c_str();
-        std::string diskstats_path(dir_path);
-        diskstats_path += "/test_data/no_diskstats_normal";
-        k_ut_diskstats_path = diskstats_path.c_str();
-        std::string net_dev_path(dir_path);
-        net_dev_path += "/test_data/no_net_dev_normal";
-        k_ut_net_dev_path = net_dev_path.c_str();
-
         std::set<std::string> disk_devices;
         disk_devices.emplace("sda");
         std::vector<std::string> network_interfaces;
@@ -284,7 +282,7 @@ TEST_F(SystemMetricsTest, no_proc_file) {
     }
 }
 
-}
+} // namespace doris
 
 int main(int argc, char** argv) {
     std::string conffile = std::string(getenv("DORIS_HOME")) + "/conf/be.conf";
