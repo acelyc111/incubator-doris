@@ -173,13 +173,13 @@ Status AnalyticEvalNode::prepare(RuntimeState* state) {
 
         if (_partition_by_eq_expr_ctx != NULL) {
             RETURN_IF_ERROR(
-                _partition_by_eq_expr_ctx->prepare(state, cmp_row_desc, expr_mem_tracker().get()));
+                    _partition_by_eq_expr_ctx->prepare(state, cmp_row_desc, expr_mem_tracker()));
             //AddExprCtxToFree(_partition_by_eq_expr_ctx);
         }
 
         if (_order_by_eq_expr_ctx != NULL) {
             RETURN_IF_ERROR(
-                _order_by_eq_expr_ctx->prepare(state, cmp_row_desc, expr_mem_tracker().get()));
+                    _order_by_eq_expr_ctx->prepare(state, cmp_row_desc, expr_mem_tracker()));
             //AddExprCtxToFree(_order_by_eq_expr_ctx);
         }
     }
