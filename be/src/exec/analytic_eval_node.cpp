@@ -157,9 +157,9 @@ Status AnalyticEvalNode::prepare(RuntimeState* state) {
 
     for (int i = 0; i < _evaluators.size(); ++i) {
         doris_udf::FunctionContext* ctx;
-        RETURN_IF_ERROR(_evaluators[i]->prepare(state, child(0)->row_desc(), _mem_pool.get(),
-                _intermediate_tuple_desc->slots()[i], _result_tuple_desc->slots()[i],
-                mem_tracker().get(), &ctx));
+        RETURN_IF_ERROR(_evaluators[i]->prepare(
+                state, child(0)->row_desc(), _mem_pool.get(), _intermediate_tuple_desc->slots()[i],
+                _result_tuple_desc->slots()[i], mem_tracker(), &ctx));
         _fn_ctxs.push_back(ctx);
         state->obj_pool()->add(ctx);
     }

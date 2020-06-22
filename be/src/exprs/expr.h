@@ -226,7 +226,7 @@ public:
     /// Convenience function for preparing multiple expr trees.
     /// Allocations from 'ctxs' will be counted against 'tracker'.
     static Status prepare(const std::vector<ExprContext*>& ctxs, RuntimeState* state,
-                          const RowDescriptor& row_desc, MemTracker* tracker);
+                          const RowDescriptor& row_desc, std::shared_ptr<MemTracker> tracker);
 
     /// Convenience function for opening multiple expr trees.
     static Status open(const std::vector<ExprContext*>& ctxs, RuntimeState* state);

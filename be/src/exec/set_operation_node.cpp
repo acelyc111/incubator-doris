@@ -45,7 +45,7 @@ Status SetOperationNode::prepare(RuntimeState* state) {
     SCOPED_TIMER(_runtime_profile->total_time_counter());
     for (size_t i = 0; i < _child_expr_lists.size(); ++i) {
         RETURN_IF_ERROR(Expr::prepare(_child_expr_lists[i], state, child(i)->row_desc(),
-                                      expr_mem_tracker().get()));
+                                      expr_mem_tracker()));
         DCHECK_EQ(_child_expr_lists[i].size(), _tuple_desc->slots().size());
     }
     _build_tuple_size = child(0)->row_desc().tuple_descriptors().size();

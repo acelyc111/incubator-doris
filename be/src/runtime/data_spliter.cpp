@@ -89,8 +89,7 @@ Status DataSpliter::prepare(RuntimeState* state) {
     std::stringstream title;
     title << "DataSplitSink (dst_fragment_instance_id=" << print_id(state->fragment_instance_id()) << ")";
     RETURN_IF_ERROR(DataSink::prepare(state));
-    RETURN_IF_ERROR(Expr::prepare(
-            _partition_expr_ctxs, state, _row_desc, _expr_mem_tracker.get()));
+    RETURN_IF_ERROR(Expr::prepare(_partition_expr_ctxs, state, _row_desc, _expr_mem_tracker));
     for (auto& iter : _rollup_map) {
         RETURN_IF_ERROR(iter.second->prepare(state, _row_desc, _expr_mem_tracker));
     }

@@ -180,7 +180,7 @@ Status ExecNode::prepare(RuntimeState* state) {
     _expr_mem_tracker.reset(new MemTracker(-1, "ExecNode Exprs", _mem_tracker.get()));
     _expr_mem_pool.reset(new MemPool(_expr_mem_tracker.get()));
     // TODO chenhao
-    RETURN_IF_ERROR(Expr::prepare(_conjunct_ctxs, state, row_desc(), expr_mem_tracker().get()));
+    RETURN_IF_ERROR(Expr::prepare(_conjunct_ctxs, state, row_desc(), expr_mem_tracker()));
     // TODO(zc):
     // AddExprCtxsToFree(_conjunct_ctxs);
 

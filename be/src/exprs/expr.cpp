@@ -539,9 +539,9 @@ Status Expr::prepare(
         const std::vector<ExprContext*>& ctxs,
         RuntimeState* state,
         const RowDescriptor& row_desc,
-        MemTracker* tracker) {
+        std::shared_ptr<MemTracker> tracker) {
     for (int i = 0; i < ctxs.size(); ++i) {
-        RETURN_IF_ERROR(ctxs[i]->prepare(state, row_desc, tracker));
+        RETURN_IF_ERROR(ctxs[i]->prepare(state, row_desc, tracker.get()));
     }
     return Status::OK();
 }

@@ -99,7 +99,7 @@ Status BrokerScanNode::prepare(RuntimeState* state) {
     // prepare partition
     if (_partition_expr_ctxs.size() > 0) {
         RETURN_IF_ERROR(Expr::prepare(
-                _partition_expr_ctxs, state, row_desc(), expr_mem_tracker().get()));
+                _partition_expr_ctxs, state, row_desc(), expr_mem_tracker()));
         for (auto iter : _partition_infos) {
             RETURN_IF_ERROR(iter->prepare(state, row_desc(), expr_mem_tracker()));
         }

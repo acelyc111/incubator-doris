@@ -95,7 +95,7 @@ Status AggregationNode::prepare(RuntimeState* state) {
     _output_tuple_desc = state->desc_tbl().get_tuple_descriptor(_output_tuple_id);
     DCHECK_EQ(_intermediate_tuple_desc->slots().size(), _output_tuple_desc->slots().size());
     RETURN_IF_ERROR(Expr::prepare(
-            _probe_expr_ctxs, state, child(0)->row_desc(), expr_mem_tracker().get()));
+            _probe_expr_ctxs, state, child(0)->row_desc(), expr_mem_tracker()));
 
     // Construct build exprs from _agg_tuple_desc
     for (int i = 0; i < _probe_expr_ctxs.size(); ++i) {
@@ -111,7 +111,7 @@ Status AggregationNode::prepare(RuntimeState* state) {
     // in a single-node plan with an intermediate tuple different from the output tuple.
     RowDescriptor build_row_desc(_intermediate_tuple_desc, false);
     RETURN_IF_ERROR(Expr::prepare(
-            _build_expr_ctxs, state, build_row_desc, expr_mem_tracker().get()));
+            _build_expr_ctxs, state, build_row_desc, expr_mem_tracker()));
 
     _tuple_pool.reset(new MemPool(mem_tracker().get()));
 
@@ -128,8 +128,8 @@ Status AggregationNode::prepare(RuntimeState* state) {
         SlotDescriptor* intermediate_slot_desc = _intermediate_tuple_desc->slots()[j];
         SlotDescriptor* output_slot_desc = _output_tuple_desc->slots()[j];
         RETURN_IF_ERROR(_aggregate_evaluators[i]->prepare(
-                state, child(0)->row_desc(), _tuple_pool.get(),
-                intermediate_slot_desc, output_slot_desc, mem_tracker().get(), &_agg_fn_ctxs[i]));
+                state, child(0)->row_desc(), _tuple_pool.get(), intermediate_slot_desc,
+                output_slot_desc, mem_tracker(), &_agg_fn_ctxs[i]));
         state->obj_pool()->add(_agg_fn_ctxs[i]);
     }
 

@@ -53,10 +53,10 @@ Status SortExecExprs::prepare(RuntimeState* state, const RowDescriptor& child_ro
                               std::shared_ptr<MemTracker> expr_mem_tracker) {
     if (_materialize_tuple) {
         RETURN_IF_ERROR(Expr::prepare(
-                _sort_tuple_slot_expr_ctxs, state, child_row_desc, expr_mem_tracker.get()));
+                _sort_tuple_slot_expr_ctxs, state, child_row_desc, expr_mem_tracker));
     }
     RETURN_IF_ERROR(Expr::prepare(
-            _lhs_ordering_expr_ctxs, state, output_row_desc, expr_mem_tracker.get()));
+            _lhs_ordering_expr_ctxs, state, output_row_desc, expr_mem_tracker));
     return Status::OK();
 }
 

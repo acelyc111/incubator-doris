@@ -148,7 +148,7 @@ Status AggFnEvaluator::prepare(
         MemPool* pool,
         const SlotDescriptor* intermediate_slot_desc,
         const SlotDescriptor* output_slot_desc,
-        MemTracker* mem_tracker,
+        std::shared_ptr<MemTracker> mem_tracker,
         FunctionContext** agg_fn_ctx) {
     DCHECK(pool != NULL);
     DCHECK(intermediate_slot_desc != NULL);
@@ -160,7 +160,7 @@ Status AggFnEvaluator::prepare(
     _string_buffer_len = 0;
     _mem_tracker = mem_tracker;
 
-    Status status = Expr::prepare(_input_exprs_ctxs, state, desc, pool->mem_tracker());
+    Status status = Expr::prepare(_input_exprs_ctxs, state, desc, _mem_tracker);
     RETURN_IF_ERROR(status);
 
     ObjectPool* obj_pool = state->obj_pool();
