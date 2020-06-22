@@ -240,7 +240,7 @@ void DataStreamRecvr::SenderQueue::add_batch(
         // Note: if this function makes a row batch, the batch *must* be added
         // to _batch_queue. It is not valid to create the row batch and destroy
         // it in this thread.
-        batch = new RowBatch(_recvr->row_desc(), pb_batch, _recvr->mem_tracker());
+        batch = new RowBatch(_recvr->row_desc(), pb_batch, _recvr->mem_tracker().get());
     }
    
     VLOG_ROW << "added #rows=" << batch->num_rows()

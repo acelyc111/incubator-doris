@@ -607,8 +607,8 @@ int BufferedBlockMgr2::num_reserved_buffers_remaining(Client* client) const {
     return std::max(client->_num_reserved_buffers - client->_num_pinned_buffers, 0);
 }
 
-MemTracker* BufferedBlockMgr2::get_tracker(Client* client) const {
-    return client->_tracker.get();
+std::shared_ptr<MemTracker> BufferedBlockMgr2::get_tracker(Client* client) const {
+    return client->_tracker;
 }
 
 // TODO: It would be good if we had a sync primitive that supports is_mine() calls, see
