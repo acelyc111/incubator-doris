@@ -80,8 +80,9 @@ static int64_t NULL_VALUE[] = {
 PartitionedHashTableCtx::PartitionedHashTableCtx(const std::vector<Expr*>& build_exprs,
     const std::vector<Expr*>& probe_exprs, bool stores_nulls,
     const std::vector<bool>& finds_nulls, int32_t initial_seed,
-    int max_levels, MemPool* mem_pool, MemPool* expr_results_pool)
-    : build_exprs_(build_exprs),
+    int max_levels, MemPool* mem_pool, MemPool* expr_results_pool, std::shared_ptr<MemTracker> tracker)
+    : tracker_(tracker),
+      build_exprs_(build_exprs),
       probe_exprs_(probe_exprs),
       stores_nulls_(stores_nulls),
       finds_nulls_(finds_nulls),
@@ -91,6 +92,7 @@ PartitionedHashTableCtx::PartitionedHashTableCtx(const std::vector<Expr*>& build
       scratch_row_(NULL),
       mem_pool_(mem_pool),
       expr_results_pool_(expr_results_pool) {
+  DCHECK(tracker_ != nullptr);
   DCHECK(!finds_some_nulls_ || stores_nulls_);
   // Compute the layout and buffer size to store the evaluated expr results
   DCHECK_EQ(build_exprs_.size(), probe_exprs_.size());
@@ -109,36 +111,38 @@ PartitionedHashTableCtx::PartitionedHashTableCtx(const std::vector<Expr*>& build
 }
 
 Status PartitionedHashTableCtx::Init(ObjectPool* pool, RuntimeState* state, int num_build_tuples,
-        std::shared_ptr<MemTracker> tracker, const RowDescriptor& row_desc, const RowDescriptor& row_desc_probe) {
+                                     const RowDescriptor& row_desc,
+                                     const RowDescriptor& row_desc_probe) {
+    int scratch_row_size = sizeof(Tuple*) * num_build_tuples;
+    scratch_row_ = reinterpret_cast<TupleRow*>(malloc(scratch_row_size));
+    if (UNLIKELY(scratch_row_ == NULL)) {
+        return Status::InternalError(
+                Substitute("Failed to allocate $0 bytes for scratch row of "
+                           "PartitionedHashTableCtx.",
+                           scratch_row_size));
+    }
 
-  int scratch_row_size = sizeof(Tuple*) * num_build_tuples;
-  scratch_row_ = reinterpret_cast<TupleRow*>(malloc(scratch_row_size));
-  if (UNLIKELY(scratch_row_ == NULL)) {
-      return Status::InternalError(Substitute("Failed to allocate $0 bytes for scratch row of "
-        "PartitionedHashTableCtx.", scratch_row_size));
-  }
+    // TODO chenhao replace ExprContext with ScalarFnEvaluator
+    for (int i = 0; i < build_exprs_.size(); i++) {
+        ExprContext* context = pool->add(new ExprContext(build_exprs_[i]));
+        context->prepare(state, row_desc, tracker_);
+        if (context == nullptr) {
+            return Status::InternalError("Hashtable init error.");
+        }
+        build_expr_evals_.push_back(context);
+    }
+    DCHECK_EQ(build_exprs_.size(), build_expr_evals_.size());
 
-  // TODO chenhao replace ExprContext with ScalarFnEvaluator
-  for (int i = 0; i < build_exprs_.size(); i++) {
-      ExprContext* context = pool->add(new ExprContext(build_exprs_[i]));
-      context->prepare(state, row_desc, tracker); 
-      if (context == nullptr) {
-          return Status::InternalError("Hashtable init error.");
-      }
-      build_expr_evals_.push_back(context);
-  }
-  DCHECK_EQ(build_exprs_.size(), build_expr_evals_.size());
-  
-  for (int i = 0; i < probe_exprs_.size(); i++) {
-      ExprContext* context = pool->add(new ExprContext(probe_exprs_[i]));
-      context->prepare(state, row_desc_probe, tracker);
-      if (context == nullptr) {
-          return Status::InternalError("Hashtable init error.");
-      }
-      probe_expr_evals_.push_back(context);
-  }
-  DCHECK_EQ(probe_exprs_.size(), probe_expr_evals_.size());
-  return expr_values_cache_.Init(state, mem_pool_->mem_tracker(), build_exprs_);
+    for (int i = 0; i < probe_exprs_.size(); i++) {
+        ExprContext* context = pool->add(new ExprContext(probe_exprs_[i]));
+        context->prepare(state, row_desc_probe, tracker_);
+        if (context == nullptr) {
+            return Status::InternalError("Hashtable init error.");
+        }
+        probe_expr_evals_.push_back(context);
+    }
+    DCHECK_EQ(probe_exprs_.size(), probe_expr_evals_.size());
+    return expr_values_cache_.Init(state, tracker_, build_exprs_);
 }
 
 Status PartitionedHashTableCtx::Create(ObjectPool* pool, RuntimeState* state,
@@ -150,8 +154,8 @@ Status PartitionedHashTableCtx::Create(ObjectPool* pool, RuntimeState* state,
     const RowDescriptor& row_desc_probe,
     scoped_ptr<PartitionedHashTableCtx>* ht_ctx) {
   ht_ctx->reset(new PartitionedHashTableCtx(build_exprs, probe_exprs, stores_nulls,
-      finds_nulls, initial_seed, max_levels, mem_pool, expr_results_pool));
-  return (*ht_ctx)->Init(pool, state, num_build_tuples, tracker, row_desc, row_desc_probe);
+      finds_nulls, initial_seed, max_levels, mem_pool, expr_results_pool, tracker));
+  return (*ht_ctx)->Init(pool, state, num_build_tuples, row_desc, row_desc_probe);
 }
 
 Status PartitionedHashTableCtx::Open(RuntimeState* state) {
@@ -168,7 +172,7 @@ Status PartitionedHashTableCtx::Open(RuntimeState* state) {
 void PartitionedHashTableCtx::Close(RuntimeState* state) {
   free(scratch_row_);
   scratch_row_ = NULL;
-  expr_values_cache_.Close(mem_pool_->mem_tracker());
+  expr_values_cache_.Close(tracker_);
   for (int i = 0; i < build_expr_evals_.size(); i++) {
       build_expr_evals_[i]->close(state);
   }
@@ -310,7 +314,7 @@ PartitionedHashTableCtx::ExprValuesCache::ExprValuesCache()
     null_bitmap_(0) {}
 
 Status PartitionedHashTableCtx::ExprValuesCache::Init(RuntimeState* state,
-    MemTracker* tracker, const std::vector<Expr*>& build_exprs) {
+    std::shared_ptr<MemTracker> tracker, const std::vector<Expr*>& build_exprs) {
   // Initialize the number of expressions.
   num_exprs_ = build_exprs.size();
   // Compute the layout of evaluated values of a row.
@@ -354,7 +358,7 @@ Status PartitionedHashTableCtx::ExprValuesCache::Init(RuntimeState* state,
   return Status::OK();
 }
 
-void PartitionedHashTableCtx::ExprValuesCache::Close(MemTracker* tracker) {
+void PartitionedHashTableCtx::ExprValuesCache::Close(std::shared_ptr<MemTracker> tracker) {
   if (capacity_ == 0) return;
   cur_expr_values_ = NULL;
   cur_expr_values_null_ = NULL;

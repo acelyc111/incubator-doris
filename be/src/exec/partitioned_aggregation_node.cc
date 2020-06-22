@@ -247,7 +247,7 @@ Status PartitionedAggregationNode::prepare(RuntimeState* state) {
   RETURN_IF_ERROR(NewAggFnEvaluator::Create(agg_fns_, state, _pool, agg_fn_pool_.get(),
       &agg_fn_evals_, expr_mem_tracker(), row_desc));
   
-  expr_results_pool_.reset(new MemPool(_expr_mem_tracker.get()));
+  expr_results_pool_.reset(new MemPool(expr_mem_tracker().get()));
   if (!grouping_exprs_.empty()) {
     RowDescriptor build_row_desc(intermediate_tuple_desc_, false);
     RETURN_IF_ERROR(PartitionedHashTableCtx::Create(_pool, state, build_exprs_,
