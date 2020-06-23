@@ -104,88 +104,88 @@ TEST(MemTestTest, ConsumptionMetric) {
 #endif // #end #if 0
 
 TEST(MemTestTest, TrackerHierarchy) {
-    MemTracker p(100);
-    MemTracker c1(80, "", &p);
-    MemTracker c2(50, "", &p);
+    auto p = std::make_shared<MemTracker>(100);
+    auto c1= std::make_shared<MemTracker>(80, "", p);
+    auto c2= std::make_shared<MemTracker>(50, "", p);
 
     // everything below limits
-    c1.Consume(60);
-    EXPECT_EQ(c1.consumption(), 60);
-    EXPECT_FALSE(c1.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c1.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(c2.consumption(), 0);
-    EXPECT_FALSE(c2.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c2.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(p.consumption(), 60);
-    EXPECT_FALSE(p.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(p.AnyLimitExceeded(MemLimit::HARD));
+    c1->Consume(60);
+    EXPECT_EQ(c1->consumption(), 60);
+    EXPECT_FALSE(c1->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c1->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(c2->consumption(), 0);
+    EXPECT_FALSE(c2->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c2->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(p->consumption(), 60);
+    EXPECT_FALSE(p->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(p->AnyLimitExceeded(MemLimit::HARD));
 
     // p goes over limit
-    c2.Consume(50);
-    EXPECT_EQ(c1.consumption(), 60);
-    EXPECT_FALSE(c1.LimitExceeded(MemLimit::HARD));
-    EXPECT_TRUE(c1.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(c2.consumption(), 50);
-    EXPECT_FALSE(c2.LimitExceeded(MemLimit::HARD));
-    EXPECT_TRUE(c2.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(p.consumption(), 110);
-    EXPECT_TRUE(p.LimitExceeded(MemLimit::HARD));
+    c2->Consume(50);
+    EXPECT_EQ(c1->consumption(), 60);
+    EXPECT_FALSE(c1->LimitExceeded(MemLimit::HARD));
+    EXPECT_TRUE(c1->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(c2->consumption(), 50);
+    EXPECT_FALSE(c2->LimitExceeded(MemLimit::HARD));
+    EXPECT_TRUE(c2->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(p->consumption(), 110);
+    EXPECT_TRUE(p->LimitExceeded(MemLimit::HARD));
 
     // c2 goes over limit, p drops below limit
-    c1.Release(20);
-    c2.Consume(10);
-    EXPECT_EQ(c1.consumption(), 40);
-    EXPECT_FALSE(c1.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c1.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(c2.consumption(), 60);
-    EXPECT_TRUE(c2.LimitExceeded(MemLimit::HARD));
-    EXPECT_TRUE(c2.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(p.consumption(), 100);
-    EXPECT_FALSE(p.LimitExceeded(MemLimit::HARD));
+    c1->Release(20);
+    c2->Consume(10);
+    EXPECT_EQ(c1->consumption(), 40);
+    EXPECT_FALSE(c1->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c1->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(c2->consumption(), 60);
+    EXPECT_TRUE(c2->LimitExceeded(MemLimit::HARD));
+    EXPECT_TRUE(c2->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(p->consumption(), 100);
+    EXPECT_FALSE(p->LimitExceeded(MemLimit::HARD));
 }
 
 TEST(MemTestTest, TrackerHierarchyTryConsume) {
-    MemTracker p(100);
-    MemTracker c1(80, "", &p);
-    MemTracker c2(50, "", &p);
+    auto p = std::make_shared<MemTracker>(100);
+    auto c1= std::make_shared<MemTracker>(80, "", p);
+    auto c2= std::make_shared<MemTracker>(50, "", p);
 
     // everything below limits
-    bool consumption = c1.TryConsume(60);
+    bool consumption = c1->TryConsume(60);
     EXPECT_EQ(consumption, true);
-    EXPECT_EQ(c1.consumption(), 60);
-    EXPECT_FALSE(c1.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c1.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(c2.consumption(), 0);
-    EXPECT_FALSE(c2.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c2.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(p.consumption(), 60);
-    EXPECT_FALSE(p.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(p.AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(c1->consumption(), 60);
+    EXPECT_FALSE(c1->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c1->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(c2->consumption(), 0);
+    EXPECT_FALSE(c2->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c2->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(p->consumption(), 60);
+    EXPECT_FALSE(p->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(p->AnyLimitExceeded(MemLimit::HARD));
 
     // p goes over limit
-    consumption = c2.TryConsume(50);
+    consumption = c2->TryConsume(50);
     EXPECT_EQ(consumption, true);
-    EXPECT_EQ(c1.consumption(), 60);
-    EXPECT_FALSE(c1.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c1.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(c2.consumption(), 0);
-    EXPECT_FALSE(c2.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c2.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(p.consumption(), 60);
-    EXPECT_FALSE(p.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(p.AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(c1->consumption(), 60);
+    EXPECT_FALSE(c1->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c1->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(c2->consumption(), 0);
+    EXPECT_FALSE(c2->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c2->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(p->consumption(), 60);
+    EXPECT_FALSE(p->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(p->AnyLimitExceeded(MemLimit::HARD));
 
     // c2 goes over limit, p drops below limit
-    c1.Release(20);
-    c2.Consume(10);
-    EXPECT_EQ(c1.consumption(), 40);
-    EXPECT_FALSE(c1.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c1.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(c2.consumption(), 10);
-    EXPECT_FALSE(c2.LimitExceeded(MemLimit::HARD));
-    EXPECT_FALSE(c2.AnyLimitExceeded(MemLimit::HARD));
-    EXPECT_EQ(p.consumption(), 50);
-    EXPECT_FALSE(p.LimitExceeded(MemLimit::HARD));
+    c1->Release(20);
+    c2->Consume(10);
+    EXPECT_EQ(c1->consumption(), 40);
+    EXPECT_FALSE(c1->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c1->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(c2->consumption(), 10);
+    EXPECT_FALSE(c2->LimitExceeded(MemLimit::HARD));
+    EXPECT_FALSE(c2->AnyLimitExceeded(MemLimit::HARD));
+    EXPECT_EQ(p->consumption(), 50);
+    EXPECT_FALSE(p->LimitExceeded(MemLimit::HARD));
 }
 
 #if 0
