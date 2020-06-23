@@ -37,7 +37,7 @@ using std::numeric_limits;
 namespace doris {
 
 InitialReservations::InitialReservations(ObjectPool* obj_pool,
-    ReservationTracker* query_reservation, MemTracker* query_mem_tracker,
+    ReservationTracker* query_reservation, std::shared_ptr<MemTracker> query_mem_tracker,
     int64_t initial_reservation_total_claims)
   : initial_reservation_mem_tracker_(obj_pool->add(
       new MemTracker(-1, "Unclaimed reservations", query_mem_tracker, false))),

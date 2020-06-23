@@ -245,9 +245,9 @@ Status RuntimeState::init_mem_trackers(const TUniqueId& query_id) {
 
     RETURN_IF_ERROR(init_buffer_poolstate());
 
-    _initial_reservations = _obj_pool->add(new InitialReservations(_obj_pool.get(),
-                      _buffer_reservation, _query_mem_tracker.get(), 
-                      _query_options.initial_reservation_total_claims));
+    _initial_reservations = _obj_pool->add(
+            new InitialReservations(_obj_pool.get(), _buffer_reservation, _query_mem_tracker,
+                                    _query_options.initial_reservation_total_claims));
     RETURN_IF_ERROR(
         _initial_reservations->Init(_query_id, min_reservation()));
     DCHECK_EQ(0, _initial_reservation_refcnt.load());
