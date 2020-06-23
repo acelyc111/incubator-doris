@@ -237,7 +237,7 @@ void MemTracker::ListTrackers(vector<shared_ptr<MemTracker>>* trackers) {
 
     trackers->push_back(t);
     {
-      lock_guard<SpinLock> l(child_trackers_lock_);
+      lock_guard<SpinLock> l(t->child_trackers_lock_);
       for (const auto& child_weak : t->child_trackers_) {
         shared_ptr<MemTracker> child = child_weak.lock();
         if (child) {

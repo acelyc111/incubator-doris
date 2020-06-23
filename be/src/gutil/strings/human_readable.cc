@@ -1,6 +1,6 @@
 // Copyright 2007 Google Inc. All Rights Reserved.
 
-#include "strings/human_readable.h"
+#include "gutil/strings/human_readable.h"
 
 #include <cinttypes>
 #include <cstdlib>
@@ -8,8 +8,8 @@
 
 #include <glog/logging.h>
 
-#include "kudu/gutil/stringprintf.h"
-#include "kudu/gutil/strings/strip.h"
+#include "gutil/stringprintf.h"
+#include "gutil/strings/strip.h"
 
 using std::string;
 

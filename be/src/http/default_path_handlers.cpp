@@ -28,6 +28,7 @@
 #include "common/configbase.h"
 #include "common/logging.h"
 #include "gutil/strings/human_readable.h"
+#include "gutil/strings/substitute.h"
 #include "http/web_page_handler.h"
 #include "runtime/mem_tracker.h"
 #include "util/debug_util.h"
@@ -37,6 +38,7 @@
 using std::vector;
 using std::shared_ptr;
 using std::string;
+using strings::Substitute;
 
 namespace doris {
 
@@ -116,7 +118,7 @@ static void MemTrackersHandler(const WebPageHandler::ArgumentMap& args, std::str
                "       data-search='true' "
                "       class='table table-striped'>\n";
     *output << "<thead><tr>"
-               "<th>Id</th>"
+               "<th>Label</th>"
                "<th>Parent</th>"
                "<th>Limit</th>"
                "<th data-sorter='bytesSorter' "
@@ -130,14 +132,14 @@ static void MemTrackersHandler(const WebPageHandler::ArgumentMap& args, std::str
     vector<shared_ptr<MemTracker>> trackers;
     MemTracker::ListTrackers(&trackers);
     for (const shared_ptr<MemTracker>& tracker : trackers) {
-        string parent = tracker->parent() == nullptr ? "none" : tracker->parent()->id();
+        string parent = tracker->parent() == nullptr ? "none" : tracker->parent()->label();
         string limit_str = tracker->limit() == -1 ? "none" :
                            HumanReadableNumBytes::ToString(tracker->limit());
         string current_consumption_str = HumanReadableNumBytes::ToString(tracker->consumption());
         string peak_consumption_str = HumanReadableNumBytes::ToString(tracker->peak_consumption());
-        (*output) << Substitute("<tr><td>$0</td><td>$1</td><td>$2</td>" // id, parent, limit
+        (*output) << Substitute("<tr><td>$0</td><td>$1</td><td>$2</td>" // label, parent, limit
                                 "<td>$3</td><td>$4</td></tr>\n", // current, peak
-                                tracker->id(), parent, limit_str, current_consumption_str,
+                                tracker->label(), parent, limit_str, current_consumption_str,
                                 peak_consumption_str);
     }
     *output << "</tbody></table>\n";
