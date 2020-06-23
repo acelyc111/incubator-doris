@@ -100,6 +100,9 @@ TEST_F(SystemMetricsTest, normal) {
     std::string fd_path(dir_path);
     fd_path += "/test_data/fd_file_nr";
     k_ut_fd_path = fd_path.c_str();
+    std::string net_snmp_path(dir_path);
+    net_snmp_path += "/test_data/net_snmp_normal";
+    k_ut_net_snmp_path = net_snmp_path.c_str();
 
     MetricRegistry registry("test");
     {
@@ -243,6 +246,7 @@ TEST_F(SystemMetricsTest, no_proc_file) {
     net_dev_path += "/test_data/no_net_dev_normal";
     k_ut_net_dev_path = net_dev_path.c_str();
     k_ut_fd_path="";
+    k_ut_net_snmp_path="";
 
     MetricRegistry registry("test");
     {
