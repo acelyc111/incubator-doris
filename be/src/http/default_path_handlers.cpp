@@ -27,11 +27,16 @@
 
 #include "common/configbase.h"
 #include "common/logging.h"
+#include "gutil/strings/human_readable.h"
 #include "http/web_page_handler.h"
 #include "runtime/mem_tracker.h"
 #include "util/debug_util.h"
 #include "util/logging.h"
 #include "util/pretty_printer.h"
+
+using std::vector;
+using std::shared_ptr;
+using std::string;
 
 namespace doris {
 
@@ -103,11 +108,47 @@ void mem_usage_handler(std::shared_ptr<MemTracker> mem_tracker, const WebPageHan
 #endif
 }
 
+// Registered to handle "/mem-trackers", and prints out memory tracker information.
+static void MemTrackersHandler(const WebPageHandler::ArgumentMap& args, std::stringstream* output) {
+    *output << "<h1>Memory usage by subsystem</h1>\n";
+    *output << "<table data-toggle='table' "
+               "       data-pagination='true' "
+               "       data-search='true' "
+               "       class='table table-striped'>\n";
+    *output << "<thead><tr>"
+               "<th>Id</th>"
+               "<th>Parent</th>"
+               "<th>Limit</th>"
+               "<th data-sorter='bytesSorter' "
+               "    data-sortable='true' "
+               ">Current Consumption</th>"
+               "<th data-sorter='bytesSorter' "
+               "    data-sortable='true' "
+               ">Peak Consumption</th>";
+    *output << "<tbody>\n";
+
+    vector<shared_ptr<MemTracker>> trackers;
+    MemTracker::ListTrackers(&trackers);
+    for (const shared_ptr<MemTracker>& tracker : trackers) {
+        string parent = tracker->parent() == nullptr ? "none" : tracker->parent()->id();
+        string limit_str = tracker->limit() == -1 ? "none" :
+                           HumanReadableNumBytes::ToString(tracker->limit());
+        string current_consumption_str = HumanReadableNumBytes::ToString(tracker->consumption());
+        string peak_consumption_str = HumanReadableNumBytes::ToString(tracker->peak_consumption());
+        (*output) << Substitute("<tr><td>$0</td><td>$1</td><td>$2</td>" // id, parent, limit
+                                "<td>$3</td><td>$4</td></tr>\n", // current, peak
+                                tracker->id(), parent, limit_str, current_consumption_str,
+                                peak_consumption_str);
+    }
+    *output << "</tbody></table>\n";
+}
+
 void add_default_path_handlers(WebPageHandler* web_page_handler, std::shared_ptr<MemTracker> process_mem_tracker) {
     web_page_handler->register_page("/logs", "Logs", logs_handler, true /* is_on_nav_bar */);
     web_page_handler->register_page("/varz", "Configs", config_handler, true /* is_on_nav_bar */);
-    web_page_handler->register_page("/memz", "Memory",
+    web_page_handler->register_page("/memz", "Memory (total)",
         boost::bind<void>(&mem_usage_handler, process_mem_tracker, _1, _2), true /* is_on_nav_bar */);
+    web_page_handler->register_page("/mem-trackers", "Memory (detail)", MemTrackersHandler, true /* is_on_nav_bar */);
 }
 
 } // namespace doris

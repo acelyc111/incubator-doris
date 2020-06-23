@@ -37,6 +37,7 @@ SET(SOURCE_FILES
         strings/ascii_ctype.cc
         strings/charset.cc
         strings/escaping.cc
+        strings/human_readable.cc
         strings/join.cc
         strings/memutil.cc
         strings/numbers.cc

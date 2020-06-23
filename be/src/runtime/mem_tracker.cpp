@@ -36,11 +36,14 @@
 #include "util/stack_util.h"
 #include "util/uid_util.h"
 
+using std::deque;
 using std::endl;
 using std::greater;
 using std::pair;
 using std::priority_queue;
+using std::shared_ptr;
 using std::string;
+using std::vector;
 using strings::Substitute;
 
 namespace doris {
@@ -220,6 +223,27 @@ MemTracker::~MemTracker() {
     parent_->Release(consumption());
     if (auto_unregister_) {  // TODO(yingchun): when auto_unregister_ is false, and can it be false?
       unregister_from_parent();
+    }
+  }
+}
+
+void MemTracker::ListTrackers(vector<shared_ptr<MemTracker>>* trackers) {
+  trackers->clear();
+  deque<shared_ptr<MemTracker>> to_process;
+  to_process.push_front(GetRootTracker());
+  while (!to_process.empty()) {
+    shared_ptr<MemTracker> t = to_process.back();
+    to_process.pop_back();
+
+    trackers->push_back(t);
+    {
+      lock_guard<SpinLock> l(child_trackers_lock_);
+      for (const auto& child_weak : t->child_trackers_) {
+        shared_ptr<MemTracker> child = child_weak.lock();
+        if (child) {
+          to_process.emplace_back(std::move(child));
+        }
+      }
     }
   }
 }

@@ -83,7 +83,6 @@ class TQueryOptions;
 /// This class is thread-safe.
 class MemTracker : public std::enable_shared_from_this<MemTracker> {
  public:
-  // TODO(yingchun): change to std::shared_ptr<MemTracker> parent
   /// 'byte_limit' < 0 means no limit
   /// 'label' is the label used in the usage string (LogUsage())
   /// If 'auto_unregister' is true, never call unregister_from_parent().
@@ -107,6 +106,9 @@ class MemTracker : public std::enable_shared_from_this<MemTracker> {
       const std::string& label = std::string(), const std::shared_ptr<MemTracker>& parent = std::shared_ptr<MemTracker>());
 
   ~MemTracker();
+
+  // Returns a list of all the valid trackers.
+  static void ListTrackers(std::vector<std::shared_ptr<MemTracker>>* trackers);
 
   // Removes this tracker from parent_->child_trackers_.
   void unregister_from_parent() {
