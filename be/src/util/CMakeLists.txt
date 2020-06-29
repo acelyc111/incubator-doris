@@ -97,6 +97,7 @@ set(UTIL_FILES
   trace_metrics.cpp
   easy_json.cc
   mustache/mustache.cc
+  timezone_utils.cpp
 )
 
 if (WITH_MYSQL)

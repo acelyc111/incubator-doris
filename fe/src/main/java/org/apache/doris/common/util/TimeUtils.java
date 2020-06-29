@@ -125,6 +125,19 @@ public class TimeUtils {
         return TimeZone.getTimeZone(ZoneId.of(timezone, timeZoneAliasMap));
     }
 
+    // return the time zone of current system
+    public static TimeZone getSystemTimeZone() {
+        return TimeZone.getTimeZone(ZoneId.of(ZoneId.systemDefault().getId(), timeZoneAliasMap));
+    }
+
+    // get time zone of given zone name, or return system time zone if name is null.
+    public static TimeZone getOrSystemTimeZone(String timeZone) {
+        if (timeZone == null) {
+            return getSystemTimeZone();
+        }
+        return TimeZone.getTimeZone(ZoneId.of(timeZone, timeZoneAliasMap));
+    }
+
     public static TimeZone getDefaultTimeZone() {
         return TimeZone.getTimeZone(ZoneId.of(DEFAULT_TIME_ZONE, timeZoneAliasMap));
     }
