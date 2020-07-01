@@ -757,6 +757,16 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
 
             Optional<RoutineLoadTaskInfo> routineLoadTaskInfoOptional = routineLoadTaskInfoList.stream().filter(
                     entity -> entity.getTxnId() == txnState.getTransactionId()).findFirst();
+            if (!routineLoadTaskInfoOptional.isPresent()) {
+                // not find task in routineLoadTaskInfoList. this may happen in following case:
+                //      After the txn of the task is COMMITTED, but before it becomes VISIBLE,
+                //      the routine load job has been paused and then start again.
+                //      The routineLoadTaskInfoList will be cleared when job being paused.
+                //      So the task can not be found here.
+                // This is a normal case, we just print a log here to observe.
+                LOG.info("Can not find task with transaction {} after visible, job: {}", txnState.getTransactionId(), id);
+                return;
+            }
             RoutineLoadTaskInfo routineLoadTaskInfo = routineLoadTaskInfoOptional.get();
             if (routineLoadTaskInfo.getTxnStatus() != TransactionStatus.COMMITTED) {
                 // TODO(cmy): Normally, this should not happen. But for safe reason, just pause the job
