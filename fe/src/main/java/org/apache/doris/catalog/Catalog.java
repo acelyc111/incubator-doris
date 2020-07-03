@@ -3541,6 +3541,13 @@ public class Catalog {
         Preconditions.checkNotNull(keysDesc);
         KeysType keysType = keysDesc.getKeysType();
 
+        if (Config.disable_unique_table_use) {
+            if (keysType == KeysType.UNIQUE_KEYS) {
+                throw new DdlException("For performance problem. We disable UNIQUE Aggregate key table, If you have more questions," +
+                        "please contact Doris user support team.");
+            }
+        }
+
         // create distribution info
         DistributionDesc distributionDesc = stmt.getDistributionDesc();
         Preconditions.checkNotNull(distributionDesc);

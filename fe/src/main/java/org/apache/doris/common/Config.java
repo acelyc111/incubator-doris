@@ -1067,5 +1067,7 @@ public class Config extends ConfigBase {
     @ConfField(mutable = true, masterOnly = true)
     public static int period_of_auto_resume_min = 5;
 
+    @ConfField(mutable = true)
+    public static boolean disable_unique_table_use = true;
 }
 

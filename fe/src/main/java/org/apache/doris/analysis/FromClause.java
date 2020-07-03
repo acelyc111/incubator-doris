@@ -23,7 +23,11 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.doris.catalog.KeysType;
+import org.apache.doris.catalog.OlapTable;
+import org.apache.doris.catalog.Table;
 import org.apache.doris.common.AnalysisException;
+import org.apache.doris.common.Config;
 import org.apache.doris.common.UserException;
 
 import com.google.common.base.Preconditions;
@@ -96,6 +100,11 @@ public class FromClause implements ParseNode, Iterable<TableRef> {
             }
             tblRef.analyze(analyzer);
             leftTblRef = tblRef;
+            Table table = tblRef.getTable();
+            if (Config.disable_unique_table_use && table instanceof OlapTable && ((OlapTable) table).getKeysType() == KeysType.UNIQUE_KEYS) {
+                throw new AnalysisException("For performance problem. We disable UNIQUE Aggregate key table, If you have more questions," +
+                        "please contact Doris user support team.");
+            }
         }
 
         analyzed_ = true;
