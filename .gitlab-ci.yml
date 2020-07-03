@@ -19,7 +19,7 @@ stages:
 test_be_job:
   stage: test
   script:
-    - ./run-ut.sh --run
+    - BUILD_TYPE=release ./run-ut.sh --run
 
 test_be_job_asan:
   stage: test
