@@ -551,12 +551,7 @@ public class DatabaseTransactionMgr {
             if (!finalStatusTransactionStateDeque.isEmpty() &&
             transactionState.getTransactionId() == finalStatusTransactionStateDeque.getFirst().getTransactionId()) {
                 finalStatusTransactionStateDeque.pop();
-                idToFinalStatusTransactionState.remove(transactionState.getTransactionId());
-                Set<Long> txnIds = unprotectedGetTxnIdsByLabel(transactionState.getLabel());
-                txnIds.remove(transactionState.getTransactionId());
-                if (txnIds.isEmpty()) {
-                    labelToTxnIds.remove(transactionState.getLabel());
-                }
+                clearTransactionState(transactionState);
             }
         } finally {
             writeUnlock();
@@ -1010,11 +1005,7 @@ public class DatabaseTransactionMgr {
                 TransactionState transactionState = finalStatusTransactionStateDeque.getFirst();
                 if (transactionState.isExpired(currentMillis)) {
                     finalStatusTransactionStateDeque.pop();
-                    Set<Long> txnIds = unprotectedGetTxnIdsByLabel(transactionState.getLabel());
-                    txnIds.remove(transactionState.getTransactionId());
-                    if (txnIds.isEmpty()) {
-                        labelToTxnIds.remove(transactionState.getLabel());
-                    }
+                    clearTransactionState(transactionState);
                     editLog.logDeleteTransactionState(transactionState);
                     LOG.info("transaction [" + transactionState.getTransactionId() + "] is expired, remove it from transaction manager");
                 } else {
@@ -1024,6 +1015,15 @@ public class DatabaseTransactionMgr {
             }
         } finally {
             writeUnlock();
+        }
+    }
+
+    private void clearTransactionState(TransactionState transactionState) {
+        idToFinalStatusTransactionState.remove(transactionState.getTransactionId());
+        Set<Long> txnIds = unprotectedGetTxnIdsByLabel(transactionState.getLabel());
+        txnIds.remove(transactionState.getTransactionId());
+        if (txnIds.isEmpty()) {
+            labelToTxnIds.remove(transactionState.getLabel());
         }
     }
 
