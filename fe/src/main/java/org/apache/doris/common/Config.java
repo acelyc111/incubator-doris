@@ -1069,5 +1069,11 @@ public class Config extends ConfigBase {
 
     @ConfField(mutable = true)
     public static boolean disable_unique_table_use = true;
+
+    /**
+     * Define thrift server's server model, default is TThreadPoolServer model
+     */
+    @ConfField
+    public static String thrift_server_type = ThriftServer.THREAD_POOL;
 }
 
