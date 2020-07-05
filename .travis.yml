@@ -87,7 +87,7 @@ matrix:
       before_install:
         - docker pull apachedoris/doris-dev:build-env-1.2
       script:
-        - docker run -v $TRAVIS_BUILD_DIR:/root/incubator-doris/ apachedoris/doris-dev:build-env-1.2 /bin/sh -c "cd /root/incubator-doris; BUILD_TYPE=lsan sh run-ut.sh --run"
+        - docker run --cap-add SYS_PTRACE --privileged=true -v $TRAVIS_BUILD_DIR:/root/incubator-doris/ apachedoris/doris-dev:build-env-1.2 /bin/sh -c "cd /root/incubator-doris; BUILD_TYPE=lsan sh run-ut.sh --run"
     - name: be-ut-asan
       os: linux
       services:
@@ -95,7 +95,7 @@ matrix:
       before_install:
         - docker pull apachedoris/doris-dev:build-env-1.2
       script:
-        - docker run -v $TRAVIS_BUILD_DIR:/root/incubator-doris/ apachedoris/doris-dev:build-env-1.2 /bin/sh -c "cd /root/incubator-doris; BUILD_TYPE=asan sh run-ut.sh --run"
+        - docker run --cap-add SYS_PTRACE --privileged=true -v $TRAVIS_BUILD_DIR:/root/incubator-doris/ apachedoris/doris-dev:build-env-1.2 /bin/sh -c "cd /root/incubator-doris; BUILD_TYPE=asan sh run-ut.sh --run"
     - name: fe-ut
       os: linux
       services:
