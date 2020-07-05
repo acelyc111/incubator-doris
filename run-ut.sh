@@ -105,7 +105,7 @@ echo "    Running PaloBe Unittest    "
 echo "******************************"
 
 cd ${DORIS_HOME}
-export DORIS_TEST_BINARY_DIR=${DORIS_HOME}/be/ut_build
+export DORIS_TEST_BINARY_DIR=${DORIS_HOME}/be/ut_build_${CMAKE_BUILD_TYPE}
 export TERM=xterm
 export UDF_RUNTIME_DIR=${DORIS_HOME}/lib/udf-runtime
 export LOG_DIR=${DORIS_HOME}/log
@@ -126,7 +126,7 @@ echo "******************************"
 echo "    Running PaloBe Unittest    "
 echo "******************************"
 
-export DORIS_TEST_BINARY_DIR=${DORIS_TEST_BINARY_DIR}/test/
+export DORIS_TEST_BINARY_DIR=${DORIS_TEST_BINARY_DIR}/test
 
 # prepare util test_data
 if [ -d ${DORIS_TEST_BINARY_DIR}/util/test_data ]; then
