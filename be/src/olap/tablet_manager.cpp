@@ -499,6 +499,7 @@ OLAPStatus TabletManager::_drop_tablet_unlocked(
     }
 
     if (is_dropping_base_tablet && !is_schema_change_finished) {
+        DorisMetrics::instance()->drop_tablet_requests_failed.increment(1);
         LOG(WARNING) << "fail to drop tablet. it is in schema-change state. tablet="
                      << to_drop_tablet->full_name();
         return OLAP_ERR_PREVIOUS_SCHEMA_CHANGE_NOT_FINISHED;
@@ -532,6 +533,7 @@ OLAPStatus TabletManager::_drop_tablet_unlocked(
     related_tablet->release_header_lock();
     res = _drop_tablet_directly_unlocked(tablet_id, schema_hash, keep_files);
     if (res != OLAP_SUCCESS) {
+        DorisMetrics::instance()->drop_tablet_requests_failed.increment(1);
         LOG(WARNING) << "fail to drop tablet which in schema change. tablet="
                      << to_drop_tablet->full_name();
         return res;

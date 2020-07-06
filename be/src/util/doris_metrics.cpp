@@ -47,109 +47,58 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
     REGISTER_DORIS_METRIC(memtable_flush_total);
     REGISTER_DORIS_METRIC(memtable_flush_duration_us);
 
-#define REGISTER_REQUEST_METRIC(request, status, metric) \
+#define REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(type, status) \
     _metrics.register_metric( \
-        #request, MetricLabels().add("status", #status), &metric)
-
-    REGISTER_REQUEST_METRIC(push_requests_total, SUCCESS, push_requests_success_total);
-    REGISTER_REQUEST_METRIC(push_requests_total, FAIL, push_requests_fail_total);
-
-#define REGISTER_ENGINE_REQUEST_METRIC(type, status) \
+        "engine_requests_total", MetricLabels().add("type", #type).add("status", #status), &type##_requests_total)
     _metrics.register_metric( \
-        "engine_requests_total", MetricLabels().add("type", #type).add("status", #status), &type##_requests_##status)
+        "engine_requests_total", MetricLabels().add("type", #type).add("status", #status), &type##_requests_failed)
 
-    REGISTER_ENGINE_REQUEST_METRIC(create_tablet, total);
-    REGISTER_ENGINE_REQUEST_METRIC(create_tablet, failed);
-    REGISTER_ENGINE_REQUEST_METRIC(drop_tablet, total);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(create_tablet);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(drop_tablet);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(report_all_tablets);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(report_tablet);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(report_disk);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(report_task);;
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(schema_change);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(create_rollup);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(storage_migrate);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(delete);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(clone);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(finish_task);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(base_compaction);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(cumulative_compaction);
+    REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(publish);
 
-    REGISTER_ENGINE_REQUEST_METRIC(report_all_tablets, total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_all_tablets, failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_tablet, total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_tablet, failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_disk, total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_disk, failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_task, total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_task, failed);
+#define REGISTER_REQUEST_METRIC(request, label_type, label_value, metric) \
+    _metrics.register_metric( \
+        #request, MetricLabels().add(#label_type, #label_type), &metric)
 
-    REGISTER_ENGINE_REQUEST_METRIC(schema_change, total);
-    REGISTER_ENGINE_REQUEST_METRIC(schema_change, failed);
-    REGISTER_ENGINE_REQUEST_METRIC(create_rollup, total);
-    REGISTER_ENGINE_REQUEST_METRIC(create_rollup, failed);
-    REGISTER_ENGINE_REQUEST_METRIC(storage_migrate, total);
-    REGISTER_ENGINE_REQUEST_METRIC(delete, total);
-    REGISTER_ENGINE_REQUEST_METRIC(delete, failed);
-    REGISTER_ENGINE_REQUEST_METRIC(clone, total);
-    REGISTER_ENGINE_REQUEST_METRIC(clone, failed);
+#define REGISTER_REQUEST_STATUS_METRIC(request) \
+    REGISTER_REQUEST_METRIC(request, status, success, &request##_##success);
+    REGISTER_REQUEST_METRIC(request, status, failed, &request##_##failed);
 
-    REGISTER_ENGINE_REQUEST_METRIC(finish_task, total);
-    REGISTER_ENGINE_REQUEST_METRIC(finish_task, failed);
+    // TODO(yingchun): Not copatibale with older version
+    REGISTER_REQUEST_METRIC(push_requests);
 
-    REGISTER_ENGINE_REQUEST_METRIC(base_compaction, total);
-    REGISTER_ENGINE_REQUEST_METRIC(base_compaction, failed);
-    REGISTER_ENGINE_REQUEST_METRIC(cumulative_compaction, total);
-    REGISTER_ENGINE_REQUEST_METRIC(cumulative_compaction, failed);
+#define REGISTER_REQUEST_TYPE_METRIC(request, type1, type2) \
+    REGISTER_REQUEST_METRIC(request, type, type1, &type1##_##request);
+    REGISTER_REQUEST_METRIC(request, type, type2, &type2##_##request);
 
-    REGISTER_ENGINE_REQUEST_METRIC(publish, total);
-    REGISTER_ENGINE_REQUEST_METRIC(publish, failed);
+    REGISTER_REQUEST_TYPE_METRIC(compaction_deltas_total, base, cumulative);
+    REGISTER_REQUEST_TYPE_METRIC(compaction_bytes_total, base, cumulative);
+    REGISTER_REQUEST_TYPE_METRIC(meta_requests_total, read, write);
+    REGISTER_REQUEST_TYPE_METRIC(meta_requests_duration, read, write);
+    REGISTER_REQUEST_TYPE_METRIC(stream_load, receive_bytes, load_rows);
 
-    _metrics.register_metric(
-        "compaction_deltas_total", MetricLabels().add("type", "base"),
-        &base_compaction_deltas_total);
-    _metrics.register_metric(
-        "compaction_deltas_total", MetricLabels().add("type", "cumulative"),
-        &cumulative_compaction_deltas_total);
-    _metrics.register_metric(
-        "compaction_bytes_total", MetricLabels().add("type", "base"),
-        &base_compaction_bytes_total);
-    _metrics.register_metric(
-        "compaction_bytes_total", MetricLabels().add("type", "cumulative"),
-        &cumulative_compaction_bytes_total);
+#define REGISTER_REQUEST_TYPE_METRIC(request, type1, type2, type3, type4) \
+    REGISTER_REQUEST_METRIC(request, type, type1, &type1##_##request);
+    REGISTER_REQUEST_METRIC(request, type, type2, &type2##_##request);
+    REGISTER_REQUEST_METRIC(request, type, type2, &type3##_##request);
+    REGISTER_REQUEST_METRIC(request, type, type2, &type4##_##request);
 
-    _metrics.register_metric(
-        "meta_requests_total", MetricLabels().add("type", "write"),
-        &meta_write_requests_total);
-    _metrics.register_metric(
-        "meta_requests_total", MetricLabels().add("type", "read"),
-        &meta_read_requests_total);
-    _metrics.register_metric(
-        "meta_requests_duration", MetricLabels().add("type", "write"),
-        &meta_write_requests_duration_us);
-    _metrics.register_metric(
-        "meta_requests_duration", MetricLabels().add("type", "read"),
-        &meta_read_requests_duration_us);
+    REGISTER_REQUEST_TYPE_METRIC(segment_read, times, row_num, rows_by_short_key, rows_read_by_zone_map);
+    REGISTER_REQUEST_TYPE_METRIC(txn_request, begin, commit, rollback, exec);
 
-    _metrics.register_metric(
-        "segment_read", MetricLabels().add("type", "segment_total_read_times"),
-        &segment_read_total);
-    _metrics.register_metric(
-        "segment_read", MetricLabels().add("type", "segment_total_row_num"),
-        &segment_row_total);
-    _metrics.register_metric(
-        "segment_read", MetricLabels().add("type", "segment_rows_by_short_key"),
-        &segment_rows_by_short_key);
-    _metrics.register_metric(
-        "segment_read", MetricLabels().add("type", "segment_rows_read_by_zone_map"),
-        &segment_rows_read_by_zone_map);
-
-    _metrics.register_metric(
-        "txn_request", MetricLabels().add("type", "begin"),
-        &txn_begin_requests_total);
-    _metrics.register_metric(
-        "txn_request", MetricLabels().add("type", "commit"),
-        &txn_commit_requests_total);
-    _metrics.register_metric(
-        "txn_request", MetricLabels().add("type", "rollback"),
-        &txn_rollback_requests_total);
-    _metrics.register_metric(
-        "txn_request", MetricLabels().add("type", "exec"),
-        &txn_exec_plan_total);
-
-    _metrics.register_metric(
-        "stream_load", MetricLabels().add("type", "receive_bytes"),
-        &stream_receive_bytes_total);
-    _metrics.register_metric(
-        "stream_load", MetricLabels().add("type", "load_rows"),
-        &stream_load_rows_total);
     _metrics.register_metric("load_rows", &load_rows_total);
     _metrics.register_metric("load_bytes", &load_bytes_total);
 

@@ -69,6 +69,7 @@ OLAPStatus EngineStorageMigrationTask::_storage_medium_migrate(
 
     WriteLock migration_wlock(tablet->get_migration_lock_ptr(), TRY_LOCK);
     if (!migration_wlock.own_lock()) {
+        DorisMetrics::instance()->storage_migrate_requests_failed.increment(1);
         return OLAP_ERR_RWLOCK_ERROR;
     }
 
@@ -77,6 +78,7 @@ OLAPStatus EngineStorageMigrationTask::_storage_medium_migrate(
     StorageEngine::instance()->txn_manager()->get_tablet_related_txns(tablet->tablet_id(), 
         tablet->schema_hash(), tablet->tablet_uid(), &partition_id, &transaction_ids);
     if (transaction_ids.size() > 0) {
+        DorisMetrics::instance()->storage_migrate_requests_failed.increment(1);
         LOG(WARNING) << "could not migration because has unfinished txns, "
                      << " tablet=" << tablet->full_name();
         return OLAP_ERR_HEADER_HAS_PENDING_DATA;
@@ -220,6 +222,10 @@ OLAPStatus EngineStorageMigrationTask::_storage_medium_migrate(
     } while (0);
 
     tablet->release_push_lock();
+
+    if (res != OLAP_SUCCESS) {
+        DorisMetrics::instance()->storage_migrate_requests_failed.increment(1);
+    }
 
     return res;
 }
