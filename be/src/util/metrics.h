@@ -236,9 +236,7 @@ struct MetricLabel {
     std::string value;
 
     MetricLabel() { }
-
-    template<typename T, typename P>
-    MetricLabel(const T& name_, const P& value_) :name(name_), value(value_) {
+    MetricLabel(const std::string& name_, const std::string& value_) :name(name_), value(value_) {
     }
 
     bool operator==(const MetricLabel& other) const {
@@ -280,9 +278,9 @@ struct MetricLabels {
         if (labels.size() != other.labels.size()) {
             return false;
         }
-        auto it = std::begin(labels);
-        auto other_it = std::begin(other.labels);
-        while (it != std::end(labels)) {
+        auto it = labels.begin();
+        auto other_it = other.labels.begin();
+        while (it != labels.end()) {
             if (*it != *other_it) {
                 return false;
             }
@@ -292,9 +290,9 @@ struct MetricLabels {
         return true;
     }
     bool operator<(const MetricLabels& other) const {
-        auto it = std::begin(labels);
-        auto other_it = std::begin(other.labels);
-        while (it != std::end(labels) && other_it != std::end(other.labels)) {
+        auto it = labels.begin();
+        auto other_it = other.labels.begin();
+        while (it != labels.end() && other_it != other.labels.end()) {
             auto res = it->compare(*other_it);
             if (res < 0) {
                 return true;
@@ -304,8 +302,8 @@ struct MetricLabels {
             ++it;
             ++other_it;
         }
-        if (it == std::end(labels)) {
-            if (other_it == std::end(other.labels)) {
+        if (it == labels.end()) {
+            if (other_it == other.labels.end()) {
                 return false;
             }
             return true;
@@ -318,15 +316,7 @@ struct MetricLabels {
     }
 
     std::string to_string() const {
-        std::stringstream ss;
-        int i = 0; 
-        for (auto& label : labels) {
-            if (i++ > 0) {
-                ss << ",";
-            }
-            ss << label.to_string();
-        }
-        return ss.str();
+        boost::join(labels, ",");
     }
 };
 
