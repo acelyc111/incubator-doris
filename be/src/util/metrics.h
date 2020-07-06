@@ -316,7 +316,15 @@ struct MetricLabels {
     }
 
     std::string to_string() const {
-        boost::join(labels, ",");
+        std::stringstream ss;
+        int i = 0;
+        for (auto& label : labels) {
+            if (i++ > 0) {
+                ss << ",";
+            }
+            ss << label.to_string();
+        }
+        return ss.str();
     }
 };
 
