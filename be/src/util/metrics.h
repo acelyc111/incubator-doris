@@ -107,14 +107,14 @@ public:
     }
 
     T value() const {
-        return _value;
+        return _value.load();
     }
 
     void increment(const T& delta) {
-        _value += delta;
+        _value.fetch_add(delta);
     }
     void set_value(const T& value) {
-        _value = value;
+        _value.store(value);
     }
 protected:
     std::atomic<T> _value;
@@ -201,7 +201,7 @@ template<typename T>
 class AtomicCounter : public AtomicMetric<T> {
 public:
     AtomicCounter(MetricUnit unit)
-            : LockSimpleMetric<T>(MetricType::COUNTER, unit) {}
+            : AtomicMetric<T>(MetricType::COUNTER, unit) {}
     virtual ~AtomicCounter() { }
 };
 
@@ -209,7 +209,7 @@ template<typename T>
 class AtomicGauge : public AtomicMetric<T> {
 public:
     AtomicGauge(MetricUnit unit)
-            : LockSimpleMetric<T>(MetricType::GAUGE, unit) {}
+            : AtomicMetric<T>(MetricType::GAUGE, unit) {}
     virtual ~AtomicGauge() { }
 };
 
