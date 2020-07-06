@@ -32,11 +32,16 @@ const char* SystemMetrics::_s_hook_name = "system_metrics";
 struct CpuMetrics {
     static constexpr int cpu_num_metrics = 10;
     std::unique_ptr<IntAtomicCounter> metrics[cpu_num_metrics] = {
-        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT),
-        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT),
-        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT),
-        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT),
-        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT)
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT)),
+        std::unique_ptr<IntAtomicCounter>(new IntAtomicCounter(MetricUnit::PERCENT))
     };
     static const char* cpu_metrics[cpu_num_metrics];
 };

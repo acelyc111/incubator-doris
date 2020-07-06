@@ -38,7 +38,7 @@ public:
     }
 
     IntGauge* set_key(const std::string& key, const MetricUnit unit) {
-        metrics.emplace(key, std::make_unique<IntGauge>(unit));
+        metrics.emplace(key, new IntGauge(unit));
         return metrics.find(key)->second.get();
     }
 
