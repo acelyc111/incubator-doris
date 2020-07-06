@@ -35,14 +35,14 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
 #define REGISTER_DORIS_METRIC(name) _metrics.register_metric(#name, &name)
     // You can put DorisMetrics's metrics initial code here
     REGISTER_DORIS_METRIC(fragment_requests_total);
-    REGISTER_DORIS_METRIC(fragment_request_duration_us);
+    REGISTER_DORIS_METRIC(fragment_requests_duration_us);
     REGISTER_DORIS_METRIC(http_requests_total);
-    REGISTER_DORIS_METRIC(http_request_send_bytes);
+    REGISTER_DORIS_METRIC(http_requests_send_bytes);
     REGISTER_DORIS_METRIC(query_scan_bytes);
     REGISTER_DORIS_METRIC(query_scan_rows);
-    REGISTER_DORIS_METRIC(push_request_duration_us);
-    REGISTER_DORIS_METRIC(push_request_write_bytes);
-    REGISTER_DORIS_METRIC(push_request_write_rows);
+    REGISTER_DORIS_METRIC(push_requests_duration_us);
+    REGISTER_DORIS_METRIC(push_requests_write_bytes);
+    REGISTER_DORIS_METRIC(push_requests_write_rows);
 
     REGISTER_DORIS_METRIC(memtable_flush_total);
     REGISTER_DORIS_METRIC(memtable_flush_duration_us);
@@ -106,17 +106,17 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
         &cumulative_compaction_bytes_total);
 
     _metrics.register_metric(
-        "meta_request_total", MetricLabels().add("type", "write"),
-        &meta_write_request_total);
+        "meta_requests_total", MetricLabels().add("type", "write"),
+        &meta_write_requests_total);
     _metrics.register_metric(
-        "meta_request_total", MetricLabels().add("type", "read"),
-        &meta_read_request_total);
+        "meta_requests_total", MetricLabels().add("type", "read"),
+        &meta_read_requests_total);
     _metrics.register_metric(
-        "meta_request_duration", MetricLabels().add("type", "write"),
-        &meta_write_request_duration_us);
+        "meta_requests_duration", MetricLabels().add("type", "write"),
+        &meta_write_requests_duration_us);
     _metrics.register_metric(
-        "meta_request_duration", MetricLabels().add("type", "read"),
-        &meta_read_request_duration_us);
+        "meta_requests_duration", MetricLabels().add("type", "read"),
+        &meta_read_requests_duration_us);
 
     _metrics.register_metric(
         "segment_read", MetricLabels().add("type", "segment_total_read_times"),
@@ -133,13 +133,13 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
 
     _metrics.register_metric(
         "txn_request", MetricLabels().add("type", "begin"),
-        &txn_begin_request_total);
+        &txn_begin_requests_total);
     _metrics.register_metric(
         "txn_request", MetricLabels().add("type", "commit"),
-        &txn_commit_request_total);
+        &txn_commit_requests_total);
     _metrics.register_metric(
         "txn_request", MetricLabels().add("type", "rollback"),
-        &txn_rollback_request_total);
+        &txn_rollback_requests_total);
     _metrics.register_metric(
         "txn_request", MetricLabels().add("type", "exec"),
         &txn_exec_plan_total);
@@ -163,7 +163,7 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
     REGISTER_DORIS_METRIC(tablet_cumulative_max_compaction_score);
     REGISTER_DORIS_METRIC(tablet_base_max_compaction_score);
 
-    REGISTER_DORIS_METRIC(push_request_write_bytes_per_second);
+    REGISTER_DORIS_METRIC(push_requests_write_bytes_per_second);
     REGISTER_DORIS_METRIC(query_scan_bytes_per_second);
     REGISTER_DORIS_METRIC(max_disk_io_util_percent);
     REGISTER_DORIS_METRIC(max_network_send_bytes_rate);

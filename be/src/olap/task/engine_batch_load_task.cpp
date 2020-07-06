@@ -341,9 +341,9 @@ OLAPStatus EngineBatchLoadTask::_push(const TPushReq& request,
             << " tablet=" << tablet->full_name()
             << ", cost=" << PrettyPrinter::print(duration_ns, TUnit::TIME_NS);
         DorisMetrics::instance()->push_requests_success_total.increment(1);
-        DorisMetrics::instance()->push_request_duration_us.increment(duration_ns / 1000);
-        DorisMetrics::instance()->push_request_write_bytes.increment(push_handler.write_bytes());
-        DorisMetrics::instance()->push_request_write_rows.increment(push_handler.write_rows());
+        DorisMetrics::instance()->push_requests_duration_us.increment(duration_ns / 1000);
+        DorisMetrics::instance()->push_requests_write_bytes.increment(push_handler.write_bytes());
+        DorisMetrics::instance()->push_requests_write_rows.increment(push_handler.write_rows());
     }
     return res;
 }

@@ -137,7 +137,7 @@ void* calculate_metrics(void* dummy) {
 
         if (last_ts == -1L) {
             last_ts = GetCurrentTimeMicros() / 1000;
-            lst_push_bytes = DorisMetrics::instance()->push_request_write_bytes.value();
+            lst_push_bytes = DorisMetrics::instance()->push_requests_write_bytes.value();
             lst_query_bytes = DorisMetrics::instance()->query_scan_bytes.value();
             DorisMetrics::instance()->system_metrics()->get_disks_io_time(&lst_disks_io_time);
             DorisMetrics::instance()->system_metrics()->get_network_traffic(&lst_net_send_bytes, &lst_net_receive_bytes);
@@ -147,9 +147,9 @@ void* calculate_metrics(void* dummy) {
             last_ts = current_ts;
 
             // 1. push bytes per second
-            int64_t current_push_bytes = DorisMetrics::instance()->push_request_write_bytes.value();
+            int64_t current_push_bytes = DorisMetrics::instance()->push_requests_write_bytes.value();
             int64_t pps = (current_push_bytes - lst_push_bytes) / (interval + 1);
-            DorisMetrics::instance()->push_request_write_bytes_per_second.set_value(
+            DorisMetrics::instance()->push_requests_write_bytes_per_second.set_value(
                 pps < 0 ? 0 : pps);
             lst_push_bytes = current_push_bytes;
 

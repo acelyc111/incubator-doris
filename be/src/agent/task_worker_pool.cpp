@@ -695,7 +695,7 @@ void* TaskWorkerPool::_publish_version_worker_thread_callback(void* arg_this) {
             worker_pool_this->_tasks.pop_front();
         }
 
-        DorisMetrics::instance()->publish_task_request_total.increment(1);
+        DorisMetrics::instance()->publish_requests_total.increment(1);
         LOG(INFO) << "get publish version task, signature:" << agent_task_req.signature;
 
         Status st;
@@ -719,7 +719,7 @@ void* TaskWorkerPool::_publish_version_worker_thread_callback(void* arg_this) {
 
         TFinishTaskRequest finish_task_request;
         if (res != OLAP_SUCCESS) {
-            DorisMetrics::instance()->publish_task_failed_total.increment(1);
+            DorisMetrics::instance()->publish_requests_failed.increment(1);
             // if publish failed, return failed, FE will ignore this error and
             // check error tablet ids and FE will also republish this task
             LOG(WARNING) << "publish version failed. signature:" << agent_task_req.signature

@@ -56,16 +56,16 @@ class DorisMetrics {
 public:
 	// counters
 	METRIC_DEFINE_INT_COUNTER(fragment_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(fragment_request_duration_us, MetricUnit::MICROSECONDS);
+	METRIC_DEFINE_INT_COUNTER(fragment_requests_duration_us, MetricUnit::MICROSECONDS);
 	METRIC_DEFINE_INT_COUNTER(http_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(http_request_send_bytes, MetricUnit::BYTES);
+	METRIC_DEFINE_INT_COUNTER(http_requests_send_bytes, MetricUnit::BYTES);
 	METRIC_DEFINE_INT_COUNTER(query_scan_bytes, MetricUnit::BYTES);
 	METRIC_DEFINE_INT_COUNTER(query_scan_rows, MetricUnit::ROWS);
 	METRIC_DEFINE_INT_COUNTER(push_requests_success_total, MetricUnit::REQUESTS);
 	METRIC_DEFINE_INT_COUNTER(push_requests_fail_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(push_request_duration_us, MetricUnit::MICROSECONDS);
-	METRIC_DEFINE_INT_COUNTER(push_request_write_bytes, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_COUNTER(push_request_write_rows, MetricUnit::ROWS);
+	METRIC_DEFINE_INT_COUNTER(push_requests_duration_us, MetricUnit::MICROSECONDS);
+	METRIC_DEFINE_INT_COUNTER(push_requests_write_bytes, MetricUnit::BYTES);
+	METRIC_DEFINE_INT_COUNTER(push_requests_write_rows, MetricUnit::ROWS);
     METRIC_DEFINE_INT_COUNTER(memtable_flush_total, MetricUnit::OPERATIONS);
     METRIC_DEFINE_INT_COUNTER(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
 
@@ -95,23 +95,23 @@ public:
 	METRIC_DEFINE_INT_COUNTER(finish_task_requests_total, MetricUnit::REQUESTS);
 	METRIC_DEFINE_INT_COUNTER(finish_task_requests_failed, MetricUnit::REQUESTS);
 	
-	METRIC_DEFINE_INT_COUNTER(base_compaction_request_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(base_compaction_request_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_request_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_request_failed, MetricUnit::REQUESTS);
+	METRIC_DEFINE_INT_COUNTER(base_compaction_requests_total, MetricUnit::REQUESTS);
+	METRIC_DEFINE_INT_COUNTER(base_compaction_requests_failed, MetricUnit::REQUESTS);
+	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_requests_total, MetricUnit::REQUESTS);
+	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_requests_failed, MetricUnit::REQUESTS);
 	
 	METRIC_DEFINE_INT_COUNTER(base_compaction_deltas_total, MetricUnit::ROWSETS);
 	METRIC_DEFINE_INT_COUNTER(base_compaction_bytes_total, MetricUnit::BYTES);
 	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_deltas_total, MetricUnit::ROWSETS);
 	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_bytes_total, MetricUnit::BYTES);
 	
-	METRIC_DEFINE_INT_COUNTER(publish_task_request_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(publish_task_request_failed, MetricUnit::REQUESTS);
+	METRIC_DEFINE_INT_COUNTER(publish_requests_total, MetricUnit::REQUESTS);
+	METRIC_DEFINE_INT_COUNTER(publish_requests_failed, MetricUnit::REQUESTS);
 	
-    METRIC_DEFINE_INT_COUNTER(meta_write_request_total, MetricUnit::REQUESTS);
-    METRIC_DEFINE_INT_COUNTER(meta_write_request_duration_us, MetricUnit::MICROSECONDS);
-    METRIC_DEFINE_INT_COUNTER(meta_read_request_total, MetricUnit::REQUESTS);
-    METRIC_DEFINE_INT_COUNTER(meta_read_request_duration_us, MetricUnit::MICROSECONDS);
+    METRIC_DEFINE_INT_COUNTER(meta_write_requests_total, MetricUnit::REQUESTS);
+    METRIC_DEFINE_INT_COUNTER(meta_write_requests_duration_us, MetricUnit::MICROSECONDS);
+    METRIC_DEFINE_INT_COUNTER(meta_read_requests_total, MetricUnit::REQUESTS);
+    METRIC_DEFINE_INT_COUNTER(meta_read_requests_duration_us, MetricUnit::MICROSECONDS);
 
 	// Counters for segment_v2
 	// -----------------------
@@ -124,9 +124,9 @@ public:
 	// total number of rows selected by zone map index
 	METRIC_DEFINE_INT_COUNTER(segment_rows_read_by_zone_map, MetricUnit::ROWS);
 	
-	METRIC_DEFINE_INT_COUNTER(txn_begin_request_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(txn_commit_request_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(txn_rollback_request_total, MetricUnit::OPERATIONS);
+	METRIC_DEFINE_INT_COUNTER(txn_begin_requests_total, MetricUnit::OPERATIONS);
+	METRIC_DEFINE_INT_COUNTER(txn_commit_requests_total, MetricUnit::OPERATIONS);
+	METRIC_DEFINE_INT_COUNTER(txn_rollback_requests_total, MetricUnit::OPERATIONS);
 	METRIC_DEFINE_INT_COUNTER(txn_exec_plan_total, MetricUnit::OPERATIONS);
 	METRIC_DEFINE_INT_COUNTER(stream_receive_bytes_total, MetricUnit::BYTES);
 	METRIC_DEFINE_INT_COUNTER(stream_load_rows_total, MetricUnit::ROWS);
@@ -152,7 +152,7 @@ public:
 	
 	// The following metrics will be calculated
 	// by metric calculator
-	METRIC_DEFINE_INT_GAUGE(push_request_write_bytes_per_second, MetricUnit::BYTES);
+	METRIC_DEFINE_INT_GAUGE(push_requests_write_bytes_per_second, MetricUnit::BYTES);
 	METRIC_DEFINE_INT_GAUGE(query_scan_bytes_per_second, MetricUnit::BYTES);
 	METRIC_DEFINE_INT_GAUGE(max_disk_io_util_percent, MetricUnit::PERCENT);
 	METRIC_DEFINE_INT_GAUGE(max_network_send_bytes_rate, MetricUnit::BYTES);

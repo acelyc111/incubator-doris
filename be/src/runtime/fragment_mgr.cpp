@@ -215,7 +215,7 @@ Status FragmentExecState::execute() {
         _executor.close();
     }
     DorisMetrics::instance()->fragment_requests_total.increment(1);
-    DorisMetrics::instance()->fragment_request_duration_us.increment(duration_ns / 1000);
+    DorisMetrics::instance()->fragment_requests_duration_us.increment(duration_ns / 1000);
     return Status::OK();
 }
 
