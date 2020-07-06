@@ -90,6 +90,37 @@ private:
 
 // Metric that only can increment
 template<typename T>
+class AtomicMetric : public Metric {
+public:
+    AtomicMetric(MetricType type, MetricUnit unit)
+            : Metric(type, unit),
+              _value(T()) {}
+    virtual ~AtomicMetric() { }
+
+    std::string to_string() const override {
+        return std::to_string(value());
+    }
+
+    void write_value(rj::Value& metric_obj,
+                     rj::Document::AllocatorType& allocator) override {
+        metric_obj.AddMember("value", rj::Value(value()), allocator);
+    }
+
+    T value() const {
+        return _value;
+    }
+
+    void increment(const T& delta) {
+        _value += delta;
+    }
+    void set_value(const T& value) {
+        _value = value;
+    }
+protected:
+    std::atomic<T> _value;
+};
+
+template<typename T>
 class LockSimpleMetric : public Metric {
 public:
     LockSimpleMetric(MetricType type, MetricUnit unit)
@@ -98,9 +129,7 @@ public:
     virtual ~LockSimpleMetric() { }
 
     std::string to_string() const override {
-        std::stringstream ss;
-        ss << value();
-        return ss.str();
+        return std::to_string(value());
     }
 
     void write_value(rj::Value& metric_obj,
@@ -166,6 +195,22 @@ public:
     }
 protected:
     CoreLocalValue<T> _value;
+};
+
+template<typename T>
+class AtomicCounter : public AtomicMetric<T> {
+public:
+    AtomicCounter(MetricUnit unit)
+            : LockSimpleMetric<T>(MetricType::COUNTER, unit) {}
+    virtual ~AtomicCounter() { }
+};
+
+template<typename T>
+class AtomicGauge : public AtomicMetric<T> {
+public:
+    AtomicGauge(MetricUnit unit)
+            : LockSimpleMetric<T>(MetricType::GAUGE, unit) {}
+    virtual ~AtomicGauge() { }
 };
 
 template<typename T>
@@ -377,11 +422,11 @@ private:
 };
 
 using IntCounter = CoreLocalCounter<int64_t>;
-using IntLockCounter = LockCounter<int64_t>;
+using IntAtomicCounter = AtomicCounter<int64_t>;
 using UIntCounter = CoreLocalCounter<uint64_t>;
 using DoubleCounter = LockCounter<double>;
-using IntGauge = LockGauge<int64_t>;
-using UIntGauge = LockGauge<uint64_t>;
+using IntGauge = AtomicGauge<int64_t>;
+using UIntGauge = AtomicGauge<uint64_t>;
 using DoubleGauge = LockGauge<double>;
 
 } // namespace doris
@@ -390,8 +435,8 @@ using DoubleGauge = LockGauge<double>;
 #define METRIC_DEFINE_INT_COUNTER(metric_name, unit)        \
     doris::IntCounter metric_name{unit}
 
-#define METRIC_DEFINE_INT_LOCK_COUNTER(metric_name, unit)   \
-    doris::IntLockCounter metric_name{unit}
+#define METRIC_DEFINE_INT_ATOMIC_COUNTER(metric_name, unit) \
+    doris::IntAtomicCounter metric_name{unit}
 
 #define METRIC_DEFINE_UINT_COUNTER(metric_name, unit)       \
     doris::UIntCounter metric_name{unit}

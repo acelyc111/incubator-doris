@@ -31,7 +31,7 @@ const char* SystemMetrics::_s_hook_name = "system_metrics";
 // /proc/stat: http://www.linuxhowtos.org/System/procstat.htm
 struct CpuMetrics {
     static constexpr int cpu_num_metrics = 10;
-    IntLockCounter metrics[cpu_num_metrics] = {
+    IntAtomicCounter metrics[cpu_num_metrics] = {
         {MetricUnit::PERCENT}, {MetricUnit::PERCENT},
         {MetricUnit::PERCENT}, {MetricUnit::PERCENT},
         {MetricUnit::PERCENT}, {MetricUnit::PERCENT},
@@ -51,33 +51,33 @@ struct MemoryMetrics {
 };
 
 struct DiskMetrics {
-    METRIC_DEFINE_INT_LOCK_COUNTER(reads_completed, MetricUnit::OPERATIONS);
-    METRIC_DEFINE_INT_LOCK_COUNTER(bytes_read, MetricUnit::BYTES);
-    METRIC_DEFINE_INT_LOCK_COUNTER(read_time_ms, MetricUnit::MILLISECONDS);
-    METRIC_DEFINE_INT_LOCK_COUNTER(writes_completed, MetricUnit::OPERATIONS);
-    METRIC_DEFINE_INT_LOCK_COUNTER(bytes_written, MetricUnit::BYTES);
-    METRIC_DEFINE_INT_LOCK_COUNTER(write_time_ms, MetricUnit::MILLISECONDS);
-    METRIC_DEFINE_INT_LOCK_COUNTER(io_time_ms, MetricUnit::MILLISECONDS);
-    METRIC_DEFINE_INT_LOCK_COUNTER(io_time_weigthed, MetricUnit::MILLISECONDS);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(reads_completed, MetricUnit::OPERATIONS);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(bytes_read, MetricUnit::BYTES);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(read_time_ms, MetricUnit::MILLISECONDS);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(writes_completed, MetricUnit::OPERATIONS);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(bytes_written, MetricUnit::BYTES);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(write_time_ms, MetricUnit::MILLISECONDS);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(io_time_ms, MetricUnit::MILLISECONDS);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(io_time_weigthed, MetricUnit::MILLISECONDS);
 };
 
 struct NetMetrics {
-    METRIC_DEFINE_INT_LOCK_COUNTER(receive_bytes, MetricUnit::BYTES);
-    METRIC_DEFINE_INT_LOCK_COUNTER(receive_packets, MetricUnit::PACKETS);
-    METRIC_DEFINE_INT_LOCK_COUNTER(send_bytes, MetricUnit::BYTES);
-    METRIC_DEFINE_INT_LOCK_COUNTER(send_packets, MetricUnit::PACKETS);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(receive_bytes, MetricUnit::BYTES);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(receive_packets, MetricUnit::PACKETS);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(send_bytes, MetricUnit::BYTES);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(send_packets, MetricUnit::PACKETS);
 };
 
 // metrics read from /proc/net/snmp
 struct SnmpMetrics {
     // The number of all problematic TCP packets received
-    METRIC_DEFINE_INT_LOCK_COUNTER(tcp_in_errs, MetricUnit::NOUNIT);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(tcp_in_errs, MetricUnit::NOUNIT);
     // All TCP packets retransmitted
-    METRIC_DEFINE_INT_LOCK_COUNTER(tcp_retrans_segs, MetricUnit::NOUNIT);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(tcp_retrans_segs, MetricUnit::NOUNIT);
     // All received TCP packets
-    METRIC_DEFINE_INT_LOCK_COUNTER(tcp_in_segs, MetricUnit::NOUNIT);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(tcp_in_segs, MetricUnit::NOUNIT);
     // All send TCP packets with RST mark
-    METRIC_DEFINE_INT_LOCK_COUNTER(tcp_out_segs, MetricUnit::NOUNIT);
+    METRIC_DEFINE_INT_ATOMIC_COUNTER(tcp_out_segs, MetricUnit::NOUNIT);
 };
 
 struct FileDescriptorMetrics {
