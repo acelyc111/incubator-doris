@@ -28,7 +28,10 @@
 
 namespace doris {
 
-DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _metrics(_name) {
+const std::string DorisMetrics::s_registry_name = "doris_be";
+const std::string DorisMetrics::s_hook_name = "doris_metrics";
+
+DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
 #define REGISTER_DORIS_METRIC(name) _metrics.register_metric(#name, &name)
     // You can put DorisMetrics's metrics initial code here
     REGISTER_DORIS_METRIC(fragment_requests_total);
@@ -37,58 +40,57 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     REGISTER_DORIS_METRIC(http_request_send_bytes);
     REGISTER_DORIS_METRIC(query_scan_bytes);
     REGISTER_DORIS_METRIC(query_scan_rows);
-
-    REGISTER_DORIS_METRIC(memtable_flush_total);
-    REGISTER_DORIS_METRIC(memtable_flush_duration_us);
-
-    // push request
-    _metrics.register_metric(
-        "push_requests_total", MetricLabels().add("status", "SUCCESS"),
-        &push_requests_success_total);
-    _metrics.register_metric(
-        "push_requests_total", MetricLabels().add("status", "FAIL"),
-        &push_requests_fail_total);
     REGISTER_DORIS_METRIC(push_request_duration_us);
     REGISTER_DORIS_METRIC(push_request_write_bytes);
     REGISTER_DORIS_METRIC(push_request_write_rows);
 
-#define REGISTER_ENGINE_REQUEST_METRIC(type, status, metric) \
+    REGISTER_DORIS_METRIC(memtable_flush_total);
+    REGISTER_DORIS_METRIC(memtable_flush_duration_us);
+
+#define REGISTER_REQUEST_METRIC(request, status, metric) \
     _metrics.register_metric( \
-        "engine_requests_total", MetricLabels().add("type", #type).add("status", #status), &metric)
+        #request, MetricLabels().add("status", #status), &metric)
 
-    REGISTER_ENGINE_REQUEST_METRIC(create_tablet, total, create_tablet_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(create_tablet, failed, create_tablet_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(drop_tablet, total, drop_tablet_requests_total);
+    REGISTER_REQUEST_METRIC(push_requests_total, SUCCESS, push_requests_success_total);
+    REGISTER_REQUEST_METRIC(push_requests_total, FAIL, push_requests_fail_total);
 
-    REGISTER_ENGINE_REQUEST_METRIC(report_all_tablets, total, report_all_tablets_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_all_tablets, failed, report_all_tablets_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_tablet, total, report_tablet_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_tablet, failed, report_tablet_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_disk, total, report_disk_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_disk, failed, report_disk_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_task, total, report_task_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_task, failed, report_task_requests_failed);
+#define REGISTER_ENGINE_REQUEST_METRIC(type, status) \
+    _metrics.register_metric( \
+        "engine_requests_total", MetricLabels().add("type", #type).add("status", #status), &type##_requests_##status)
 
-    REGISTER_ENGINE_REQUEST_METRIC(schema_change, total, schema_change_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(schema_change, failed, schema_change_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(create_rollup, total, create_rollup_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(create_rollup, failed, create_rollup_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(storage_migrate, total, storage_migrate_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(delete, total, delete_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(delete, failed, delete_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(clone, total, clone_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(clone, failed, clone_requests_failed);
+    REGISTER_ENGINE_REQUEST_METRIC(create_tablet, total);
+    REGISTER_ENGINE_REQUEST_METRIC(create_tablet, failed);
+    REGISTER_ENGINE_REQUEST_METRIC(drop_tablet, total);
 
-    REGISTER_ENGINE_REQUEST_METRIC(finish_task, total, finish_task_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(finish_task, failed, finish_task_requests_failed);
+    REGISTER_ENGINE_REQUEST_METRIC(report_all_tablets, total);
+    REGISTER_ENGINE_REQUEST_METRIC(report_all_tablets, failed);
+    REGISTER_ENGINE_REQUEST_METRIC(report_tablet, total);
+    REGISTER_ENGINE_REQUEST_METRIC(report_tablet, failed);
+    REGISTER_ENGINE_REQUEST_METRIC(report_disk, total);
+    REGISTER_ENGINE_REQUEST_METRIC(report_disk, failed);
+    REGISTER_ENGINE_REQUEST_METRIC(report_task, total);
+    REGISTER_ENGINE_REQUEST_METRIC(report_task, failed);
 
-    REGISTER_ENGINE_REQUEST_METRIC(base_compaction, total, base_compaction_request_total);
-    REGISTER_ENGINE_REQUEST_METRIC(base_compaction, failed, base_compaction_request_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(cumulative_compaction, total, cumulative_compaction_request_total);
-    REGISTER_ENGINE_REQUEST_METRIC(cumulative_compaction, failed, cumulative_compaction_request_failed);
+    REGISTER_ENGINE_REQUEST_METRIC(schema_change, total);
+    REGISTER_ENGINE_REQUEST_METRIC(schema_change, failed);
+    REGISTER_ENGINE_REQUEST_METRIC(create_rollup, total);
+    REGISTER_ENGINE_REQUEST_METRIC(create_rollup, failed);
+    REGISTER_ENGINE_REQUEST_METRIC(storage_migrate, total);
+    REGISTER_ENGINE_REQUEST_METRIC(delete, total);
+    REGISTER_ENGINE_REQUEST_METRIC(delete, failed);
+    REGISTER_ENGINE_REQUEST_METRIC(clone, total);
+    REGISTER_ENGINE_REQUEST_METRIC(clone, failed);
 
-    REGISTER_ENGINE_REQUEST_METRIC(publish, total, publish_task_request_total);
-    REGISTER_ENGINE_REQUEST_METRIC(publish, failed, publish_task_failed_total);
+    REGISTER_ENGINE_REQUEST_METRIC(finish_task, total);
+    REGISTER_ENGINE_REQUEST_METRIC(finish_task, failed);
+
+    REGISTER_ENGINE_REQUEST_METRIC(base_compaction, total);
+    REGISTER_ENGINE_REQUEST_METRIC(base_compaction, failed);
+    REGISTER_ENGINE_REQUEST_METRIC(cumulative_compaction, total);
+    REGISTER_ENGINE_REQUEST_METRIC(cumulative_compaction, failed);
+
+    REGISTER_ENGINE_REQUEST_METRIC(publish, total);
+    REGISTER_ENGINE_REQUEST_METRIC(publish, failed);
 
     _metrics.register_metric(
         "compaction_deltas_total", MetricLabels().add("type", "base"),
@@ -167,7 +169,7 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     REGISTER_DORIS_METRIC(max_network_send_bytes_rate);
     REGISTER_DORIS_METRIC(max_network_receive_bytes_rate);
 
-    _metrics.register_hook(_hook_name, std::bind(&DorisMetrics::_update, this));
+    _metrics.register_hook(s_hook_name, std::bind(&DorisMetrics::_update, this));
 
     REGISTER_DORIS_METRIC(readable_blocks_total);
     REGISTER_DORIS_METRIC(writable_blocks_total);
@@ -187,13 +189,13 @@ void DorisMetrics::initialize(
         const std::vector<std::string>& network_interfaces) {
     // disk usage
     for (auto& path : paths) {
-        IntGauge* gauge = disks_total_capacity.set_key(path, MetricUnit::BYTES);
+        IntGauge* gauge = disks_total_capacity.add_metric(path, MetricUnit::BYTES);
         _metrics.register_metric("disks_total_capacity", MetricLabels().add("path", path), gauge);
-        gauge = disks_avail_capacity.set_key(path, MetricUnit::BYTES);
+        gauge = disks_avail_capacity.add_metric(path, MetricUnit::BYTES);
         _metrics.register_metric("disks_avail_capacity", MetricLabels().add("path", path), gauge);
-        gauge = disks_data_used_capacity.set_key(path, MetricUnit::BYTES);
+        gauge = disks_data_used_capacity.add_metric(path, MetricUnit::BYTES);
         _metrics.register_metric("disks_data_used_capacity", MetricLabels().add("path", path), gauge);
-        gauge = disks_state.set_key(path, MetricUnit::NOUNIT);
+        gauge = disks_state.add_metric(path, MetricUnit::NOUNIT);
         _metrics.register_metric("disks_state", MetricLabels().add("path", path), gauge);
     }
 

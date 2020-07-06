@@ -37,7 +37,7 @@ public:
         }
     }
 
-    IntGauge* set_key(const std::string& key, const MetricUnit unit) {
+    IntGauge* add_metric(const std::string& key, const MetricUnit unit) {
         metrics.emplace(key, new IntGauge(unit));
         return metrics.find(key)->second.get();
     }
@@ -66,6 +66,9 @@ public:
 	METRIC_DEFINE_INT_COUNTER(push_request_duration_us, MetricUnit::MICROSECONDS);
 	METRIC_DEFINE_INT_COUNTER(push_request_write_bytes, MetricUnit::BYTES);
 	METRIC_DEFINE_INT_COUNTER(push_request_write_rows, MetricUnit::ROWS);
+    METRIC_DEFINE_INT_COUNTER(memtable_flush_total, MetricUnit::OPERATIONS);
+    METRIC_DEFINE_INT_COUNTER(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
+
 	METRIC_DEFINE_INT_COUNTER(create_tablet_requests_total, MetricUnit::REQUESTS);
 	METRIC_DEFINE_INT_COUNTER(create_tablet_requests_failed, MetricUnit::REQUESTS);
 	METRIC_DEFINE_INT_COUNTER(drop_tablet_requests_total, MetricUnit::REQUESTS);
@@ -103,7 +106,7 @@ public:
 	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_bytes_total, MetricUnit::BYTES);
 	
 	METRIC_DEFINE_INT_COUNTER(publish_task_request_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(publish_task_failed_total, MetricUnit::REQUESTS);
+	METRIC_DEFINE_INT_COUNTER(publish_task_request_failed, MetricUnit::REQUESTS);
 	
     METRIC_DEFINE_INT_COUNTER(meta_write_request_total, MetricUnit::REQUESTS);
     METRIC_DEFINE_INT_COUNTER(meta_write_request_duration_us, MetricUnit::MICROSECONDS);
@@ -129,9 +132,6 @@ public:
 	METRIC_DEFINE_INT_COUNTER(stream_load_rows_total, MetricUnit::ROWS);
 	METRIC_DEFINE_INT_COUNTER(load_rows_total, MetricUnit::ROWS);
 	METRIC_DEFINE_INT_COUNTER(load_bytes_total, MetricUnit::BYTES);
-	
-	METRIC_DEFINE_INT_COUNTER(memtable_flush_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
 	
 	// Gauges
 	METRIC_DEFINE_INT_GAUGE(memory_pool_bytes_total, MetricUnit::BYTES);
@@ -210,8 +210,8 @@ private:
     void _update_process_fd_num();
 
 private:
-    const char* _name;
-    const char* _hook_name;
+    static const std::string s_registry_name;
+    static const std::string s_hook_name;
 
     MetricRegistry _metrics;
     SystemMetrics _system_metrics;
