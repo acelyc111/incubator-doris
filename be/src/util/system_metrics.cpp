@@ -31,12 +31,12 @@ const char* SystemMetrics::_s_hook_name = "system_metrics";
 // /proc/stat: http://www.linuxhowtos.org/System/procstat.htm
 struct CpuMetrics {
     static constexpr int cpu_num_metrics = 10;
-    IntAtomicCounter metrics[cpu_num_metrics] = {
-        {MetricUnit::PERCENT}, {MetricUnit::PERCENT},
-        {MetricUnit::PERCENT}, {MetricUnit::PERCENT},
-        {MetricUnit::PERCENT}, {MetricUnit::PERCENT},
-        {MetricUnit::PERCENT}, {MetricUnit::PERCENT},
-        {MetricUnit::PERCENT}, {MetricUnit::PERCENT}
+    std::unique_ptr<IntAtomicCounter> metrics[cpu_num_metrics] = {
+        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT),
+        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT),
+        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT),
+        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT),
+        std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT), std::make_unique<IntAtomicCounter>(MetricUnit::PERCENT)
     };
     static const char* cpu_metrics[cpu_num_metrics];
 };
@@ -136,7 +136,7 @@ void SystemMetrics::_install_cpu_metrics(MetricRegistry* registry) {
     for (int i = 0; i < CpuMetrics::cpu_num_metrics; ++i) {
         registry->register_metric("cpu",
                                   MetricLabels().add("mode", CpuMetrics::cpu_metrics[i]),
-                                  &_cpu_total->metrics[i]);
+                                  _cpu_total->metrics[i].get());
     }
 }
 
@@ -184,7 +184,7 @@ void SystemMetrics::_update_cpu_metrics() {
            &values[9]);
 
     for (int i = 0; i < CpuMetrics::cpu_num_metrics; ++i) {
-        _cpu_total->metrics[i].set_value(values[i]);
+        _cpu_total->metrics[i]->set_value(values[i]);
     }
 
     fclose(fp);
