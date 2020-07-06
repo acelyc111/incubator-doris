@@ -88,8 +88,8 @@ TEST_F(DorisMetricsTest, Normal) {
         ASSERT_STREQ("12", metric->to_string().c_str());
     }
     {
-        DorisMetrics::instance()->fragment_request_duration_us.increment(101);
-        auto metric = metrics->get_metric("fragment_request_duration_us");
+        DorisMetrics::instance()->fragment_requests_duration_us.increment(101);
+        auto metric = metrics->get_metric("fragment_requests_duration_us");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("101", metric->to_string().c_str());
     }
@@ -100,8 +100,8 @@ TEST_F(DorisMetricsTest, Normal) {
         ASSERT_STREQ("102", metric->to_string().c_str());
     }
     {
-        DorisMetrics::instance()->http_request_send_bytes.increment(104);
-        auto metric = metrics->get_metric("http_request_send_bytes");
+        DorisMetrics::instance()->http_requests_send_bytes.increment(104);
+        auto metric = metrics->get_metric("http_requests_send_bytes");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("104", metric->to_string().c_str());
     }
@@ -132,20 +132,20 @@ TEST_F(DorisMetricsTest, Normal) {
         ASSERT_STREQ("107", metric->to_string().c_str());
     }
     {
-        DorisMetrics::instance()->push_request_duration_us.increment(108);
-        auto metric = metrics->get_metric("push_request_duration_us");
+        DorisMetrics::instance()->push_requests_duration_us.increment(108);
+        auto metric = metrics->get_metric("push_requests_duration_us");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("108", metric->to_string().c_str());
     }
     {
-        DorisMetrics::instance()->push_request_write_bytes.increment(109);
-        auto metric = metrics->get_metric("push_request_write_bytes");
+        DorisMetrics::instance()->push_requests_write_bytes.increment(109);
+        auto metric = metrics->get_metric("push_requests_write_bytes");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("109", metric->to_string().c_str());
     }
     {
-        DorisMetrics::instance()->push_request_write_rows.increment(110);
-        auto metric = metrics->get_metric("push_request_write_rows");
+        DorisMetrics::instance()->push_requests_write_rows.increment(110);
+        auto metric = metrics->get_metric("push_requests_write_rows");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("110", metric->to_string().c_str());
     }
