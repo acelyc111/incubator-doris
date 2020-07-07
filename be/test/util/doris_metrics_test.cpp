@@ -119,15 +119,15 @@ TEST_F(DorisMetricsTest, Normal) {
     }
     {
         DorisMetrics::instance()->push_requests_success.increment(106);
-        auto metric = metrics->get_metric("push_requests_total",
-                                          MetricLabels().add("status", "SUCCESS"));
+        auto metric = metrics->get_metric("push_requests",
+                                          MetricLabels().add("status", "success"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("106", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->push_requests_failed.increment(107);
-        auto metric = metrics->get_metric("push_requests_total",
-                                          MetricLabels().add("status", "FAIL"));
+        auto metric = metrics->get_metric("push_requests",
+                                          MetricLabels().add("status", "failed"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("107", metric->to_string().c_str());
     }

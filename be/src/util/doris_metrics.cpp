@@ -66,7 +66,6 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
     REGISTER_DORIS_METRIC(disk_sync_total);
     REGISTER_DORIS_METRIC(blocks_open_reading);
     REGISTER_DORIS_METRIC(blocks_open_writing);
-#enddef
 
 #define REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(type)                                                       \
     _metrics.register_metric(                                                                                       \
@@ -89,11 +88,10 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
     REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(base_compaction);
     REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(cumulative_compaction);
     REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(publish);
-#enddef
 
 #define REGISTER_REQUEST_METRIC(request, label_type, label_value, metric)     \
     _metrics.register_metric(                                                 \
-        #request, MetricLabels().add(#label_type, #label_type), &metric)
+        #request, MetricLabels().add(#label_type, #label_value), &metric)
 
 #define REGISTER_REQUEST_STATUS_METRIC(request)                               \
     REGISTER_REQUEST_METRIC(request, status, success, request##_success);     \
@@ -101,7 +99,6 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
 
     // TODO(yingchun): Not copatibale with older version
     REGISTER_REQUEST_STATUS_METRIC(push_requests);
-#enddef
 
 #define REGISTER_REQUEST_TYPE2_METRIC(request, type1, type2)                  \
     REGISTER_REQUEST_METRIC(request, type, type1, type1##_##request);         \
@@ -111,14 +108,12 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
     REGISTER_REQUEST_TYPE2_METRIC(compaction_bytes_total, base, cumulative);
     REGISTER_REQUEST_TYPE2_METRIC(meta_requests_total, read, write);
     REGISTER_REQUEST_TYPE2_METRIC(meta_requests_duration_us, read, write);
-#enddef
 
 #define REGISTER_REQUEST_RTYPE2_METRIC(request, type1, type2)                 \
     REGISTER_REQUEST_METRIC(request, type, type1, request##_##type1);         \
     REGISTER_REQUEST_METRIC(request, type, type2, request##_##type2);
 
     REGISTER_REQUEST_RTYPE2_METRIC(stream_load, receive_bytes, load_rows);
-#enddef
 
 #define REGISTER_REQUEST_TYPE4_METRIC(request, type1, type2, type3, type4)    \
     REGISTER_REQUEST_METRIC(request, type, type1, request##_##type1);         \
@@ -128,8 +123,6 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
 
     REGISTER_REQUEST_TYPE4_METRIC(segment_read, times, rows, rows_by_short_key, rows_read_by_zone_map);
     REGISTER_REQUEST_TYPE4_METRIC(txn_request, begin, commit, rollback, exec);
-#enddef
-#enddef
 
     _metrics.register_metric("load_rows", &load_rows_total);
     _metrics.register_metric("load_bytes", &load_bytes_total);
@@ -142,9 +135,11 @@ void DorisMetrics::initialize(
         bool init_system_metrics,
         const std::set<std::string>& disk_devices,
         const std::vector<std::string>& network_interfaces) {
-#define REGISTER_PATH_METRIC(path, metric, unit)                                 \
-    IntGauge* gauge = metric.add_metric(path, unit);                             \
-    _metrics.register_metric(#metric, MetricLabels().add("path", path), gauge)
+#define REGISTER_PATH_METRIC(path, metric, unit)                                     \
+    do {                                                                             \
+        IntGauge* gauge = metric.add_metric(path, unit);                             \
+        _metrics.register_metric(#metric, MetricLabels().add("path", path), gauge);  \
+    } while (false)
 
     for (auto& path : paths) {
         REGISTER_PATH_METRIC(path, disks_total_capacity, MetricUnit::BYTES);
@@ -152,7 +147,6 @@ void DorisMetrics::initialize(
         REGISTER_PATH_METRIC(path, disks_data_used_capacity, MetricUnit::BYTES);
         REGISTER_PATH_METRIC(path, disks_state, MetricUnit::NOUNIT);
     }
-#enddef
 
     if (init_system_metrics) {
         _system_metrics.install(&_metrics, disk_devices, network_interfaces);
