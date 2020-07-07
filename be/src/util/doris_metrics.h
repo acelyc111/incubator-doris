@@ -154,6 +154,7 @@ public:
     METRIC_DEFINE_INT_GAUGE(tablet_cumulative_max_compaction_score, MetricUnit::NOUNIT);
     METRIC_DEFINE_INT_GAUGE(tablet_base_max_compaction_score, MetricUnit::NOUNIT);
 
+    // TODO(yingchun): COUNTER type metrics can be deal well by 3rd party monitor system, it's not needed.
     // The following metrics will be calculated
     // by metric calculator
     METRIC_DEFINE_INT_GAUGE(push_requests_write_bytes_per_second, MetricUnit::BYTES);

@@ -136,12 +136,12 @@ void SystemMetrics::update() {
 }
 
 void SystemMetrics::_install_cpu_metrics(MetricRegistry* registry) {
-    _cpu_total.reset(new CpuMetrics());
+    _cpu_metrics.reset(new CpuMetrics());
 
     for (int i = 0; i < CpuMetrics::cpu_num_metrics; ++i) {
         registry->register_metric("cpu",
                                   MetricLabels().add("mode", CpuMetrics::cpu_metrics[i]),
-                                  _cpu_total->metrics[i].get());
+                                  _cpu_metrics->metrics[i].get());
     }
 }
 
@@ -189,7 +189,7 @@ void SystemMetrics::_update_cpu_metrics() {
            &values[9]);
 
     for (int i = 0; i < CpuMetrics::cpu_num_metrics; ++i) {
-        _cpu_total->metrics[i]->set_value(values[i]);
+        _cpu_metrics->metrics[i]->set_value(values[i]);
     }
 
     fclose(fp);

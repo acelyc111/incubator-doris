@@ -43,9 +43,30 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
     REGISTER_DORIS_METRIC(push_requests_duration_us);
     REGISTER_DORIS_METRIC(push_requests_write_bytes);
     REGISTER_DORIS_METRIC(push_requests_write_rows);
-
     REGISTER_DORIS_METRIC(memtable_flush_total);
     REGISTER_DORIS_METRIC(memtable_flush_duration_us);
+    REGISTER_DORIS_METRIC(memory_pool_bytes_total);
+    REGISTER_DORIS_METRIC(process_thread_num);
+    REGISTER_DORIS_METRIC(process_fd_num_used);
+    REGISTER_DORIS_METRIC(process_fd_num_limit_soft);
+    REGISTER_DORIS_METRIC(process_fd_num_limit_hard);
+    REGISTER_DORIS_METRIC(tablet_cumulative_max_compaction_score);
+    REGISTER_DORIS_METRIC(tablet_base_max_compaction_score);
+    REGISTER_DORIS_METRIC(push_requests_write_bytes_per_second);
+    REGISTER_DORIS_METRIC(query_scan_bytes_per_second);
+    REGISTER_DORIS_METRIC(max_disk_io_util_percent);
+    REGISTER_DORIS_METRIC(max_network_send_bytes_rate);
+    REGISTER_DORIS_METRIC(max_network_receive_bytes_rate);
+    REGISTER_DORIS_METRIC(readable_blocks_total);
+    REGISTER_DORIS_METRIC(writable_blocks_total);
+    REGISTER_DORIS_METRIC(blocks_created_total);
+    REGISTER_DORIS_METRIC(blocks_deleted_total);
+    REGISTER_DORIS_METRIC(bytes_read_total);
+    REGISTER_DORIS_METRIC(bytes_written_total);
+    REGISTER_DORIS_METRIC(disk_sync_total);
+    REGISTER_DORIS_METRIC(blocks_open_reading);
+    REGISTER_DORIS_METRIC(blocks_open_writing);
+#enddef
 
 #define REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(type)                                                       \
     _metrics.register_metric(                                                                                       \
@@ -68,72 +89,52 @@ DorisMetrics::DorisMetrics() : _metrics(s_registry_name) {
     REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(base_compaction);
     REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(cumulative_compaction);
     REGISTER_ENGINE_REQUEST_TOTAL_AND_FAILED_METRIC(publish);
+#enddef
 
 #define REGISTER_REQUEST_METRIC(request, label_type, label_value, metric)     \
     _metrics.register_metric(                                                 \
         #request, MetricLabels().add(#label_type, #label_type), &metric)
 
 #define REGISTER_REQUEST_STATUS_METRIC(request)                               \
-    REGISTER_REQUEST_METRIC(request, status, success, request##_success);  \
+    REGISTER_REQUEST_METRIC(request, status, success, request##_success);     \
     REGISTER_REQUEST_METRIC(request, status, failed, request##_failed);
 
     // TODO(yingchun): Not copatibale with older version
     REGISTER_REQUEST_STATUS_METRIC(push_requests);
+#enddef
 
 #define REGISTER_REQUEST_TYPE2_METRIC(request, type1, type2)                  \
-    REGISTER_REQUEST_METRIC(request, type, type1, type1##_##request);        \
+    REGISTER_REQUEST_METRIC(request, type, type1, type1##_##request);         \
     REGISTER_REQUEST_METRIC(request, type, type2, type2##_##request);
 
     REGISTER_REQUEST_TYPE2_METRIC(compaction_deltas_total, base, cumulative);
     REGISTER_REQUEST_TYPE2_METRIC(compaction_bytes_total, base, cumulative);
     REGISTER_REQUEST_TYPE2_METRIC(meta_requests_total, read, write);
     REGISTER_REQUEST_TYPE2_METRIC(meta_requests_duration_us, read, write);
+#enddef
 
-#define REGISTER_REQUEST_RTYPE2_METRIC(request, type1, type2)                  \
-    REGISTER_REQUEST_METRIC(request, type, type1, request##_##type1);        \
+#define REGISTER_REQUEST_RTYPE2_METRIC(request, type1, type2)                 \
+    REGISTER_REQUEST_METRIC(request, type, type1, request##_##type1);         \
     REGISTER_REQUEST_METRIC(request, type, type2, request##_##type2);
 
     REGISTER_REQUEST_RTYPE2_METRIC(stream_load, receive_bytes, load_rows);
+#enddef
 
 #define REGISTER_REQUEST_TYPE4_METRIC(request, type1, type2, type3, type4)    \
-    REGISTER_REQUEST_METRIC(request, type, type1, request##_##type1);        \
-    REGISTER_REQUEST_METRIC(request, type, type2, request##_##type2);        \
-    REGISTER_REQUEST_METRIC(request, type, type2, request##_##type3);        \
+    REGISTER_REQUEST_METRIC(request, type, type1, request##_##type1);         \
+    REGISTER_REQUEST_METRIC(request, type, type2, request##_##type2);         \
+    REGISTER_REQUEST_METRIC(request, type, type2, request##_##type3);         \
     REGISTER_REQUEST_METRIC(request, type, type2, request##_##type4);
 
     REGISTER_REQUEST_TYPE4_METRIC(segment_read, times, rows, rows_by_short_key, rows_read_by_zone_map);
     REGISTER_REQUEST_TYPE4_METRIC(txn_request, begin, commit, rollback, exec);
+#enddef
+#enddef
 
     _metrics.register_metric("load_rows", &load_rows_total);
     _metrics.register_metric("load_bytes", &load_bytes_total);
 
-    // Gauge
-    REGISTER_DORIS_METRIC(memory_pool_bytes_total);
-    REGISTER_DORIS_METRIC(process_thread_num);
-    REGISTER_DORIS_METRIC(process_fd_num_used);
-    REGISTER_DORIS_METRIC(process_fd_num_limit_soft);
-    REGISTER_DORIS_METRIC(process_fd_num_limit_hard);
-
-    REGISTER_DORIS_METRIC(tablet_cumulative_max_compaction_score);
-    REGISTER_DORIS_METRIC(tablet_base_max_compaction_score);
-
-    REGISTER_DORIS_METRIC(push_requests_write_bytes_per_second);
-    REGISTER_DORIS_METRIC(query_scan_bytes_per_second);
-    REGISTER_DORIS_METRIC(max_disk_io_util_percent);
-    REGISTER_DORIS_METRIC(max_network_send_bytes_rate);
-    REGISTER_DORIS_METRIC(max_network_receive_bytes_rate);
-
     _metrics.register_hook(s_hook_name, std::bind(&DorisMetrics::_update, this));
-
-    REGISTER_DORIS_METRIC(readable_blocks_total);
-    REGISTER_DORIS_METRIC(writable_blocks_total);
-    REGISTER_DORIS_METRIC(blocks_created_total);
-    REGISTER_DORIS_METRIC(blocks_deleted_total);
-    REGISTER_DORIS_METRIC(bytes_read_total);
-    REGISTER_DORIS_METRIC(bytes_written_total);
-    REGISTER_DORIS_METRIC(disk_sync_total);
-    REGISTER_DORIS_METRIC(blocks_open_reading);
-    REGISTER_DORIS_METRIC(blocks_open_writing);
 }
 
 void DorisMetrics::initialize(
@@ -141,17 +142,17 @@ void DorisMetrics::initialize(
         bool init_system_metrics,
         const std::set<std::string>& disk_devices,
         const std::vector<std::string>& network_interfaces) {
-    // disk usage
+#define REGISTER_PATH_METRIC(path, metric, unit)                                 \
+    IntGauge* gauge = metric.add_metric(path, unit);                             \
+    _metrics.register_metric(#metric, MetricLabels().add("path", path), gauge)
+
     for (auto& path : paths) {
-        IntGauge* gauge = disks_total_capacity.add_metric(path, MetricUnit::BYTES);
-        _metrics.register_metric("disks_total_capacity", MetricLabels().add("path", path), gauge);
-        gauge = disks_avail_capacity.add_metric(path, MetricUnit::BYTES);
-        _metrics.register_metric("disks_avail_capacity", MetricLabels().add("path", path), gauge);
-        gauge = disks_data_used_capacity.add_metric(path, MetricUnit::BYTES);
-        _metrics.register_metric("disks_data_used_capacity", MetricLabels().add("path", path), gauge);
-        gauge = disks_state.add_metric(path, MetricUnit::NOUNIT);
-        _metrics.register_metric("disks_state", MetricLabels().add("path", path), gauge);
+        REGISTER_PATH_METRIC(path, disks_total_capacity, MetricUnit::BYTES);
+        REGISTER_PATH_METRIC(path, disks_avail_capacity, MetricUnit::BYTES);
+        REGISTER_PATH_METRIC(path, disks_data_used_capacity, MetricUnit::BYTES);
+        REGISTER_PATH_METRIC(path, disks_state, MetricUnit::NOUNIT);
     }
+#enddef
 
     if (init_system_metrics) {
         _system_metrics.install(&_metrics, disk_devices, network_interfaces);
