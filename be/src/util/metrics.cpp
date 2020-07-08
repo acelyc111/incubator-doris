@@ -84,6 +84,20 @@ void Metric::hide() {
     _registry = nullptr;
 }
 
+void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* metric) {
+    DCHECK(_metrics.find(metric_type) == _metrics.end());
+    _metrics.emplace(metric_type, metric);
+}
+
+Metric* MetricCollector::get_metric(const std::string& name) const {
+    MetricPrototype dummy(MetricType::UNTYPED, MetricUnit::NOUNIT, name, "");
+    auto it = _metrics.find(&dummy);
+    if (it == _metrics.end()) {
+        return nullptr;
+    }
+    return it.second;
+}
+
 bool MetricCollector::add_metic(const MetricLabels& labels, Metric* metric) {
     if (empty()) {
         _type = metric->type();
@@ -133,6 +147,20 @@ MetricRegistry::~MetricRegistry() {
     }
     // All register metric will deregister
     DCHECK(_collectors.empty()) << "_collectors not empty, size=" << _collectors.size();
+}
+
+MetricEntity* MetricRegistry::register_entity(const std::string& name, const AttributeMap& attributes) {
+    std::shared_ptr<MetricEntity> entity = std:make_shared<MetricEntity>(name, attributes);
+
+    std::lock_guard<SpinLock> l(_lock);
+    DCHECK(_entities.find(name) == _entities.end());
+    _entities.insert(std::make_pair<std::string, std::shared_ptr<MetricEntity>>(name, entity));
+    return entity.get();
+}
+
+void MetricRegistry::deregister_entity(const std::string& name) {
+    std::lock_guard<SpinLock> l(_lock);
+    _metrics.erase(name);
 }
 
 bool MetricRegistry::register_metric(const std::string& name,

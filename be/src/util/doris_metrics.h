@@ -54,8 +54,10 @@ private:
 
 class DorisMetrics {
 public:
+    doris::IntCounter fragment_requests_total;
+
 	// counters
-	METRIC_DEFINE_INT_COUNTER(fragment_requests_total, MetricUnit::REQUESTS);
+	//METRIC_DEFINE_INT_COUNTER(fragment_requests_total, MetricUnit::REQUESTS);
 	METRIC_DEFINE_INT_COUNTER(fragment_request_duration_us, MetricUnit::MICROSECONDS);
 	METRIC_DEFINE_INT_COUNTER(http_requests_total, MetricUnit::REQUESTS);
 	METRIC_DEFINE_INT_COUNTER(http_request_send_bytes, MetricUnit::BYTES);
@@ -198,7 +200,7 @@ public:
         const std::set<std::string>& disk_devices = std::set<std::string>(),
         const std::vector<std::string>& network_interfaces = std::vector<std::string>());
 
-    MetricRegistry* metrics() { return &_metrics; }
+    MetricRegistry* metrics() { return &_metric_registry; }
     SystemMetrics* system_metrics() { return &_system_metrics; }
 
 private:
@@ -213,8 +215,11 @@ private:
     const char* _name;
     const char* _hook_name;
 
-    MetricRegistry _metrics;
+    MetricRegistry _metric_registry;
+
     SystemMetrics _system_metrics;
+
+    MetricEntity* _server_metric_entity;
 };
 
 };

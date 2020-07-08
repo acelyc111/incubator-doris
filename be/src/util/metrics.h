@@ -287,6 +287,55 @@ struct MetricLabels {
 
 class MetricCollector;
 
+struct MetricPrototype {
+    MetricPrototype(MetricType type,
+                    MetricUnit unit,
+                    const std::string& name,
+                    const std::string& description)
+        : _type(type),
+          _unit(unit),
+          _name(name),
+          _description(description) {}
+
+    MetricType _type;
+    MetricUnit _unit;
+    std::string _name;
+    std::string _description;
+};
+
+#define METRIC_DEFINE(name, type, unit, desc)                \
+    MetricPrototype METRIC_##name(#name, type, unit, desc)
+
+// For 'metrics' in MetricEntity.
+struct MetricPrototypeHash {
+    size_t operator()(const MetricPrototype* metric_prototype) const {
+        return std::hash<const char*>()(metric_prototype->name);
+    }
+};
+
+struct MetricPrototypeEqualTo {
+    bool operator()(const MetricPrototype* first, const MetricPrototype* second) const {
+        return strcmp(first->name, second->name) == 0;
+    }
+};
+
+using AttributeMap = std::unordered_map<std::string, std::string>;
+class MetricEntity {
+public:
+    MetricEntity(const std::string& name, const AttributeMap& attributes)
+        : _name(name), _attributes(attributes) {}
+
+    void register_metric(const MetricPrototype* metric_type, Metric* metric);
+    Metric* get_metric(const std::string& name) const;
+
+private:
+    std::string _name;
+    AttributeMap _attributes;
+    std::unordered_map<const MetricPrototype*, Metric*> _metrics;
+
+    std::function<void()> _hook;
+};
+
 class MetricsVisitor {
 public:
     virtual ~MetricsVisitor() { }
@@ -324,6 +373,10 @@ class MetricRegistry {
 public:
     MetricRegistry(const std::string& name) : _name(name) { }
     ~MetricRegistry();
+
+    MetricEntity* register_entity(const std::string& name, const AttributeMap& attributes);
+    void deregister_entity(const std::string& name);
+
     bool register_metric(const std::string& name, Metric* metric) {
         return register_metric(name, MetricLabels::EmptyLabels, metric);
     }
@@ -374,6 +427,8 @@ private:
     mutable SpinLock _lock;
     std::map<std::string, MetricCollector*> _collectors;
     std::map<std::string, std::function<void()>> _hooks;
+
+    std::unordered_map<std::string, std::shared_ptr<MetricEntity>> _entities;
 };
 
 using IntCounter = CoreLocalCounter<int64_t>;
