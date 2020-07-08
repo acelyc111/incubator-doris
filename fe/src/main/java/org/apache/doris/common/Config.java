@@ -1075,5 +1075,12 @@ public class Config extends ConfigBase {
      */
     @ConfField
     public static String thrift_server_type = ThriftServer.THREAD_POOL;
+
+    /**
+     * exec memory limit
+     */
+    @ConfField(mutable = true)
+    public static long exec_mem_limit = 17179869184L;
+
 }
 

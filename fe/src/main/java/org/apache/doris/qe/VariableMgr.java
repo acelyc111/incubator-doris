@@ -24,6 +24,7 @@ import org.apache.doris.analysis.SysVariableDesc;
 import org.apache.doris.catalog.Catalog;
 import org.apache.doris.catalog.Type;
 import org.apache.doris.common.AnalysisException;
+import org.apache.doris.common.Config;
 import org.apache.doris.common.DdlException;
 import org.apache.doris.common.ErrorCode;
 import org.apache.doris.common.ErrorReport;
@@ -219,6 +220,19 @@ public class VariableMgr {
             setVar = new SetVar(
                     setVar.getType(), setVar.getVariable(),
                     new StringLiteral(TimeUtils.checkTimeZoneValidAndStandardize(setVar.getValue().getStringValue())));
+        }
+        // check variable exec_mem_limit value is valid
+        if (setVar.getVariable().toLowerCase().equalsIgnoreCase("exec_mem_limit")) {
+            try {
+                if (setVar.getValue().getStringValue() != null) {
+                    Long value = Long.parseLong(setVar.getValue().getStringValue());
+                    if (value > Config.exec_mem_limit) {
+                        throw new DdlException("the value for exec_mem_limit cannot exceed " + Config.exec_mem_limit);
+                    }
+                }
+            } catch (Exception e) {
+                throw new DdlException("set var for exec_mem_limit failed", e);
+            }
         }
 
         // To modify to default value.
