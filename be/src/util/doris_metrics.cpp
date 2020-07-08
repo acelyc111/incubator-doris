@@ -33,9 +33,9 @@ METRIC_DEFINE(fragment_requests_total, MetricType::COUNTER, MetricUnit::REQUESTS
 DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _metric_registry(_name) {
     _server_metric_entity = _metric_registry.register_entity("server", {});
 
-    _server_metric_entity->register_metric(METRIC_fragment_requests_total, &fragment_requests_total);
+    _server_metric_entity->register_metric(&METRIC_fragment_requests_total, &fragment_requests_total);
 
-#define REGISTER_DORIS_METRIC(name) metricRegistry.register_metric(#name, &name)
+#define REGISTER_DORIS_METRIC(name) _metric_registry.register_metric(#name, &name)
     // You can put DorisMetrics's metrics initial code here
     //REGISTER_DORIS_METRIC(fragment_requests_total);
     REGISTER_DORIS_METRIC(fragment_request_duration_us);
@@ -59,7 +59,7 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     REGISTER_DORIS_METRIC(push_request_write_rows);
 
 #define REGISTER_ENGINE_REQUEST_METRIC(type, status, metric) \
-    metricRegistry.register_metric( \
+    _metric_registry.register_metric( \
         "engine_requests_total", MetricLabels().add("type", #type).add("status", #status), &metric)
 
     REGISTER_ENGINE_REQUEST_METRIC(create_tablet, total, create_tablet_requests_total);

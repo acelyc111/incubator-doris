@@ -89,13 +89,13 @@ void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* m
     _metrics.emplace(metric_type, metric);
 }
 
-Metric* MetricCollector::get_metric(const std::string& name) const {
-    MetricPrototype dummy(MetricType::UNTYPED, MetricUnit::NOUNIT, name, "");
+Metric* MetricEntity::get_metric(const std::string& name) const {
+    MetricPrototype dummy(MetricType::UNTYPED, MetricUnit::NOUNIT, name.c_str(), "");
     auto it = _metrics.find(&dummy);
     if (it == _metrics.end()) {
         return nullptr;
     }
-    return it.second;
+    return it->second;
 }
 
 bool MetricCollector::add_metic(const MetricLabels& labels, Metric* metric) {
@@ -150,17 +150,17 @@ MetricRegistry::~MetricRegistry() {
 }
 
 MetricEntity* MetricRegistry::register_entity(const std::string& name, const AttributeMap& attributes) {
-    std::shared_ptr<MetricEntity> entity = std:make_shared<MetricEntity>(name, attributes);
+    std::shared_ptr<MetricEntity> entity = std::make_shared<MetricEntity>(name, attributes);
 
     std::lock_guard<SpinLock> l(_lock);
     DCHECK(_entities.find(name) == _entities.end());
-    _entities.insert(std::make_pair<std::string, std::shared_ptr<MetricEntity>>(name, entity));
+    _entities.insert(std::make_pair(name, entity));
     return entity.get();
 }
 
 void MetricRegistry::deregister_entity(const std::string& name) {
     std::lock_guard<SpinLock> l(_lock);
-    _metrics.erase(name);
+    _entities.erase(name);
 }
 
 bool MetricRegistry::register_metric(const std::string& name,

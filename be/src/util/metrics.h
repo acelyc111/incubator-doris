@@ -137,7 +137,7 @@ protected:
 template<typename T>
 class CoreLocalCounter : public Metric {
 public:
-    CoreLocalCounter(MetricUnit unit)
+    CoreLocalCounter(MetricUnit unit = MetricUnit::NOUNIT)
       : Metric(MetricType::COUNTER, unit), 
         _value() {}
 
@@ -291,8 +291,8 @@ class MetricCollector;
 struct MetricPrototype {
     MetricPrototype(MetricType type_,
                     MetricUnit unit_,
-                    const std::string& name_,
-                    const std::string& description_)
+                    const char* name_,
+                    const char* description_)
         : type(type_),
           unit(unit_),
           name(name_),
@@ -300,12 +300,12 @@ struct MetricPrototype {
 
     MetricType type;
     MetricUnit unit;
-    std::string name;
-    std::string description;
+    const char* const name;
+    const char* const description;
 };
 
-#define METRIC_DEFINE(name, type, unit, desc)                \
-    MetricPrototype METRIC_##name(#name, type, unit, desc)
+#define METRIC_DEFINE(name, type, unit, desc)                         \
+    ::doris::MetricPrototype METRIC_##name(type, unit, #name, desc)
 
 // For 'metrics' in MetricEntity.
 struct MetricPrototypeHash {
