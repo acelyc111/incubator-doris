@@ -25,6 +25,7 @@
 #include <string>
 #include <mutex>
 #include <iomanip>
+#include <unordered_map>
 
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
@@ -288,19 +289,19 @@ struct MetricLabels {
 class MetricCollector;
 
 struct MetricPrototype {
-    MetricPrototype(MetricType type,
-                    MetricUnit unit,
-                    const std::string& name,
-                    const std::string& description)
-        : _type(type),
-          _unit(unit),
-          _name(name),
-          _description(description) {}
+    MetricPrototype(MetricType type_,
+                    MetricUnit unit_,
+                    const std::string& name_,
+                    const std::string& description_)
+        : type(type_),
+          unit(unit_),
+          name(name_),
+          description(description_) {}
 
-    MetricType _type;
-    MetricUnit _unit;
-    std::string _name;
-    std::string _description;
+    MetricType type;
+    MetricUnit unit;
+    std::string name;
+    std::string description;
 };
 
 #define METRIC_DEFINE(name, type, unit, desc)                \
