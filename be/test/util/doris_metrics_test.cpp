@@ -77,7 +77,7 @@ private:
 
 TEST_F(DorisMetricsTest, Normal) {
     TestMetricsVisitor visitor;
-    auto metrics = DorisMetrics::instance()->metrics();
+    auto metrics = DorisMetrics::instance()->metric_registry();
     metrics->collect(&visitor);
     LOG(INFO) << "\n" << visitor.to_string();
     // check metric

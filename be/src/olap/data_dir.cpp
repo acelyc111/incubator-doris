@@ -55,6 +55,11 @@ using strings::Substitute;
 
 namespace doris {
 
+DEFINE_GAUGE_METRIC(disks_total_capacity, MetricUnit::BYTES, "");
+DEFINE_GAUGE_METRIC(disks_avail_capacity, MetricUnit::BYTES, "");
+DEFINE_GAUGE_METRIC(disks_data_used_capacity, MetricUnit::BYTES, "");
+DEFINE_GAUGE_METRIC(disks_state, MetricUnit::BYTES, "");
+
 static const char* const kMtabPath = "/etc/mtab";
 static const char* const kTestFilePath = "/.testfile";
 
@@ -72,7 +77,13 @@ DataDir::DataDir(const std::string& path, int64_t capacity_bytes,
           _cluster_id(-1),
           _to_be_deleted(false),
           _current_shard(0),
-          _meta(nullptr) {}
+          _meta(nullptr) {
+    _data_dir_metric_entity = DorisMetrics::instance()->metric_registry()->register_entity(path, {});
+    METRIC_REGISTER(_data_dir_metric_entity, disks_total_capacity);
+    METRIC_REGISTER(_data_dir_metric_entity, disks_avail_capacity);
+    METRIC_REGISTER(_data_dir_metric_entity, disks_data_used_capacity);
+    METRIC_REGISTER(_data_dir_metric_entity, disks_state);
+}
 
 DataDir::~DataDir() {
     delete _id_generator;
@@ -308,6 +319,7 @@ void DataDir::health_check() {
             }
         }
     }
+    disks_state = _is_used;
 }
 
 OLAPStatus DataDir::_read_and_write_test_file() {
@@ -890,10 +902,17 @@ Status DataDir::update_capacity() {
                 Substitute("get path $0 available capacity failed, error=$1", _path, e.what())),
             "boost::filesystem::space failed");
     }
+
+    disks_total_capacity = _disk_capacity_bytes;
+    disks_avail_capacity = _available_bytes;
     LOG(INFO) << "path: " << _path << " total capacity: " << _disk_capacity_bytes
               << ", available capacity: " << _available_bytes;
 
     return Status::OK();
+}
+
+void DataDir::update_user_data_size(uint64_t size) {
+    disks_data_used_capacity = size;
 }
 
 bool DataDir::reach_capacity_limit(int64_t incoming_data_size) {

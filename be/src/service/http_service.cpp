@@ -88,10 +88,10 @@ Status HttpService::start() {
     // register pprof actions
     PprofActions::setup(_env, _ev_http_server.get());
 
-    // register metrics
+    // register metric_registry
     {
-        auto action = new MetricsAction(DorisMetrics::instance()->metrics());
-        _ev_http_server->register_handler(HttpMethod::GET, "/metrics", action);
+        auto action = new MetricsAction(DorisMetrics::instance()->metric_registry());
+        _ev_http_server->register_handler(HttpMethod::GET, "/metric_registry", action);
     }
 
     MetaAction* meta_action = new MetaAction(HEADER);

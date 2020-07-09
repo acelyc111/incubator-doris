@@ -637,7 +637,7 @@ public:
     int64_t unexpected_remote_bytes(RequestContext* reader) const;
 
     // Returns the read throughput across all readers.
-    // TODO: should this be a sliding window?  This should report metrics for the
+    // TODO: should this be a sliding window?  This should report metric_registry for the
     // last minute, hour and since the beginning.
     int64_t get_read_throughput();
 

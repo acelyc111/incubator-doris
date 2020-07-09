@@ -105,7 +105,7 @@ private:
     std::unordered_set<std::string> _dirty_dirs;
 
     // Metric container for the block manager.
-    // May be null if instantiated without metrics.
+    // May be null if instantiated without metric_registry.
     std::unique_ptr<internal::BlockManagerMetrics> _metrics;
 
     // Tracks memory consumption of any allocations numerous enough to be

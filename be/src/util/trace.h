@@ -99,7 +99,7 @@ class Trace;
   ::doris::ScopedTraceLatencyCounter _scoped_latency(counter_name)
 
 // Construct a constant C string counter name which acts as a sort of
-// coarse-grained histogram for trace metrics.
+// coarse-grained histogram for trace metric_registry.
 #define BUCKETED_COUNTER_NAME(prefix, duration_us)      \
   [=]() {                                               \
     if (duration_us >= 100 * 1000) {                    \
@@ -165,7 +165,7 @@ class Trace : public RefCountedThreadSafe<Trace> {
 
     // If set, calculate and print the difference between successive trace messages.
     INCLUDE_TIME_DELTAS = 1 << 0,
-    // If set, include a 'Metrics' line showing any attached trace metrics.
+    // If set, include a 'Metrics' line showing any attached trace metric_registry.
     INCLUDE_METRICS =     1 << 1,
 
     INCLUDE_ALL = INCLUDE_TIME_DELTAS | INCLUDE_METRICS

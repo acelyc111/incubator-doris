@@ -288,29 +288,39 @@ struct MetricLabels {
 
 class MetricCollector;
 
+using Labels = std::vector<std::pair<std::string, std::string>>;
 struct MetricPrototype {
     MetricPrototype(MetricType type_,
                     MetricUnit unit_,
                     std::string name_,
-                    std::string description_)
+                    std::string description_ = "",
+                    Labels labels = Labels())
         : type(type_),
           unit(unit_),
           name(std::move(name_)),
-          description(std::move(description_)) {}
+          description(std::move(description_)),
+          labels(std::move(labels)) {}
 
     MetricType type;
     MetricUnit unit;
     std::string name;
     std::string description;
+    Labels labels;
 };
 
-#define METRIC_DEFINE(name, type, unit, desc)                         \
+#define DEFINE_METRIC(name, type, unit, desc)                         \
     ::doris::MetricPrototype METRIC_##name(type, unit, #name, desc)
+
+#define DEFINE_COUNTER_METRIC(name, unit, desc)                         \
+    ::doris::MetricPrototype METRIC_##name(MetricType::COUNTER, unit, #name, desc)
+
+#define DEFINE_GAUGE_METRIC(name, unit, desc)                         \
+    ::doris::MetricPrototype METRIC_##name(MetricType::GAUGE, unit, #name, desc)
 
 #define METRIC_REGISTER(entity, metric)                         \
     entity->register_metric(&METRIC_##metric, &metric)
 
-// For 'metrics' in MetricEntity.
+// For 'metric_registry' in MetricEntity.
 struct MetricPrototypeHash {
     size_t operator()(const MetricPrototype* metric_prototype) const {
         return std::hash<std::string>()(metric_prototype->name);
@@ -361,7 +371,7 @@ public:
         return _metrics.empty();
     }
     Metric* get_metric(const MetricLabels& labels) const;
-    // get all metrics belong to this collector
+    // get all metric_registry belong to this collector
     void get_metrics(std::vector<Metric*>* metrics);
 
     const std::map<MetricLabels, Metric*>& metrics() const {

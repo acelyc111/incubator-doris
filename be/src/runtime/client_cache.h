@@ -226,10 +226,10 @@ public:
         return _client_cache_helper.test_shutdown();
     }
 
-    // Adds metrics for this cache to the supplied MetricRegistry instance. The
-    // metrics have keys that are prefixed by the key_prefix argument
+    // Adds metric_registry for this cache to the supplied MetricRegistry instance. The
+    // metric_registry have keys that are prefixed by the key_prefix argument
     // (which should not end in a period).
-    // Must be called before the cache is used, otherwise the metrics might be wrong
+    // Must be called before the cache is used, otherwise the metric_registry might be wrong
     void init_metrics(MetricRegistry* metrics, const std::string& key_prefix) {
         _client_cache_helper.init_metrics(metrics, key_prefix);
     }

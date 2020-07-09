@@ -83,9 +83,9 @@ public:
     // hosts. Further send() calls are illegal after calling close().
     virtual Status close(RuntimeState* state, Status exec_status);
 
-    /// Serializes the src batch into the dest thrift batch. Maintains metrics.
+    /// Serializes the src batch into the dest thrift batch. Maintains metric_registry.
     /// num_receivers is the number of receivers this batch will be sent to. Only
-    /// used to maintain metrics.
+    /// used to maintain metric_registry.
     template<class T>
     Status serialize_batch(RowBatch* src, T* dest, int num_receivers = 1);
 

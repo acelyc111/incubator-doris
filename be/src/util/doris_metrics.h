@@ -54,153 +54,139 @@ private:
 
 class DorisMetrics {
 public:
-    doris::IntCounter fragment_requests_total;
+    IntCounter fragment_requests_total;
+	IntCounter fragment_request_duration_us;
+	IntCounter http_requests_total;
+	IntCounter http_request_send_bytes;
+	IntCounter query_scan_bytes;
+	IntCounter query_scan_rows;
+	IntCounter push_requests_success_total;
+	IntCounter push_requests_fail_total;
+	IntCounter push_request_duration_us;
+	IntCounter push_request_write_bytes;
+	IntCounter push_request_write_rows;
+	IntCounter create_tablet_requests_total;
+	IntCounter create_tablet_requests_failed;
+	IntCounter drop_tablet_requests_total;
 
-	// counters
-	//METRIC_DEFINE_INT_COUNTER(fragment_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(fragment_request_duration_us, MetricUnit::MICROSECONDS);
-	METRIC_DEFINE_INT_COUNTER(http_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(http_request_send_bytes, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_COUNTER(query_scan_bytes, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_COUNTER(query_scan_rows, MetricUnit::ROWS);
-	METRIC_DEFINE_INT_COUNTER(push_requests_success_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(push_requests_fail_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(push_request_duration_us, MetricUnit::MICROSECONDS);
-	METRIC_DEFINE_INT_COUNTER(push_request_write_bytes, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_COUNTER(push_request_write_rows, MetricUnit::ROWS);
-	METRIC_DEFINE_INT_COUNTER(create_tablet_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(create_tablet_requests_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(drop_tablet_requests_total, MetricUnit::REQUESTS);
-	
-	METRIC_DEFINE_INT_COUNTER(report_all_tablets_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(report_all_tablets_requests_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(report_tablet_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(report_tablet_requests_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(report_disk_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(report_disk_requests_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(report_task_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(report_task_requests_failed, MetricUnit::REQUESTS);
-	
-	METRIC_DEFINE_INT_COUNTER(schema_change_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(schema_change_requests_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(create_rollup_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(create_rollup_requests_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(storage_migrate_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(delete_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(delete_requests_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(clone_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(clone_requests_failed, MetricUnit::REQUESTS);
-	
-	METRIC_DEFINE_INT_COUNTER(finish_task_requests_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(finish_task_requests_failed, MetricUnit::REQUESTS);
-	
-	METRIC_DEFINE_INT_COUNTER(base_compaction_request_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(base_compaction_request_failed, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_request_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_request_failed, MetricUnit::REQUESTS);
-	
-	METRIC_DEFINE_INT_COUNTER(base_compaction_deltas_total, MetricUnit::ROWSETS);
-	METRIC_DEFINE_INT_COUNTER(base_compaction_bytes_total, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_deltas_total, MetricUnit::ROWSETS);
-	METRIC_DEFINE_INT_COUNTER(cumulative_compaction_bytes_total, MetricUnit::BYTES);
-	
-	METRIC_DEFINE_INT_COUNTER(publish_task_request_total, MetricUnit::REQUESTS);
-	METRIC_DEFINE_INT_COUNTER(publish_task_failed_total, MetricUnit::REQUESTS);
-	
-    METRIC_DEFINE_INT_COUNTER(meta_write_request_total, MetricUnit::REQUESTS);
-    METRIC_DEFINE_INT_COUNTER(meta_write_request_duration_us, MetricUnit::MICROSECONDS);
-    METRIC_DEFINE_INT_COUNTER(meta_read_request_total, MetricUnit::REQUESTS);
-    METRIC_DEFINE_INT_COUNTER(meta_read_request_duration_us, MetricUnit::MICROSECONDS);
+	IntCounter report_all_tablets_requests_total;
+	IntCounter report_all_tablets_requests_failed;
+	IntCounter report_tablet_requests_total;
+	IntCounter report_tablet_requests_failed;
+	IntCounter report_disk_requests_total;
+	IntCounter report_disk_requests_failed;
+	IntCounter report_task_requests_total;
+	IntCounter report_task_requests_failed;
 
-	// Counters for segment_v2
-	// -----------------------
-	// total number of segments read
-	METRIC_DEFINE_INT_COUNTER(segment_read_total, MetricUnit::OPERATIONS);
-	// total number of rows in queried segments (before index pruning)
-	METRIC_DEFINE_INT_COUNTER(segment_row_total, MetricUnit::ROWS);
-	// total number of rows selected by short key index
-	METRIC_DEFINE_INT_COUNTER(segment_rows_by_short_key, MetricUnit::ROWS);
-	// total number of rows selected by zone map index
-	METRIC_DEFINE_INT_COUNTER(segment_rows_read_by_zone_map, MetricUnit::ROWS);
-	
-	METRIC_DEFINE_INT_COUNTER(txn_begin_request_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(txn_commit_request_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(txn_rollback_request_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(txn_exec_plan_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(stream_receive_bytes_total, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_COUNTER(stream_load_rows_total, MetricUnit::ROWS);
-	METRIC_DEFINE_INT_COUNTER(load_rows_total, MetricUnit::ROWS);
-	METRIC_DEFINE_INT_COUNTER(load_bytes_total, MetricUnit::BYTES);
-	
-	METRIC_DEFINE_INT_COUNTER(memtable_flush_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
-	
-	// Gauges
-	METRIC_DEFINE_INT_GAUGE(memory_pool_bytes_total, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_GAUGE(process_thread_num, MetricUnit::NOUNIT);
-	METRIC_DEFINE_INT_GAUGE(process_fd_num_used, MetricUnit::NOUNIT);
-	METRIC_DEFINE_INT_GAUGE(process_fd_num_limit_soft, MetricUnit::NOUNIT);
-	METRIC_DEFINE_INT_GAUGE(process_fd_num_limit_hard, MetricUnit::NOUNIT);
-    IntGaugeMetricsMap disks_total_capacity;
-    IntGaugeMetricsMap disks_avail_capacity;
-    IntGaugeMetricsMap disks_data_used_capacity;
-    IntGaugeMetricsMap disks_state;
-	
+	IntCounter schema_change_requests_total;
+	IntCounter schema_change_requests_failed;
+	IntCounter create_rollup_requests_total;
+	IntCounter create_rollup_requests_failed;
+	IntCounter storage_migrate_requests_total;
+	IntCounter delete_requests_total;
+	IntCounter delete_requests_failed;
+	IntCounter clone_requests_total;
+	IntCounter clone_requests_failed;
+
+	IntCounter finish_task_requests_total;
+	IntCounter finish_task_requests_failed;
+
+	IntCounter base_compaction_request_total;
+	IntCounter base_compaction_request_failed;
+	IntCounter cumulative_compaction_request_total;
+	IntCounter cumulative_compaction_request_failed;
+
+	IntCounter base_compaction_deltas_total;
+	IntCounter base_compaction_bytes_total;
+	IntCounter cumulative_compaction_deltas_total;
+	IntCounter cumulative_compaction_bytes_total;
+
+	IntCounter publish_task_request_total;
+	IntCounter publish_task_failed_total;
+
+    IntCounter meta_write_request_total;
+    IntCounter meta_write_request_duration_us;
+    IntCounter meta_read_request_total;
+    IntCounter meta_read_request_duration_us;
+
+	IntCounter segment_read_total;
+	IntCounter segment_row_total;
+	IntCounter segment_rows_by_short_key;
+	IntCounter segment_rows_read_by_zone_map;
+
+	IntCounter txn_begin_request_total;
+	IntCounter txn_commit_request_total;
+	IntCounter txn_rollback_request_total;
+	IntCounter txn_exec_plan_total;
+	IntCounter stream_receive_bytes_total;
+	IntCounter stream_load_rows_total;
+	IntCounter load_rows_total;
+	IntCounter load_bytes_total;
+
+	IntCounter memtable_flush_total;
+	IntCounter memtable_flush_duration_us;
+
+	IntGauge memory_pool_bytes_total;
+	IntGauge process_thread_num;
+	IntGauge process_fd_num_used;
+	IntGauge process_fd_num_limit_soft;
+	IntGauge process_fd_num_limit_hard;
+
 	// the max compaction score of all tablets.
 	// Record base and cumulative scores separately, because
 	// we need to get the larger of the two.
-	METRIC_DEFINE_INT_GAUGE(tablet_cumulative_max_compaction_score, MetricUnit::NOUNIT);
-	METRIC_DEFINE_INT_GAUGE(tablet_base_max_compaction_score, MetricUnit::NOUNIT);
-	
-	// The following metrics will be calculated
+	IntGauge tablet_cumulative_max_compaction_score;
+	IntGauge tablet_base_max_compaction_score;
+
+	// The following metric_registry will be calculated
 	// by metric calculator
-	METRIC_DEFINE_INT_GAUGE(push_request_write_bytes_per_second, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_GAUGE(query_scan_bytes_per_second, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_GAUGE(max_disk_io_util_percent, MetricUnit::PERCENT);
-	METRIC_DEFINE_INT_GAUGE(max_network_send_bytes_rate, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_GAUGE(max_network_receive_bytes_rate, MetricUnit::BYTES);
-	
+	IntGauge push_request_write_bytes_per_second;
+	IntGauge query_scan_bytes_per_second;
+	IntGauge max_disk_io_util_percent;
+	IntGauge max_network_send_bytes_rate;
+	IntGauge max_network_receive_bytes_rate;
+
 	// Metrics related with BlockManager
-	METRIC_DEFINE_INT_COUNTER(readable_blocks_total, MetricUnit::BLOCKS);
-	METRIC_DEFINE_INT_COUNTER(writable_blocks_total, MetricUnit::BLOCKS);
-	METRIC_DEFINE_INT_COUNTER(blocks_created_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(blocks_deleted_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_COUNTER(bytes_read_total, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_COUNTER(bytes_written_total, MetricUnit::BYTES);
-	METRIC_DEFINE_INT_COUNTER(disk_sync_total, MetricUnit::OPERATIONS);
-	METRIC_DEFINE_INT_GAUGE(blocks_open_reading, MetricUnit::BLOCKS);
-	METRIC_DEFINE_INT_GAUGE(blocks_open_writing, MetricUnit::BLOCKS);
-	
+	IntCounter readable_blocks_total;
+	IntCounter writable_blocks_total;
+	IntCounter blocks_created_total;
+	IntCounter blocks_deleted_total;
+	IntCounter bytes_read_total;
+	IntCounter bytes_written_total;
+	IntCounter disk_sync_total;
+	IntGauge blocks_open_reading;
+	IntGauge blocks_open_writing;
+
 	// Size of some global containers
-	METRIC_DEFINE_UINT_GAUGE(rowset_count_generated_and_in_use, MetricUnit::ROWSETS);
-	METRIC_DEFINE_UINT_GAUGE(unused_rowsets_count, MetricUnit::ROWSETS);
-	METRIC_DEFINE_UINT_GAUGE(broker_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(data_stream_receiver_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(fragment_endpoint_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(active_scan_context_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(plan_fragment_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(load_channel_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(result_buffer_block_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(result_block_queue_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(routine_load_task_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(small_file_cache_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(stream_load_pipe_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(brpc_endpoint_stub_count, MetricUnit::NOUNIT);
-	METRIC_DEFINE_UINT_GAUGE(tablet_writer_count, MetricUnit::NOUNIT);
+	UIntGauge rowset_count_generated_and_in_use;
+	UIntGauge unused_rowsets_count;
+	UIntGauge broker_count;
+	UIntGauge data_stream_receiver_count;
+	UIntGauge fragment_endpoint_count;
+	UIntGauge active_scan_context_count;
+	UIntGauge plan_fragment_count;
+	UIntGauge load_channel_count;
+	UIntGauge result_buffer_block_count;
+	UIntGauge result_block_queue_count;
+	UIntGauge routine_load_task_count;
+	UIntGauge small_file_cache_count;
+	UIntGauge stream_load_pipe_count;
+	UIntGauge brpc_endpoint_stub_count;
+	UIntGauge tablet_writer_count;
 
     static DorisMetrics* instance() {
         static DorisMetrics instance;
         return &instance;
     }
 
-    // not thread-safe, call before calling metrics
+    // not thread-safe, call before calling metric_registry
     void initialize(
         const std::vector<std::string>& paths = std::vector<std::string>(),
         bool init_system_metrics = false,
         const std::set<std::string>& disk_devices = std::set<std::string>(),
         const std::vector<std::string>& network_interfaces = std::vector<std::string>());
 
-    MetricRegistry* metrics() { return &_metric_registry; }
+    MetricRegistry* metric_registry() { return &_metric_registry; }
     SystemMetrics* system_metrics() { return &_system_metrics; }
 
 private:

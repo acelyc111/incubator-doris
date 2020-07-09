@@ -121,6 +121,8 @@ public:
 
     Status update_capacity();
 
+    void update_user_data_size(uint64_t size);
+
 private:
     std::string _cluster_id_path() const { return _path + CLUSTER_ID_PREFIX; }
     Status _init_cluster_id();
@@ -185,6 +187,13 @@ private:
 
     // used in convert process
     bool _convert_old_data_success;
+
+    doris::IntGauge disks_total_capacity;
+    doris::IntGauge disks_avail_capacity;
+    doris::IntGauge disks_data_used_capacity;
+    doris::IntGauge disks_state;
+
+    MetricEntity* _data_dir_metric_entity;
 };
 
 } // namespace doris

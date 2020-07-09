@@ -88,14 +88,14 @@ static bool is_format_support_streaming(TFileFormatType::type format) {
 }
 
 StreamLoadAction::StreamLoadAction(ExecEnv* exec_env) : _exec_env(exec_env) {
-    DorisMetrics::instance()->metrics()->register_metric("streaming_load_requests_total",
-                                            &streaming_load_requests_total);
-    DorisMetrics::instance()->metrics()->register_metric("streaming_load_bytes",
-                                            &streaming_load_bytes);
-    DorisMetrics::instance()->metrics()->register_metric("streaming_load_duration_ms",
-                                            &streaming_load_duration_ms);
-    DorisMetrics::instance()->metrics()->register_metric("streaming_load_current_processing",
-                                            &streaming_load_current_processing);
+    DorisMetrics::instance()->metric_registry()->register_metric("streaming_load_requests_total",
+                                                                 &streaming_load_requests_total);
+    DorisMetrics::instance()->metric_registry()->register_metric("streaming_load_bytes",
+                                                                 &streaming_load_bytes);
+    DorisMetrics::instance()->metric_registry()->register_metric("streaming_load_duration_ms",
+                                                                 &streaming_load_duration_ms);
+    DorisMetrics::instance()->metric_registry()->register_metric("streaming_load_current_processing",
+                                                                 &streaming_load_current_processing);
 }
 
 StreamLoadAction::~StreamLoadAction() {

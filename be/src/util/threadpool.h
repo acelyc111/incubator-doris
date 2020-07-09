@@ -88,7 +88,7 @@ public:
 //    We always keep at least min_threads.
 //    Default: 500 milliseconds.
 //
-// metrics: Histograms, counters, etc. to update on various threadpool events.
+// metric_registry: Histograms, counters, etc. to update on various threadpool events.
 //    Default: not set.
 //
 class ThreadPoolBuilder {
@@ -129,7 +129,7 @@ private:
 // 2. CONCURRENT: submitted tasks may be run in parallel. This isn't unlike
 //    tasks submitted without a token, but the logical grouping that tokens
 //    impart can be useful when a pool is shared by many contexts (e.g. to
-//    safely shut down one context, to derive context-specific metrics, etc.).
+//    safely shut down one context, to derive context-specific metric_registry, etc.).
 //
 // Tasks submitted without a token or via ExecutionMode::CONCURRENT tokens are
 // processed in FIFO order. On the other hand, ExecutionMode::SERIAL tokens are

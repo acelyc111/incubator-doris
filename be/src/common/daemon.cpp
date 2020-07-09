@@ -116,7 +116,7 @@ void* memory_maintenance_thread(void* dummy) {
 }
 
 /*
- * this thread will calculate some metrics at a fix interval(15 sec)
+ * this thread will calculate some metric_registry at a fix interval(15 sec)
  * 1. push bytes per second
  * 2. scan bytes per second
  * 3. max io util of all disks
@@ -133,7 +133,7 @@ void* calculate_metrics(void* dummy) {
     std::map<std::string, int64_t> lst_net_receive_bytes;
 
     while (true) {
-        DorisMetrics::instance()->metrics()->trigger_hook();
+        DorisMetrics::instance()->metric_registry()->trigger_hook();
 
         if (last_ts == -1L) {
             last_ts = GetCurrentTimeMicros() / 1000;

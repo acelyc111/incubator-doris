@@ -35,12 +35,12 @@ public:
     SystemMetrics();
     ~SystemMetrics();
 
-    // install system metrics to registry
+    // install system metric_registry to registry
     void install(MetricRegistry* registry,
                  const std::set<std::string>& disk_devices,
                  const std::vector<std::string>& network_interfaces);
 
-    // update metrics
+    // update metric_registry
     void update();
 
     void get_disks_io_time(std::map<std::string, int64_t>* map);

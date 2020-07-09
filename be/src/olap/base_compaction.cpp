@@ -54,7 +54,7 @@ OLAPStatus BaseCompaction::compact() {
     // 4. add metric to base compaction
     DorisMetrics::instance()->base_compaction_deltas_total.increment(_input_rowsets.size());
     DorisMetrics::instance()->base_compaction_bytes_total.increment(_input_rowsets_size);
-    TRACE("save base compaction metrics");
+    TRACE("save base compaction metric_registry");
 
     // 5. garbage collect input rowsets after base compaction 
     RETURN_NOT_OK(gc_unused_rowsets());

@@ -182,7 +182,7 @@ struct BlockManagerOptions {
     // If NULL, new memory trackers will be parented to the root tracker.
     std::shared_ptr<MemTracker> parent_mem_tracker;
 
-    // If false, metrics will not be produced.
+    // If false, metric_registry will not be produced.
     bool enable_metric = false;
 
     // Whether the block manager should only allow reading. Defaults to false.

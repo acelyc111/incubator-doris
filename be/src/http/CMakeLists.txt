@@ -58,7 +58,7 @@ add_library(Webserver STATIC
 #ADD_BE_TEST(runtime-profile-test)
 #ADD_BE_TEST(benchmark-test)
 #ADD_BE_TEST(decompress-test)
-#ADD_BE_TEST(metrics-test)
+#ADD_BE_TEST(metric_registry-test)
 #ADD_BE_TEST(debug-util-test)
 #ADD_BE_TEST(url-coding-test)
 #ADD_BE_TEST(thrift-util-test)

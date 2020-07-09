@@ -45,7 +45,7 @@ void TestEnv::init_metrics() {
 
 void TestEnv::init_tmp_file_mgr(const std::vector<std::string>& tmp_dirs,
         bool one_dir_per_device) {
-    // Need to recreate metrics to avoid error when registering metric twice.
+    // Need to recreate metric_registry to avoid error when registering metric twice.
     init_metrics();
     _tmp_file_mgr.reset(new TmpFileMgr());
     _tmp_file_mgr->init_custom(tmp_dirs, one_dir_per_device, _metrics.get());
