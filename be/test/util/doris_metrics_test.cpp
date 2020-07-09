@@ -83,7 +83,7 @@ TEST_F(DorisMetricsTest, Normal) {
     // check metric
     {
         DorisMetrics::instance()->fragment_requests_total.increment(12);
-        auto metric = metrics->get_metric("fragment_requests_total");
+        auto metric = metrics->get_entity("server")->get_metric("fragment_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("12", metric->to_string().c_str());
     }

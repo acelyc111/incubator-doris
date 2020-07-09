@@ -377,6 +377,7 @@ public:
 
     MetricEntity* register_entity(const std::string& name, const AttributeMap& attributes);
     void deregister_entity(const std::string& name);
+    const std::shared_ptr<MetricEntity>& get_entity(const std::string& name);
 
     bool register_metric(const std::string& name, Metric* metric) {
         return register_metric(name, MetricLabels::EmptyLabels, metric);

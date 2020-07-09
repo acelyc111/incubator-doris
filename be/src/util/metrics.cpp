@@ -163,6 +163,15 @@ void MetricRegistry::deregister_entity(const std::string& name) {
     _entities.erase(name);
 }
 
+const std::shared_ptr<MetricEntity>& MetricRegistry::get_entity(const std::string& name) {
+    std::lock_guard<SpinLock> l(_lock);
+    auto entity = _entities.find(name);
+    if (entity == _entities.end()) {
+        return nullptr;
+    }
+    return entity->second;
+}
+
 bool MetricRegistry::register_metric(const std::string& name,
                                      const MetricLabels& labels,
                                      Metric* metric) {
