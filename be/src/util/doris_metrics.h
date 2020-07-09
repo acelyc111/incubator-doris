@@ -60,6 +60,7 @@ public:
 	IntCounter http_request_send_bytes;
 	IntCounter query_scan_bytes;
 	IntCounter query_scan_rows;
+
 	IntCounter push_requests_success_total;
 	IntCounter push_requests_fail_total;
 	IntCounter push_request_duration_us;
@@ -120,8 +121,8 @@ public:
 	IntCounter txn_exec_plan_total;
 	IntCounter stream_receive_bytes_total;
 	IntCounter stream_load_rows_total;
-	IntCounter load_rows_total;
-	IntCounter load_bytes_total;
+	IntCounter load_rows;
+	IntCounter load_bytes;
 
 	IntCounter memtable_flush_total;
 	IntCounter memtable_flush_duration_us;

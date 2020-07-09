@@ -34,59 +34,71 @@ DEFINE_COUNTER_METRIC(http_requests_total, MetricUnit::REQUESTS);
 DEFINE_COUNTER_METRIC(http_request_send_bytes, MetricUnit::BYTES);
 DEFINE_COUNTER_METRIC(query_scan_bytes, MetricUnit::BYTES);
 DEFINE_COUNTER_METRIC(query_scan_rows, MetricUnit::ROWS);
-DEFINE_COUNTER_METRIC(push_requests_success_total, MetricUnit::REQUESTS, "", {{"status", "SUCCESS"}});
-DEFINE_COUNTER_METRIC(push_requests_fail_total, MetricUnit::REQUESTS, "", {{"status", "FAIL"}});
+DEFINE_COUNTER_METRIC(push_requests_success_total, MetricUnit::REQUESTS, "", push_requests_total, {{"status", "SUCCESS"}});
+DEFINE_COUNTER_METRIC(push_requests_fail_total, MetricUnit::REQUESTS, "", push_requests_total, {{"status", "FAIL"}});
 DEFINE_COUNTER_METRIC(push_request_duration_us, MetricUnit::MICROSECONDS);
 DEFINE_COUNTER_METRIC(push_request_write_bytes, MetricUnit::BYTES);
 DEFINE_COUNTER_METRIC(push_request_write_rows, MetricUnit::ROWS);
-DEFINE_COUNTER_METRIC(create_tablet_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(create_tablet_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(drop_tablet_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(report_all_tablets_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(report_all_tablets_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(report_tablet_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(report_tablet_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(report_disk_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(report_disk_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(report_task_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(report_task_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(schema_change_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(schema_change_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(create_rollup_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(create_rollup_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(storage_migrate_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(delete_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(delete_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(clone_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(clone_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(finish_task_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(finish_task_requests_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(base_compaction_request_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(base_compaction_request_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(cumulative_compaction_request_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(cumulative_compaction_request_failed, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(base_compaction_deltas_total, MetricUnit::ROWSETS);
-DEFINE_COUNTER_METRIC(base_compaction_bytes_total, MetricUnit::BYTES);
-DEFINE_COUNTER_METRIC(cumulative_compaction_deltas_total, MetricUnit::ROWSETS);
-DEFINE_COUNTER_METRIC(cumulative_compaction_bytes_total, MetricUnit::BYTES);
-DEFINE_COUNTER_METRIC(publish_task_request_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(publish_task_failed_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(meta_write_request_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(meta_write_request_duration_us, MetricUnit::MICROSECONDS);
-DEFINE_COUNTER_METRIC(meta_read_request_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(meta_read_request_duration_us, MetricUnit::MICROSECONDS);
-DEFINE_COUNTER_METRIC(segment_read_total, MetricUnit::OPERATIONS, "(segment_v2) total number of segments read");
-DEFINE_COUNTER_METRIC(segment_row_total, MetricUnit::ROWS, "(segment_v2) total number of rows in queried segments (before index pruning)");
-DEFINE_COUNTER_METRIC(segment_rows_by_short_key, MetricUnit::ROWS, "(segment_v2) total number of rows selected by short key index");
-DEFINE_COUNTER_METRIC(segment_rows_read_by_zone_map, MetricUnit::ROWS, "(segment_v2) total number of rows selected by zone map index");
-DEFINE_COUNTER_METRIC(txn_begin_request_total, MetricUnit::OPERATIONS);
-DEFINE_COUNTER_METRIC(txn_commit_request_total, MetricUnit::OPERATIONS);
-DEFINE_COUNTER_METRIC(txn_rollback_request_total, MetricUnit::OPERATIONS);
-DEFINE_COUNTER_METRIC(txn_exec_plan_total, MetricUnit::OPERATIONS);
-DEFINE_COUNTER_METRIC(stream_receive_bytes_total, MetricUnit::BYTES);
-DEFINE_COUNTER_METRIC(stream_load_rows_total, MetricUnit::ROWS);
-DEFINE_COUNTER_METRIC(load_rows_total, MetricUnit::ROWS);
-DEFINE_COUNTER_METRIC(load_bytes_total, MetricUnit::BYTES);
+
+#define DEFINE_ENGINE_COUNTER_METRIC(name, type, status, desc)  \
+    DEFINE_COUNTER_METRIC(name, MetricUnit::REQUESTS, desc, "engine_requests_total", {{"type", #type}, {"status", #status}});
+
+DEFINE_ENGINE_COUNTER_METRIC(create_tablet_requests_total, create_tablet, total);
+DEFINE_ENGINE_COUNTER_METRIC(create_tablet_requests_failed, create_tablet, failed);
+DEFINE_ENGINE_COUNTER_METRIC(drop_tablet_requests_total, drop_tablet, total);
+DEFINE_ENGINE_COUNTER_METRIC(report_all_tablets_requests_total, report_all_tablets, total);
+DEFINE_ENGINE_COUNTER_METRIC(report_all_tablets_requests_failed, report_all_tablets, failed);
+DEFINE_ENGINE_COUNTER_METRIC(report_tablet_requests_total, report_tablet, total);
+DEFINE_ENGINE_COUNTER_METRIC(report_tablet_requests_failed, report_tablet, failed);
+DEFINE_ENGINE_COUNTER_METRIC(report_disk_requests_total, report_disk, total);
+DEFINE_ENGINE_COUNTER_METRIC(report_disk_requests_failed, report_disk, failed);
+DEFINE_ENGINE_COUNTER_METRIC(report_task_requests_total, report_task, total);
+DEFINE_ENGINE_COUNTER_METRIC(report_task_requests_failed, report_task, failed);
+DEFINE_ENGINE_COUNTER_METRIC(schema_change_requests_total, schema_change, total);
+DEFINE_ENGINE_COUNTER_METRIC(schema_change_requests_failed, schema_change, failed);
+DEFINE_ENGINE_COUNTER_METRIC(create_rollup_requests_total, create_rollup, total);
+DEFINE_ENGINE_COUNTER_METRIC(create_rollup_requests_failed, create_rollup, failed);
+DEFINE_ENGINE_COUNTER_METRIC(storage_migrate_requests_total, storage_migrate, total);
+DEFINE_ENGINE_COUNTER_METRIC(delete_requests_total, delete, total);
+DEFINE_ENGINE_COUNTER_METRIC(delete_requests_failed, delete, failed);
+DEFINE_ENGINE_COUNTER_METRIC(clone_requests_total, clone, total);
+DEFINE_ENGINE_COUNTER_METRIC(clone_requests_failed, clone, failed);
+DEFINE_ENGINE_COUNTER_METRIC(finish_task_requests_total, finish_task, total);
+DEFINE_ENGINE_COUNTER_METRIC(finish_task_requests_failed, finish_task, failed);
+DEFINE_ENGINE_COUNTER_METRIC(base_compaction_request_total, base_compaction, total);
+DEFINE_ENGINE_COUNTER_METRIC(base_compaction_request_failed, base_compaction, failed);
+DEFINE_ENGINE_COUNTER_METRIC(cumulative_compaction_request_total, cumulative_compaction, total);
+DEFINE_ENGINE_COUNTER_METRIC(cumulative_compaction_request_failed, cumulative_compaction, failed);
+DEFINE_ENGINE_COUNTER_METRIC(publish_task_request_total, publish, total);
+DEFINE_ENGINE_COUNTER_METRIC(publish_task_failed_total, publish, failed);
+
+DEFINE_COUNTER_METRIC(base_compaction_deltas_total, MetricUnit::ROWSETS, "", compaction_deltas_total, {{"type", "base"}});
+DEFINE_COUNTER_METRIC(cumulative_compaction_deltas_total, MetricUnit::ROWSETS, "", compaction_deltas_total, {{"type", "cumulative"}});
+DEFINE_COUNTER_METRIC(base_compaction_bytes_total, MetricUnit::BYTES, "", compaction_bytes_total, {{"type", "base"}});
+DEFINE_COUNTER_METRIC(cumulative_compaction_bytes_total, MetricUnit::BYTES, "", compaction_bytes_total, {{"type", "cumulative"}});
+
+DEFINE_COUNTER_METRIC(meta_write_request_total, MetricUnit::REQUESTS, "", meta_request_total, {{"type", "write"}});
+DEFINE_COUNTER_METRIC(meta_read_request_total, MetricUnit::REQUESTS, "", meta_request_total, {{"type", "read"}});
+
+DEFINE_COUNTER_METRIC(meta_write_request_duration_us, MetricUnit::MICROSECONDS, "", meta_request_duration, {{"type", "write"}});
+DEFINE_COUNTER_METRIC(meta_read_request_duration_us, MetricUnit::MICROSECONDS, "", meta_request_duration, {{"type", "read"}});
+
+DEFINE_COUNTER_METRIC(segment_read_total, MetricUnit::OPERATIONS, "(segment_v2) total number of segments read", segment_read, {{"type", "segment_total_read_times"}});
+DEFINE_COUNTER_METRIC(segment_row_total, MetricUnit::ROWS, "(segment_v2) total number of rows in queried segments (before index pruning)", segment_read, {{"type", "segment_total_row_num"}});
+DEFINE_COUNTER_METRIC(segment_rows_by_short_key, MetricUnit::ROWS, "(segment_v2) total number of rows selected by short key index", segment_read, {{"type", "segment_rows_by_short_key"}});
+DEFINE_COUNTER_METRIC(segment_rows_read_by_zone_map, MetricUnit::ROWS, "(segment_v2) total number of rows selected by zone map index", segment_read, {{"type", "segment_rows_read_by_zone_map"}});
+
+DEFINE_COUNTER_METRIC(txn_begin_request_total, MetricUnit::OPERATIONS, "", txn_request, {{"type", "begin"}});
+DEFINE_COUNTER_METRIC(txn_commit_request_total, MetricUnit::OPERATIONS, "", txn_request, {{"type", "commit"}});
+DEFINE_COUNTER_METRIC(txn_rollback_request_total, MetricUnit::OPERATIONS, "", txn_request, {{"type", "rollback"}});
+DEFINE_COUNTER_METRIC(txn_exec_plan_total, MetricUnit::OPERATIONS, "", txn_request, {{"type", "exec"}});
+
+DEFINE_COUNTER_METRIC(stream_receive_bytes_total, MetricUnit::BYTES, "", stream_load, {{"type", "receive_bytes"}});
+DEFINE_COUNTER_METRIC(stream_load_rows_total, MetricUnit::ROWS, "", stream_load, {{"type", "load_rows"}});
+
+DEFINE_COUNTER_METRIC(load_rows, MetricUnit::ROWS);
+DEFINE_COUNTER_METRIC(load_bytes, MetricUnit::BYTES);
+
 DEFINE_COUNTER_METRIC(memtable_flush_total, MetricUnit::OPERATIONS);
 DEFINE_COUNTER_METRIC(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
 
@@ -141,15 +153,17 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, http_request_send_bytes);
     METRIC_REGISTER(_server_metric_entity, query_scan_bytes);
     METRIC_REGISTER(_server_metric_entity, query_scan_rows);
+
     METRIC_REGISTER(_server_metric_entity, push_requests_success_total);
     METRIC_REGISTER(_server_metric_entity, push_requests_fail_total);
     METRIC_REGISTER(_server_metric_entity, push_request_duration_us);
     METRIC_REGISTER(_server_metric_entity, push_request_write_bytes);
     METRIC_REGISTER(_server_metric_entity, push_request_write_rows);
+
+    // engine_requests_total
     METRIC_REGISTER(_server_metric_entity, create_tablet_requests_total);
     METRIC_REGISTER(_server_metric_entity, create_tablet_requests_failed);
     METRIC_REGISTER(_server_metric_entity, drop_tablet_requests_total);
-
     METRIC_REGISTER(_server_metric_entity, report_all_tablets_requests_total);
     METRIC_REGISTER(_server_metric_entity, report_all_tablets_requests_failed);
     METRIC_REGISTER(_server_metric_entity, report_tablet_requests_total);
@@ -158,7 +172,6 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, report_disk_requests_failed);
     METRIC_REGISTER(_server_metric_entity, report_task_requests_total);
     METRIC_REGISTER(_server_metric_entity, report_task_requests_failed);
-
     METRIC_REGISTER(_server_metric_entity, schema_change_requests_total);
     METRIC_REGISTER(_server_metric_entity, schema_change_requests_failed);
     METRIC_REGISTER(_server_metric_entity, create_rollup_requests_total);
@@ -168,22 +181,19 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, delete_requests_failed);
     METRIC_REGISTER(_server_metric_entity, clone_requests_total);
     METRIC_REGISTER(_server_metric_entity, clone_requests_failed);
-
     METRIC_REGISTER(_server_metric_entity, finish_task_requests_total);
     METRIC_REGISTER(_server_metric_entity, finish_task_requests_failed);
-
     METRIC_REGISTER(_server_metric_entity, base_compaction_request_total);
     METRIC_REGISTER(_server_metric_entity, base_compaction_request_failed);
     METRIC_REGISTER(_server_metric_entity, cumulative_compaction_request_total);
     METRIC_REGISTER(_server_metric_entity, cumulative_compaction_request_failed);
+    METRIC_REGISTER(_server_metric_entity, publish_task_request_total);
+    METRIC_REGISTER(_server_metric_entity, publish_task_failed_total);
 
     METRIC_REGISTER(_server_metric_entity, base_compaction_deltas_total);
     METRIC_REGISTER(_server_metric_entity, base_compaction_bytes_total);
     METRIC_REGISTER(_server_metric_entity, cumulative_compaction_deltas_total);
     METRIC_REGISTER(_server_metric_entity, cumulative_compaction_bytes_total);
-
-    METRIC_REGISTER(_server_metric_entity, publish_task_request_total);
-    METRIC_REGISTER(_server_metric_entity, publish_task_failed_total);
 
     METRIC_REGISTER(_server_metric_entity, meta_write_request_total);
     METRIC_REGISTER(_server_metric_entity, meta_write_request_duration_us);
@@ -201,8 +211,6 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, txn_exec_plan_total);
     METRIC_REGISTER(_server_metric_entity, stream_receive_bytes_total);
     METRIC_REGISTER(_server_metric_entity, stream_load_rows_total);
-    METRIC_REGISTER(_server_metric_entity, load_rows_total);
-    METRIC_REGISTER(_server_metric_entity, load_bytes_total);
 
     METRIC_REGISTER(_server_metric_entity, memtable_flush_total);
     METRIC_REGISTER(_server_metric_entity, memtable_flush_duration_us);
@@ -248,132 +256,10 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, brpc_endpoint_stub_count);
     METRIC_REGISTER(_server_metric_entity, tablet_writer_count);
 
-#define REGISTER_ENGINE_REQUEST_METRIC(type, status, metric) \
-    _metric_registry.register_metric( \
-        "engine_requests_total", MetricLabels().add("type", #type).add("status", #status), &metric)
-
-    REGISTER_ENGINE_REQUEST_METRIC(create_tablet, total, create_tablet_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(create_tablet, failed, create_tablet_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(drop_tablet, total, drop_tablet_requests_total);
-
-    REGISTER_ENGINE_REQUEST_METRIC(report_all_tablets, total, report_all_tablets_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_all_tablets, failed, report_all_tablets_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_tablet, total, report_tablet_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_tablet, failed, report_tablet_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_disk, total, report_disk_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_disk, failed, report_disk_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(report_task, total, report_task_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(report_task, failed, report_task_requests_failed);
-
-    REGISTER_ENGINE_REQUEST_METRIC(schema_change, total, schema_change_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(schema_change, failed, schema_change_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(create_rollup, total, create_rollup_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(create_rollup, failed, create_rollup_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(storage_migrate, total, storage_migrate_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(delete, total, delete_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(delete, failed, delete_requests_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(clone, total, clone_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(clone, failed, clone_requests_failed);
-
-    REGISTER_ENGINE_REQUEST_METRIC(finish_task, total, finish_task_requests_total);
-    REGISTER_ENGINE_REQUEST_METRIC(finish_task, failed, finish_task_requests_failed);
-
-    REGISTER_ENGINE_REQUEST_METRIC(base_compaction, total, base_compaction_request_total);
-    REGISTER_ENGINE_REQUEST_METRIC(base_compaction, failed, base_compaction_request_failed);
-    REGISTER_ENGINE_REQUEST_METRIC(cumulative_compaction, total, cumulative_compaction_request_total);
-    REGISTER_ENGINE_REQUEST_METRIC(cumulative_compaction, failed, cumulative_compaction_request_failed);
-
-    REGISTER_ENGINE_REQUEST_METRIC(publish, total, publish_task_request_total);
-    REGISTER_ENGINE_REQUEST_METRIC(publish, failed, publish_task_failed_total);
-
-    _metric_registry.register_metric(
-        "compaction_deltas_total", MetricLabels().add("type", "base"),
-        &base_compaction_deltas_total);
-    _metric_registry.register_metric(
-        "compaction_deltas_total", MetricLabels().add("type", "cumulative"),
-        &cumulative_compaction_deltas_total);
-    _metric_registry.register_metric(
-        "compaction_bytes_total", MetricLabels().add("type", "base"),
-        &base_compaction_bytes_total);
-    _metric_registry.register_metric(
-        "compaction_bytes_total", MetricLabels().add("type", "cumulative"),
-        &cumulative_compaction_bytes_total);
-
-    _metric_registry.register_metric(
-        "meta_request_total", MetricLabels().add("type", "write"),
-        &meta_write_request_total);
-    _metric_registry.register_metric(
-        "meta_request_total", MetricLabels().add("type", "read"),
-        &meta_read_request_total);
-    _metric_registry.register_metric(
-        "meta_request_duration", MetricLabels().add("type", "write"),
-        &meta_write_request_duration_us);
-    _metric_registry.register_metric(
-        "meta_request_duration", MetricLabels().add("type", "read"),
-        &meta_read_request_duration_us);
-
-    _metric_registry.register_metric(
-        "segment_read", MetricLabels().add("type", "segment_total_read_times"),
-        &segment_read_total);
-    _metric_registry.register_metric(
-        "segment_read", MetricLabels().add("type", "segment_total_row_num"),
-        &segment_row_total);
-    _metric_registry.register_metric(
-        "segment_read", MetricLabels().add("type", "segment_rows_by_short_key"),
-        &segment_rows_by_short_key);
-    _metric_registry.register_metric(
-        "segment_read", MetricLabels().add("type", "segment_rows_read_by_zone_map"),
-        &segment_rows_read_by_zone_map);
-
-    _metric_registry.register_metric(
-        "txn_request", MetricLabels().add("type", "begin"),
-        &txn_begin_request_total);
-    _metric_registry.register_metric(
-        "txn_request", MetricLabels().add("type", "commit"),
-        &txn_commit_request_total);
-    _metric_registry.register_metric(
-        "txn_request", MetricLabels().add("type", "rollback"),
-        &txn_rollback_request_total);
-    _metric_registry.register_metric(
-        "txn_request", MetricLabels().add("type", "exec"),
-        &txn_exec_plan_total);
-
-    _metric_registry.register_metric(
-        "stream_load", MetricLabels().add("type", "receive_bytes"),
-        &stream_receive_bytes_total);
-    _metric_registry.register_metric(
-        "stream_load", MetricLabels().add("type", "load_rows"),
-        &stream_load_rows_total);
-    _metric_registry.register_metric("load_rows", &load_rows_total);
-    _metric_registry.register_metric("load_bytes", &load_bytes_total);
-
-    // Gauge
-    REGISTER_DORIS_METRIC(memory_pool_bytes_total);
-    REGISTER_DORIS_METRIC(process_thread_num);
-    REGISTER_DORIS_METRIC(process_fd_num_used);
-    REGISTER_DORIS_METRIC(process_fd_num_limit_soft);
-    REGISTER_DORIS_METRIC(process_fd_num_limit_hard);
-
-    REGISTER_DORIS_METRIC(tablet_cumulative_max_compaction_score);
-    REGISTER_DORIS_METRIC(tablet_base_max_compaction_score);
-
-    REGISTER_DORIS_METRIC(push_request_write_bytes_per_second);
-    REGISTER_DORIS_METRIC(query_scan_bytes_per_second);
-    REGISTER_DORIS_METRIC(max_disk_io_util_percent);
-    REGISTER_DORIS_METRIC(max_network_send_bytes_rate);
-    REGISTER_DORIS_METRIC(max_network_receive_bytes_rate);
+    METRIC_REGISTER(_server_metric_entity, load_rows);
+    METRIC_REGISTER(_server_metric_entity, load_bytes);
 
     _metric_registry.register_hook(_hook_name, std::bind(&DorisMetrics::_update, this));
-
-    REGISTER_DORIS_METRIC(readable_blocks_total);
-    REGISTER_DORIS_METRIC(writable_blocks_total);
-    REGISTER_DORIS_METRIC(blocks_created_total);
-    REGISTER_DORIS_METRIC(blocks_deleted_total);
-    REGISTER_DORIS_METRIC(bytes_read_total);
-    REGISTER_DORIS_METRIC(bytes_written_total);
-    REGISTER_DORIS_METRIC(disk_sync_total);
-    REGISTER_DORIS_METRIC(blocks_open_reading);
-    REGISTER_DORIS_METRIC(blocks_open_writing);
 }
 
 void DorisMetrics::initialize(

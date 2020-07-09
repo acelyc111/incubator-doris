@@ -294,28 +294,31 @@ struct MetricPrototype {
                     MetricUnit unit_,
                     std::string name_,
                     std::string description_ = "",
+                    std::string group_name_ = "",
                     Labels labels = Labels())
         : type(type_),
           unit(unit_),
           name(std::move(name_)),
           description(std::move(description_)),
+          group_name(std::move(group_name_)),
           labels(std::move(labels)) {}
 
     MetricType type;
     MetricUnit unit;
     std::string name;
     std::string description;
+    std::string group_name;
     Labels labels;
 };
 
-#define DEFINE_METRIC(name, type, unit, desc)                         \
-    ::doris::MetricPrototype METRIC_##name(type, unit, #name, desc)
+#define DEFINE_METRIC(name, type, unit, desc, group, labels)      \
+    ::doris::MetricPrototype METRIC_##name(type, unit, #name, desc, group, labels)
 
-#define DEFINE_COUNTER_METRIC(name, unit, desc)                         \
-    ::doris::MetricPrototype METRIC_##name(MetricType::COUNTER, unit, #name, desc)
+#define DEFINE_COUNTER_METRIC(name, unit, desc, group, labels)    \
+    DEFINE_METRIC(MetricType::COUNTER, unit, #name, desc, #group, labels)
 
-#define DEFINE_GAUGE_METRIC(name, unit, desc)                         \
-    ::doris::MetricPrototype METRIC_##name(MetricType::GAUGE, unit, #name, desc)
+#define DEFINE_GAUGE_METRIC(name, unit, desc, group, labels)                     \
+    DEFINE_METRIC(MetricType::GAUGE, unit, #name, desc, group, labels)
 
 #define METRIC_REGISTER(entity, metric)                         \
     entity->register_metric(&METRIC_##metric, &metric)
