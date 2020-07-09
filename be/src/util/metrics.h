@@ -291,17 +291,17 @@ class MetricCollector;
 struct MetricPrototype {
     MetricPrototype(MetricType type_,
                     MetricUnit unit_,
-                    const char* name_,
-                    const char* description_)
+                    std::string name_,
+                    std::string description_)
         : type(type_),
           unit(unit_),
-          name(name_),
-          description(description_) {}
+          name(std::move(name_)),
+          description(std::move(description_)) {}
 
     MetricType type;
     MetricUnit unit;
-    const char* const name;
-    const char* const description;
+    std::string name;
+    std::string description;
 };
 
 #define METRIC_DEFINE(name, type, unit, desc)                         \
@@ -310,13 +310,13 @@ struct MetricPrototype {
 // For 'metrics' in MetricEntity.
 struct MetricPrototypeHash {
     size_t operator()(const MetricPrototype* metric_prototype) const {
-        return std::hash<const char*>()(metric_prototype->name);
+        return std::hash<std::string>()(metric_prototype->name);
     }
 };
 
 struct MetricPrototypeEqualTo {
     bool operator()(const MetricPrototype* first, const MetricPrototype* second) const {
-        return strcmp(first->name, second->name) == 0;
+        return first->name == second->name;
     }
 };
 
@@ -332,7 +332,7 @@ public:
 private:
     std::string _name;
     AttributeMap _attributes;
-    std::unordered_map<const MetricPrototype*, Metric*> _metrics;
+    std::unordered_map<const MetricPrototype*, Metric*, MetricPrototypeHash, MetricPrototypeEqualTo> _metrics;
 
     std::function<void()> _hook;
 };
@@ -377,7 +377,7 @@ public:
 
     MetricEntity* register_entity(const std::string& name, const AttributeMap& attributes);
     void deregister_entity(const std::string& name);
-    const std::shared_ptr<MetricEntity>& get_entity(const std::string& name);
+    std::shared_ptr<MetricEntity> get_entity(const std::string& name);
 
     bool register_metric(const std::string& name, Metric* metric) {
         return register_metric(name, MetricLabels::EmptyLabels, metric);

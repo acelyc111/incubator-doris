@@ -90,7 +90,7 @@ void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* m
 }
 
 Metric* MetricEntity::get_metric(const std::string& name) const {
-    MetricPrototype dummy(MetricType::UNTYPED, MetricUnit::NOUNIT, name.c_str(), "");
+    MetricPrototype dummy(MetricType::UNTYPED, MetricUnit::NOUNIT, name, "");
     auto it = _metrics.find(&dummy);
     if (it == _metrics.end()) {
         return nullptr;
@@ -163,11 +163,11 @@ void MetricRegistry::deregister_entity(const std::string& name) {
     _entities.erase(name);
 }
 
-const std::shared_ptr<MetricEntity>& MetricRegistry::get_entity(const std::string& name) {
+std::shared_ptr<MetricEntity> MetricRegistry::get_entity(const std::string& name) {
     std::lock_guard<SpinLock> l(_lock);
     auto entity = _entities.find(name);
     if (entity == _entities.end()) {
-        return nullptr;
+        return std::shared_ptr<MetricEntity>();
     }
     return entity->second;
 }
