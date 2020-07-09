@@ -307,6 +307,9 @@ struct MetricPrototype {
 #define METRIC_DEFINE(name, type, unit, desc)                         \
     ::doris::MetricPrototype METRIC_##name(type, unit, #name, desc)
 
+#define METRIC_REGISTER(entity, metric)                         \
+    entity->register_metric(&METRIC_##metric, &metric)
+
 // For 'metrics' in MetricEntity.
 struct MetricPrototypeHash {
     size_t operator()(const MetricPrototype* metric_prototype) const {

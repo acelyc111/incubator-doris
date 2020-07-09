@@ -33,7 +33,7 @@ METRIC_DEFINE(fragment_requests_total, MetricType::COUNTER, MetricUnit::REQUESTS
 DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _metric_registry(_name) {
     _server_metric_entity = _metric_registry.register_entity("server", {});
 
-    _server_metric_entity->register_metric(&METRIC_fragment_requests_total, &fragment_requests_total);
+    METRIC_REGISTER(_server_metric_entity, fragment_requests_total);
 
 #define REGISTER_DORIS_METRIC(name) _metric_registry.register_metric(#name, &name)
     // You can put DorisMetrics's metrics initial code here
