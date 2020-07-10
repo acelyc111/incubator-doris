@@ -276,7 +276,8 @@ ThriftServer::ThriftServer(
             _server(NULL),
             _processor(processor),
             _session_handler(NULL) {
-    if (DorisMetrics::instance()->metric_registry()) {
+    // TODO(yingchun): when to disable?
+    if (true) {
         _metrics_enabled = true;
 
         // TODO(yingchun): these metrics are not compaitable with old versions

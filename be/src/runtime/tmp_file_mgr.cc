@@ -62,7 +62,7 @@ Status TmpFileMgr::init() {
     for (auto& path : _exec_env->store_paths()) {
         all_tmp_dirs.emplace_back(path.path);
     }
-    return init_custom(all_tmp_dirs);
+    return init_custom(all_tmp_dirs, true);
 }
 
 Status TmpFileMgr::init_custom(const vector<string>& tmp_dirs, bool one_dir_per_device) {
