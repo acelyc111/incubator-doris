@@ -175,6 +175,8 @@ public:
 	UIntGauge brpc_endpoint_stub_count;
 	UIntGauge tablet_writer_count;
 
+    UIntGauge active_scratch_dirs;
+
     static DorisMetrics* instance() {
         static DorisMetrics instance;
         return &instance;

@@ -144,6 +144,8 @@ DEFINE_GAUGE_METRIC(stream_load_pipe_count, MetricUnit::NOUNIT);
 DEFINE_GAUGE_METRIC(brpc_endpoint_stub_count, MetricUnit::NOUNIT);
 DEFINE_GAUGE_METRIC(tablet_writer_count, MetricUnit::NOUNIT);
 
+DEFINE_GAUGE_METRIC(active_scratch_dirs, MetricUnit::NOUNIT);
+
 DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _metric_registry(_name) {
     _server_metric_entity = _metric_registry.register_entity("server", {});
 
@@ -255,6 +257,8 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, stream_load_pipe_count);
     METRIC_REGISTER(_server_metric_entity, brpc_endpoint_stub_count);
     METRIC_REGISTER(_server_metric_entity, tablet_writer_count);
+
+    METRIC_REGISTER(_server_metric_entity, active_scratch_dirs);
 
     METRIC_REGISTER(_server_metric_entity, load_rows);
     METRIC_REGISTER(_server_metric_entity, load_bytes);

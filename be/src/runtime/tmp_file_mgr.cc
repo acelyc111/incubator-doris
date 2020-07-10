@@ -56,18 +56,16 @@ const std::string TMP_FILE_MGR_ACTIVE_SCRATCH_DIRS_LIST = "tmp_file_mgr.active_s
 
 TmpFileMgr::TmpFileMgr(ExecEnv* exec_env) :
         _exec_env(exec_env), _initialized(false), _dir_status_lock(), _tmp_dirs() { }
-        // _num_active_scratch_dirs_metric(NULL), _active_scratch_dirs_metric(NULL) {}
 
-Status TmpFileMgr::init(MetricRegistry* metrics) {
+Status TmpFileMgr::init() {
     vector<string> all_tmp_dirs;
     for (auto& path : _exec_env->store_paths()) {
         all_tmp_dirs.emplace_back(path.path);
     }
-    return init_custom(all_tmp_dirs, true, metrics);
+    return init_custom(all_tmp_dirs);
 }
 
-Status TmpFileMgr::init_custom(
-        const vector<string>& tmp_dirs, bool one_dir_per_device, MetricRegistry* metrics) {
+Status TmpFileMgr::init_custom(const vector<string>& tmp_dirs, bool one_dir_per_device) {
     DCHECK(!_initialized);
     if (tmp_dirs.empty()) {
         LOG(WARNING) << "Running without spill to disk: no scratch directories provided.";
@@ -118,19 +116,8 @@ Status TmpFileMgr::init_custom(
         }
     }
 
-    DCHECK(metrics != NULL);
-    _num_active_scratch_dirs_metric.reset(new IntGauge(MetricUnit::NOUNIT));
-    metrics->register_metric("active_scratch_dirs", _num_active_scratch_dirs_metric.get());
-    //_active_scratch_dirs_metric = metrics->register_metric(new SetMetric<std::string>(
-    //        TMP_FILE_MGR_ACTIVE_SCRATCH_DIRS_LIST,
-    //        std::set<std::string>()));
-    // TODO(zc):
-    // _active_scratch_dirs_metric = SetMetric<string>::CreateAndRegister(
-    // metrics, TMP_FILE_MGR_ACTIVE_SCRATCH_DIRS_LIST, std::set<std::string>());
+    _num_active_scratch_dirs_metric = static_cast<IntGauge*>(DorisMetrics::instance()->metric_registry()->get_entity("server")->get_metric("active_scratch_dirs"));
     _num_active_scratch_dirs_metric->set_value(_tmp_dirs.size());
-    // for (int i = 0; i < _tmp_dirs.size(); ++i) {
-    //     _active_scratch_dirs_metric->add(_tmp_dirs[i].path());
-    // }
 
     _initialized = true;
 
@@ -183,7 +170,6 @@ void TmpFileMgr::blacklist_device(DeviceId device_id) {
     }
     if (added) {
         _num_active_scratch_dirs_metric->increment(-1);
-        // _active_scratch_dirs_metric->remove(_tmp_dirs[device_id].path());
     }
 }
 

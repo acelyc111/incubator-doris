@@ -144,16 +144,16 @@ private:
     // True if metrics are enabled
     bool _metrics_enabled;
 
-    // Number of currently active connections
-    std::unique_ptr<IntGauge> _current_connections;
-
-    // Total connections made over the lifetime of this server
-    std::unique_ptr<IntCounter> _connections_total;
-
     // Helper class which monitors starting servers. Needs access to internal members, and
     // is not used outside of this class.
     class ThriftServerEventProcessor;
     friend class ThriftServerEventProcessor;
+
+    MetricEntity* _thrift_server_metric_entity;
+    // Number of currently active connections
+    IntGauge thrift_current_connections;
+    // Total connections made over the lifetime of this server
+    IntCounter thrift_connections_total;
 };
 
 }

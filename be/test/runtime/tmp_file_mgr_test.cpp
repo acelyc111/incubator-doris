@@ -70,7 +70,7 @@ protected:
 // at the expected file offsets and expands the temporary file to the correct size.
 TEST_F(TmpFileMgrTest, TestFileAllocation) {
     TmpFileMgr tmp_file_mgr;
-    EXPECT_TRUE(tmp_file_mgr.init(_metrics.get()).ok());
+    EXPECT_TRUE(tmp_file_mgr.init().ok());
     // Default configuration should give us one temporary device.
     EXPECT_EQ(1, tmp_file_mgr.num_active_tmp_devices());
     vector<TmpFileMgr::DeviceId> tmp_devices = tmp_file_mgr.active_tmp_devices();

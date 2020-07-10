@@ -34,6 +34,9 @@
 
 namespace doris {
 
+DEFINE_GAUGE_METRIC(thrift_used_clients, MetricUnit::NOUNIT, "Number of clients 'checked-out' from the cache");
+DEFINE_GAUGE_METRIC(thrift_opened_clients, MetricUnit::NOUNIT, "Total clients in the cache, including those in use");
+
 ClientCacheHelper::~ClientCacheHelper() {
     for (auto& it : _client_map) {
         delete it.second;
@@ -210,21 +213,17 @@ void ClientCacheHelper::test_shutdown() {
     }
 }
 
-void ClientCacheHelper::init_metrics(MetricRegistry* metrics, const std::string& key_prefix) {
+void ClientCacheHelper::init_metrics(const std::string& name) {
     DCHECK(metrics != NULL);
     // Not strictly needed if init_metrics is called before any cache
     // usage, but ensures that _metrics_enabled is published.
     boost::lock_guard<boost::mutex> lock(_lock);
 
-    _used_clients.reset(new IntGauge(MetricUnit::NOUNIT));
-    metrics->register_metric("thrift_used_clients",
-                             MetricLabels().add("name", key_prefix),
-                             _used_clients.get());
+    // TODO(yingchun): these metrics are not compaitable with old versions
+    _thrift_client_metric_entity = DorisMetrics::instance()->metric_registry()->register_entity(std::string("thrift_client.") + name, {});
+    METRIC_REGISTER(_thrift_client_metric_entity, thrift_used_clients);
+    METRIC_REGISTER(_thrift_client_metric_entity, thrift_opened_clients);
 
-    _opened_clients.reset(new IntGauge(MetricUnit::NOUNIT));
-    metrics->register_metric("thrift_opened_clients",
-                             MetricLabels().add("name", key_prefix),
-                             _opened_clients.get());
     _metrics_enabled = true;
 }
 

@@ -185,7 +185,6 @@ AgentStatus create_heartbeat_server(
             server_name,
             server_processor,
             server_port,
-            exec_env->metric_registry(),
             worker_thread_num);
     return DORIS_SUCCESS;
 }
