@@ -78,7 +78,7 @@ DataDir::DataDir(const std::string& path, int64_t capacity_bytes,
           _to_be_deleted(false),
           _current_shard(0),
           _meta(nullptr) {
-    _data_dir_metric_entity = DorisMetrics::instance()->metric_registry()->register_entity(path, {});
+    _data_dir_metric_entity = DorisMetrics::instance()->metric_registry()->register_entity(_path, {});
     METRIC_REGISTER(_data_dir_metric_entity, disks_total_capacity);
     METRIC_REGISTER(_data_dir_metric_entity, disks_avail_capacity);
     METRIC_REGISTER(_data_dir_metric_entity, disks_data_used_capacity);
@@ -86,6 +86,7 @@ DataDir::DataDir(const std::string& path, int64_t capacity_bytes,
 }
 
 DataDir::~DataDir() {
+    DorisMetrics::instance()->metric_registry()->deregister_entity(_path);
     delete _id_generator;
     delete _meta;
 }
