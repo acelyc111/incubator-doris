@@ -105,7 +105,7 @@ private:
     // All thread categorys, keyed on the category name.
     typedef std::map<std::string, ThreadCategory> ThreadCategoryMap;
 
-    // Protects _thread_categories and thread metric_registry.
+    // Protects _thread_categories and thread metrics.
     Mutex _lock;
 
     // All thread categorys that ever contained a thread, even if empty

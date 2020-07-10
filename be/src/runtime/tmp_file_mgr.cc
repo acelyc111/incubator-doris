@@ -121,12 +121,12 @@ Status TmpFileMgr::init_custom(
     DCHECK(metrics != NULL);
     _num_active_scratch_dirs_metric.reset(new IntGauge(MetricUnit::NOUNIT));
     metrics->register_metric("active_scratch_dirs", _num_active_scratch_dirs_metric.get());
-    //_active_scratch_dirs_metric = metric_registry->register_metric(new SetMetric<std::string>(
+    //_active_scratch_dirs_metric = metrics->register_metric(new SetMetric<std::string>(
     //        TMP_FILE_MGR_ACTIVE_SCRATCH_DIRS_LIST,
     //        std::set<std::string>()));
     // TODO(zc):
     // _active_scratch_dirs_metric = SetMetric<string>::CreateAndRegister(
-    // metric_registry, TMP_FILE_MGR_ACTIVE_SCRATCH_DIRS_LIST, std::set<std::string>());
+    // metrics, TMP_FILE_MGR_ACTIVE_SCRATCH_DIRS_LIST, std::set<std::string>());
     _num_active_scratch_dirs_metric->set_value(_tmp_dirs.size());
     // for (int i = 0; i < _tmp_dirs.size(); ++i) {
     //     _active_scratch_dirs_metric->add(_tmp_dirs[i].path());

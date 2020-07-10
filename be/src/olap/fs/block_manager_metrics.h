@@ -24,7 +24,7 @@ namespace fs {
 namespace internal {
 
 // TODO(lingbin): we should add a registry mechanism to Metrics, so that for
-// different BlockManager we can register different metric_registry.
+// different BlockManager we can register different metrics.
 struct BlockManagerMetrics {
     explicit BlockManagerMetrics();
 

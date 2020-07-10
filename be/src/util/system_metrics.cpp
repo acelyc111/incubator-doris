@@ -68,7 +68,7 @@ struct NetMetrics {
     METRIC_DEFINE_INT_LOCK_COUNTER(send_packets, MetricUnit::PACKETS);
 };
 
-// metric_registry read from /proc/net/snmp
+// metrics read from /proc/net/snmp
 struct SnmpMetrics {
     // The number of all problematic TCP packets received
     METRIC_DEFINE_INT_LOCK_COUNTER(tcp_in_errs, MetricUnit::NOUNIT);
@@ -279,7 +279,7 @@ void SystemMetrics::_update_disk_metrics() {
         if (it == std::end(_disk_metrics)) {
             continue;
         }
-        // update disk metric_registry
+        // update disk metrics
         // reads_completed: 4 reads completed successfully
         it->second->reads_completed.set_value(values[0]);
         // bytes_read: 6 sectors read * 512; 5 reads merged is ignored
@@ -466,7 +466,7 @@ void SystemMetrics::_update_snmp_metrics() {
         header_map.emplace(h, pos++);
     }
 
-    // read the metric_registry of TCP
+    // read the metrics of TCP
     if (getline(&_line_ptr, &_line_buf_size, fp) < 0) {
         char buf[64];
         LOG(WARNING) << "failed to skip Tcp header line of /proc/net/snmp, errno=" << errno
@@ -479,7 +479,7 @@ void SystemMetrics::_update_snmp_metrics() {
     // Tcp: 1 200 120000 -1 47849374 38601877 3353843 2320314 276 1033354613 1166025166 825439 12694 23238924 0
     std::vector<std::string> metrics = strings::Split(_line_ptr, " ");
     if (metrics.size() != headers.size()) {
-        LOG(WARNING) << "invalid tcp metric_registry line: " << _line_ptr;
+        LOG(WARNING) << "invalid tcp metrics line: " << _line_ptr;
         fclose(fp);
         return;
     }

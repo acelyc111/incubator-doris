@@ -374,7 +374,7 @@ namespace config {
     // to forward compatibility, will be removed later
     CONF_mBool(enable_token_check, "true");
 
-    // to open/close system metric_registry
+    // to open/close system metrics
     CONF_Bool(enable_system_metrics, "true");
 
     CONF_mBool(enable_prefetch, "true");

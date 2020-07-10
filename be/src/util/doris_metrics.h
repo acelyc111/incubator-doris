@@ -139,7 +139,7 @@ public:
 	IntGauge tablet_cumulative_max_compaction_score;
 	IntGauge tablet_base_max_compaction_score;
 
-	// The following metric_registry will be calculated
+	// The following metrics will be calculated
 	// by metric calculator
 	IntGauge push_request_write_bytes_per_second;
 	IntGauge query_scan_bytes_per_second;
@@ -180,7 +180,7 @@ public:
         return &instance;
     }
 
-    // not thread-safe, call before calling metric_registry
+    // not thread-safe, call before calling metrics
     void initialize(
         const std::vector<std::string>& paths = std::vector<std::string>(),
         bool init_system_metrics = false,

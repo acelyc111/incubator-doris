@@ -89,7 +89,7 @@ public:
     /// Closes this MemTracker. After closing it is invalid to consume memory on this
     /// tracker and the tracker's consumption counter (which may be owned by a
     /// RuntimeProfile, not this MemTracker) can be safely destroyed. MemTrackers without
-    /// consumption metric_registry in the context of a daemon must always be closed.
+    /// consumption metrics in the context of a daemon must always be closed.
     /// Idempotent: calling multiple times has no effect.
     void close();
 
@@ -326,7 +326,7 @@ public:
     /// Note that 'f' must be valid for the lifetime of this MemTracker.
     void AddGcFunction(GcFunction f);
 
-    /// Register this MemTracker's metric_registry. Each key will be of the form
+    /// Register this MemTracker's metrics. Each key will be of the form
     /// "<prefix>.<metric name>".
     void RegisterMetrics(MetricRegistry* metrics, const std::string& prefix);
 
@@ -395,7 +395,7 @@ private:
 
     /// If consumption is higher than max_consumption, attempts to free memory by calling
     /// any added GC functions.  Returns true if max_consumption is still exceeded. Takes
-    /// gc_lock. Updates metric_registry if initialized.
+    /// gc_lock. Updates metrics if initialized.
     bool GcMemory(int64_t max_consumption);
 
     // Walks the MemTracker hierarchy and populates _all_trackers and _limit_trackers

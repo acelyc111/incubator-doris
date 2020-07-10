@@ -45,7 +45,7 @@ struct PageReadOptions {
     PagePointer page_pointer;
     // decompressor for page body (null means page body is not compressed)
     const BlockCompressionCodec* codec = nullptr;
-    // used to collect IO metric_registry
+    // used to collect IO metrics
     OlapReaderStatistics* stats = nullptr;
     // whether to verify page checksum
     bool verify_checksum = true;

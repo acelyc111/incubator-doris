@@ -330,7 +330,7 @@ struct MetricPrototype {
 #define METRIC_REGISTER(entity, metric)                                 \
     entity->register_metric(&METRIC_##metric, &metric)
 
-// For 'metric_registry' in MetricEntity.
+// For 'metrics' in MetricEntity.
 struct MetricPrototypeHash {
     size_t operator()(const MetricPrototype* metric_prototype) const {
         return std::hash<std::string>()(metric_prototype->name);
@@ -381,7 +381,7 @@ public:
         return _metrics.empty();
     }
     Metric* get_metric(const MetricLabels& labels) const;
-    // get all metric_registry belong to this collector
+    // get all metrics belong to this collector
     void get_metrics(std::vector<Metric*>* metrics);
 
     const std::map<MetricLabels, Metric*>& metrics() const {

@@ -1112,7 +1112,6 @@ void TabletManager::update_root_path_info(std::map<string, DataDirInfo>* path_ma
             for (auto& tablet : instance.table_arr) {
                 ++(*tablet_count);
                 int64_t data_size = tablet->tablet_footprint();
-                // TODO(yingchun): add and tablet ref to datadir, then we can obtain tablets info by datadir directly
                 auto iter = path_map->find(tablet->data_dir()->path());
                 if (iter == path_map->end()) {
                     continue;

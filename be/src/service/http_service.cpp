@@ -88,7 +88,7 @@ Status HttpService::start() {
     // register pprof actions
     PprofActions::setup(_env, _ev_http_server.get());
 
-    // register metric_registry
+    // register metrics
     {
         auto action = new MetricsAction(DorisMetrics::instance()->metric_registry());
         _ev_http_server->register_handler(HttpMethod::GET, "/metric_registry", action);

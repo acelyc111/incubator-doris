@@ -189,12 +189,11 @@ private:
     // used in convert process
     bool _convert_old_data_success;
 
+    MetricEntity* _data_dir_metric_entity;
     IntGauge disks_total_capacity;
     IntGauge disks_avail_capacity;
     IntGauge disks_data_used_capacity;
     IntGauge disks_state;
-
-    MetricEntity* _data_dir_metric_entity;
 };
 
 } // namespace doris
