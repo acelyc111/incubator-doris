@@ -122,7 +122,7 @@ public:
 
     Status update_capacity();
 
-    void update_user_data_size(uint64_t size);
+    void update_user_data_size(int64_t size);
 
 private:
     std::string _cluster_id_path() const { return _path + CLUSTER_ID_PREFIX; }

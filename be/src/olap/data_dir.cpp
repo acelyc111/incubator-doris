@@ -319,7 +319,7 @@ void DataDir::health_check() {
             }
         }
     }
-    disks_state = _is_used;
+    disks_state.set_value(_is_used ? 1 : 0);
 }
 
 OLAPStatus DataDir::_read_and_write_test_file() {
@@ -903,16 +903,16 @@ Status DataDir::update_capacity() {
             "boost::filesystem::space failed");
     }
 
-    disks_total_capacity = _disk_capacity_bytes;
-    disks_avail_capacity = _available_bytes;
+    disks_total_capacity.set_value(_disk_capacity_bytes);
+    disks_avail_capacity.set_value(_available_bytes);
     LOG(INFO) << "path: " << _path << " total capacity: " << _disk_capacity_bytes
               << ", available capacity: " << _available_bytes;
 
     return Status::OK();
 }
 
-void DataDir::update_user_data_size(uint64_t size) {
-    disks_data_used_capacity = size;
+void DataDir::update_user_data_size(int64_t size) {
+    disks_data_used_capacity.set_value(size);
 }
 
 bool DataDir::reach_capacity_limit(int64_t incoming_data_size) {

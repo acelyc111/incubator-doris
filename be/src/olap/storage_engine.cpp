@@ -312,7 +312,7 @@ OLAPStatus StorageEngine::get_all_data_dir_info(vector<DataDirInfo>* data_dir_in
         std::lock_guard<std::mutex> l(_store_lock);
         auto data_dir = _store_map.find(path.first);
         DCHECK(data_dir != _store_map.end());
-        data_dir.second->update_user_data_size(data_used_capacity);
+        data_dir->second->update_user_data_size(path.second.data_used_capacity);
     }
 
     // add path info to data_dir_infos
