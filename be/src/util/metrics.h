@@ -314,13 +314,19 @@ struct MetricPrototype {
 #define DEFINE_METRIC(name, type, unit, desc, group, labels)      \
     ::doris::MetricPrototype METRIC_##name(type, unit, #name, desc, group, labels)
 
+#define DEFINE_COUNTER_METRIC(name, unit)                         \
+    DEFINE_METRIC(MetricType::COUNTER, unit, #name)
+
+#define DEFINE_COUNTER_METRIC(name, unit, desc)                   \
+    DEFINE_METRIC(MetricType::COUNTER, unit, #name, desc)
+
 #define DEFINE_COUNTER_METRIC(name, unit, desc, group, labels)    \
     DEFINE_METRIC(MetricType::COUNTER, unit, #name, desc, #group, labels)
 
-#define DEFINE_GAUGE_METRIC(name, unit, desc, group, labels)                     \
+#define DEFINE_GAUGE_METRIC(name, unit, desc, group, labels)      \
     DEFINE_METRIC(MetricType::GAUGE, unit, #name, desc, group, labels)
 
-#define METRIC_REGISTER(entity, metric)                         \
+#define METRIC_REGISTER(entity, metric)                           \
     entity->register_metric(&METRIC_##metric, &metric)
 
 // For 'metric_registry' in MetricEntity.

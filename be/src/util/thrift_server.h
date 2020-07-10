@@ -67,7 +67,7 @@ public:
     //  - name: human-readable name of this server. Should not contain spaces
     //  - processor: Thrift processor to handle RPCs
     //  - port: The port the server will listen for connections on
-    //  - metrics: if not NULL, the server will register metric_registry on this object
+    //  - metric_registry: if not NULL, the server will register metric_registry on this object
     //  - num_worker_threads: the number of worker threads to use in any thread pool
     //  - server_type: the type of IO strategy this server should employ
     ThriftServer(const std::string& name,

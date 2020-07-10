@@ -72,7 +72,7 @@ Status ExecEnv::init(ExecEnv* env, const std::vector<StorePath>& store_paths) {
 Status ExecEnv::_init(const std::vector<StorePath>& store_paths) {
     _store_paths = store_paths;
     _external_scan_context_mgr = new ExternalScanContextMgr(this);
-    _metrics = DorisMetrics::instance()->metric_registry();
+    _metric_registry = DorisMetrics::instance()->metric_registry();
     _stream_mgr = new DataStreamMgr();
     _result_mgr = new ResultBufferMgr();
     _result_queue_mgr = new ResultQueueMgr();
@@ -236,7 +236,7 @@ void ExecEnv::_destory() {
     delete _routine_load_task_executor;
     delete _external_scan_context_mgr;
     delete _heartbeat_flags;
-    _metrics = nullptr;
+    _metric_registry = nullptr;
 }
 
 void ExecEnv::destroy(ExecEnv* env) {

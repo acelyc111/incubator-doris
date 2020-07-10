@@ -28,6 +28,7 @@
 #include "gen_cpp/olap_file.pb.h"
 #include "olap/olap_common.h"
 #include "olap/rowset/rowset_id_generator.h"
+#include "util/metrics.h"
 #include "util/mutex.h"
 
 namespace doris {
@@ -188,10 +189,10 @@ private:
     // used in convert process
     bool _convert_old_data_success;
 
-    doris::IntGauge disks_total_capacity;
-    doris::IntGauge disks_avail_capacity;
-    doris::IntGauge disks_data_used_capacity;
-    doris::IntGauge disks_state;
+    IntGauge disks_total_capacity;
+    IntGauge disks_avail_capacity;
+    IntGauge disks_data_used_capacity;
+    IntGauge disks_state;
 
     MetricEntity* _data_dir_metric_entity;
 };

@@ -87,7 +87,7 @@ Status BackendService::create_service(ExecEnv* exec_env, int port, ThriftServer*
     *server = new ThriftServer("backend",
                                be_processor,
                                port,
-                               exec_env->metrics(),
+                               exec_env->metric_registry(),
                                config::be_service_threads);
 
     LOG(INFO) << "DorisInternalService listening on " << port;
