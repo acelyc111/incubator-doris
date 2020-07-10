@@ -84,6 +84,7 @@ public:
 private:
     friend class MetricRegistry;
 
+    // TODO: remove
     MetricType _type = MetricType::UNTYPED;
     MetricUnit _unit = MetricUnit::NOUNIT;
     MetricRegistry* _registry;
@@ -172,7 +173,7 @@ protected:
 template<typename T>
 class LockCounter : public LockSimpleMetric<T> {
 public:
-    LockCounter(MetricUnit unit)
+    LockCounter(MetricUnit unit = MetricUnit::NOUNIT)
       : LockSimpleMetric<T>(MetricType::COUNTER, unit) {}
     virtual ~LockCounter() { }
 };
@@ -181,7 +182,7 @@ public:
 template<typename T>
 class LockGauge : public LockSimpleMetric<T> {
 public:
-    LockGauge(MetricUnit unit)
+    LockGauge(MetricUnit unit = MetricUnit::NOUNIT)
       : LockSimpleMetric<T>(MetricType::GAUGE, unit) {}
     virtual ~LockGauge() { }
 };
@@ -311,22 +312,22 @@ struct MetricPrototype {
     Labels labels;
 };
 
-#define DEFINE_METRIC(name, type, unit, desc, group, labels)      \
+#define DEFINE_METRIC(name, type, unit, desc, group, labels)            \
     ::doris::MetricPrototype METRIC_##name(type, unit, #name, desc, group, labels)
 
-#define DEFINE_COUNTER_METRIC(name, unit)                         \
-    DEFINE_METRIC(MetricType::COUNTER, unit, #name)
+#define DEFINE_COUNTER_METRIC_2ARG(name, unit)                          \
+    DEFINE_METRIC(name, MetricType::COUNTER, unit, "", "", Labels())
 
-#define DEFINE_COUNTER_METRIC(name, unit, desc)                   \
-    DEFINE_METRIC(MetricType::COUNTER, unit, #name, desc)
+#define DEFINE_COUNTER_METRIC_3ARG(name, unit, desc)                    \
+    DEFINE_METRIC(name, MetricType::COUNTER, unit, #desc, "", Labels())
 
-#define DEFINE_COUNTER_METRIC(name, unit, desc, group, labels)    \
-    DEFINE_METRIC(MetricType::COUNTER, unit, #name, desc, #group, labels)
+#define DEFINE_COUNTER_METRIC_5ARG(name, unit, desc, group, labels)     \
+    DEFINE_METRIC(name, MetricType::COUNTER, unit, #desc, #group, labels)
 
-#define DEFINE_GAUGE_METRIC(name, unit, desc, group, labels)      \
-    DEFINE_METRIC(MetricType::GAUGE, unit, #name, desc, group, labels)
+#define DEFINE_GAUGE_METRIC(name, unit)                                 \
+    DEFINE_METRIC(name, MetricType::GAUGE, unit, "", "", Labels())
 
-#define METRIC_REGISTER(entity, metric)                           \
+#define METRIC_REGISTER(entity, metric)                                 \
     entity->register_metric(&METRIC_##metric, &metric)
 
 // For 'metric_registry' in MetricEntity.

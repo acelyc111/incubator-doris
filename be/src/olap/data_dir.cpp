@@ -55,10 +55,10 @@ using strings::Substitute;
 
 namespace doris {
 
-DEFINE_GAUGE_METRIC(disks_total_capacity, MetricUnit::BYTES, "");
-DEFINE_GAUGE_METRIC(disks_avail_capacity, MetricUnit::BYTES, "");
-DEFINE_GAUGE_METRIC(disks_data_used_capacity, MetricUnit::BYTES, "");
-DEFINE_GAUGE_METRIC(disks_state, MetricUnit::BYTES, "");
+DEFINE_GAUGE_METRIC(disks_total_capacity, MetricUnit::BYTES);
+DEFINE_GAUGE_METRIC(disks_avail_capacity, MetricUnit::BYTES);
+DEFINE_GAUGE_METRIC(disks_data_used_capacity, MetricUnit::BYTES);
+DEFINE_GAUGE_METRIC(disks_state, MetricUnit::BYTES);
 
 static const char* const kMtabPath = "/etc/mtab";
 static const char* const kTestFilePath = "/.testfile";

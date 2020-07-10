@@ -28,20 +28,20 @@
 
 namespace doris {
 
-DEFINE_COUNTER_METRIC(fragment_requests_total, MetricUnit::REQUESTS, "Total fragment requests received.");
-DEFINE_COUNTER_METRIC(fragment_request_duration_us, MetricUnit::MICROSECONDS);
-DEFINE_COUNTER_METRIC(http_requests_total, MetricUnit::REQUESTS);
-DEFINE_COUNTER_METRIC(http_request_send_bytes, MetricUnit::BYTES);
-DEFINE_COUNTER_METRIC(query_scan_bytes, MetricUnit::BYTES);
-DEFINE_COUNTER_METRIC(query_scan_rows, MetricUnit::ROWS);
-DEFINE_COUNTER_METRIC(push_requests_success_total, MetricUnit::REQUESTS, "", push_requests_total, {{"status", "SUCCESS"}});
-DEFINE_COUNTER_METRIC(push_requests_fail_total, MetricUnit::REQUESTS, "", push_requests_total, {{"status", "FAIL"}});
-DEFINE_COUNTER_METRIC(push_request_duration_us, MetricUnit::MICROSECONDS);
-DEFINE_COUNTER_METRIC(push_request_write_bytes, MetricUnit::BYTES);
-DEFINE_COUNTER_METRIC(push_request_write_rows, MetricUnit::ROWS);
+DEFINE_COUNTER_METRIC_3ARG(fragment_requests_total, MetricUnit::REQUESTS, "Total fragment requests received.");
+DEFINE_COUNTER_METRIC_2ARG(fragment_request_duration_us, MetricUnit::MICROSECONDS);
+DEFINE_COUNTER_METRIC_2ARG(http_requests_total, MetricUnit::REQUESTS);
+DEFINE_COUNTER_METRIC_2ARG(http_request_send_bytes, MetricUnit::BYTES);
+DEFINE_COUNTER_METRIC_2ARG(query_scan_bytes, MetricUnit::BYTES);
+DEFINE_COUNTER_METRIC_2ARG(query_scan_rows, MetricUnit::ROWS);
+DEFINE_COUNTER_METRIC_5ARG(push_requests_success_total, MetricUnit::REQUESTS, "", push_requests_total, Labels({{"status", "SUCCESS"}}));
+DEFINE_COUNTER_METRIC_5ARG(push_requests_fail_total, MetricUnit::REQUESTS, "", push_requests_total, Labels({{"status", "FAIL"}}));
+DEFINE_COUNTER_METRIC_2ARG(push_request_duration_us, MetricUnit::MICROSECONDS);
+DEFINE_COUNTER_METRIC_2ARG(push_request_write_bytes, MetricUnit::BYTES);
+DEFINE_COUNTER_METRIC_2ARG(push_request_write_rows, MetricUnit::ROWS);
 
-#define DEFINE_ENGINE_COUNTER_METRIC(name, type, status, desc)  \
-    DEFINE_COUNTER_METRIC(name, MetricUnit::REQUESTS, desc, "engine_requests_total", {{"type", #type}, {"status", #status}});
+#define DEFINE_ENGINE_COUNTER_METRIC(name, type, status)  \
+    DEFINE_COUNTER_METRIC_5ARG(name, MetricUnit::REQUESTS, "", "engine_requests_total", Labels({{"type", #type}, {"status", #status}}));
 
 DEFINE_ENGINE_COUNTER_METRIC(create_tablet_requests_total, create_tablet, total);
 DEFINE_ENGINE_COUNTER_METRIC(create_tablet_requests_failed, create_tablet, failed);
@@ -72,35 +72,35 @@ DEFINE_ENGINE_COUNTER_METRIC(cumulative_compaction_request_failed, cumulative_co
 DEFINE_ENGINE_COUNTER_METRIC(publish_task_request_total, publish, total);
 DEFINE_ENGINE_COUNTER_METRIC(publish_task_failed_total, publish, failed);
 
-DEFINE_COUNTER_METRIC(base_compaction_deltas_total, MetricUnit::ROWSETS, "", compaction_deltas_total, {{"type", "base"}});
-DEFINE_COUNTER_METRIC(cumulative_compaction_deltas_total, MetricUnit::ROWSETS, "", compaction_deltas_total, {{"type", "cumulative"}});
-DEFINE_COUNTER_METRIC(base_compaction_bytes_total, MetricUnit::BYTES, "", compaction_bytes_total, {{"type", "base"}});
-DEFINE_COUNTER_METRIC(cumulative_compaction_bytes_total, MetricUnit::BYTES, "", compaction_bytes_total, {{"type", "cumulative"}});
+DEFINE_COUNTER_METRIC_5ARG(base_compaction_deltas_total, MetricUnit::ROWSETS, "", compaction_deltas_total, Labels({{"type", "base"}}));
+DEFINE_COUNTER_METRIC_5ARG(cumulative_compaction_deltas_total, MetricUnit::ROWSETS, "", compaction_deltas_total, Labels({{"type", "cumulative"}}));
+DEFINE_COUNTER_METRIC_5ARG(base_compaction_bytes_total, MetricUnit::BYTES, "", compaction_bytes_total, Labels({{"type", "base"}}));
+DEFINE_COUNTER_METRIC_5ARG(cumulative_compaction_bytes_total, MetricUnit::BYTES, "", compaction_bytes_total, Labels({{"type", "cumulative"}}));
 
-DEFINE_COUNTER_METRIC(meta_write_request_total, MetricUnit::REQUESTS, "", meta_request_total, {{"type", "write"}});
-DEFINE_COUNTER_METRIC(meta_read_request_total, MetricUnit::REQUESTS, "", meta_request_total, {{"type", "read"}});
+DEFINE_COUNTER_METRIC_5ARG(meta_write_request_total, MetricUnit::REQUESTS, "", meta_request_total, Labels({{"type", "write"}}));
+DEFINE_COUNTER_METRIC_5ARG(meta_read_request_total, MetricUnit::REQUESTS, "", meta_request_total, Labels({{"type", "read"}}));
 
-DEFINE_COUNTER_METRIC(meta_write_request_duration_us, MetricUnit::MICROSECONDS, "", meta_request_duration, {{"type", "write"}});
-DEFINE_COUNTER_METRIC(meta_read_request_duration_us, MetricUnit::MICROSECONDS, "", meta_request_duration, {{"type", "read"}});
+DEFINE_COUNTER_METRIC_5ARG(meta_write_request_duration_us, MetricUnit::MICROSECONDS, "", meta_request_duration, Labels({{"type", "write"}}));
+DEFINE_COUNTER_METRIC_5ARG(meta_read_request_duration_us, MetricUnit::MICROSECONDS, "", meta_request_duration, Labels({{"type", "read"}}));
 
-DEFINE_COUNTER_METRIC(segment_read_total, MetricUnit::OPERATIONS, "(segment_v2) total number of segments read", segment_read, {{"type", "segment_total_read_times"}});
-DEFINE_COUNTER_METRIC(segment_row_total, MetricUnit::ROWS, "(segment_v2) total number of rows in queried segments (before index pruning)", segment_read, {{"type", "segment_total_row_num"}});
-DEFINE_COUNTER_METRIC(segment_rows_by_short_key, MetricUnit::ROWS, "(segment_v2) total number of rows selected by short key index", segment_read, {{"type", "segment_rows_by_short_key"}});
-DEFINE_COUNTER_METRIC(segment_rows_read_by_zone_map, MetricUnit::ROWS, "(segment_v2) total number of rows selected by zone map index", segment_read, {{"type", "segment_rows_read_by_zone_map"}});
+DEFINE_COUNTER_METRIC_5ARG(segment_read_total, MetricUnit::OPERATIONS, "(segment_v2) total number of segments read", segment_read, Labels({{"type", "segment_total_read_times"}}));
+DEFINE_COUNTER_METRIC_5ARG(segment_row_total, MetricUnit::ROWS, "(segment_v2) total number of rows in queried segments (before index pruning)", segment_read, Labels({{"type", "segment_total_row_num"}}));
+DEFINE_COUNTER_METRIC_5ARG(segment_rows_by_short_key, MetricUnit::ROWS, "(segment_v2) total number of rows selected by short key index", segment_read, Labels({{"type", "segment_rows_by_short_key"}}));
+DEFINE_COUNTER_METRIC_5ARG(segment_rows_read_by_zone_map, MetricUnit::ROWS, "(segment_v2) total number of rows selected by zone map index", segment_read, Labels({{"type", "segment_rows_read_by_zone_map"}}));
 
-DEFINE_COUNTER_METRIC(txn_begin_request_total, MetricUnit::OPERATIONS, "", txn_request, {{"type", "begin"}});
-DEFINE_COUNTER_METRIC(txn_commit_request_total, MetricUnit::OPERATIONS, "", txn_request, {{"type", "commit"}});
-DEFINE_COUNTER_METRIC(txn_rollback_request_total, MetricUnit::OPERATIONS, "", txn_request, {{"type", "rollback"}});
-DEFINE_COUNTER_METRIC(txn_exec_plan_total, MetricUnit::OPERATIONS, "", txn_request, {{"type", "exec"}});
+DEFINE_COUNTER_METRIC_5ARG(txn_begin_request_total, MetricUnit::OPERATIONS, "", txn_request, Labels({{"type", "begin"}}));
+DEFINE_COUNTER_METRIC_5ARG(txn_commit_request_total, MetricUnit::OPERATIONS, "", txn_request, Labels({{"type", "commit"}}));
+DEFINE_COUNTER_METRIC_5ARG(txn_rollback_request_total, MetricUnit::OPERATIONS, "", txn_request, Labels({{"type", "rollback"}}));
+DEFINE_COUNTER_METRIC_5ARG(txn_exec_plan_total, MetricUnit::OPERATIONS, "", txn_request, Labels({{"type", "exec"}}));
 
-DEFINE_COUNTER_METRIC(stream_receive_bytes_total, MetricUnit::BYTES, "", stream_load, {{"type", "receive_bytes"}});
-DEFINE_COUNTER_METRIC(stream_load_rows_total, MetricUnit::ROWS, "", stream_load, {{"type", "load_rows"}});
+DEFINE_COUNTER_METRIC_5ARG(stream_receive_bytes_total, MetricUnit::BYTES, "", stream_load, Labels({{"type", "receive_bytes"}}));
+DEFINE_COUNTER_METRIC_5ARG(stream_load_rows_total, MetricUnit::ROWS, "", stream_load, Labels({{"type", "load_rows"}}));
 
-DEFINE_COUNTER_METRIC(load_rows, MetricUnit::ROWS);
-DEFINE_COUNTER_METRIC(load_bytes, MetricUnit::BYTES);
+DEFINE_COUNTER_METRIC_2ARG(load_rows, MetricUnit::ROWS);
+DEFINE_COUNTER_METRIC_2ARG(load_bytes, MetricUnit::BYTES);
 
-DEFINE_COUNTER_METRIC(memtable_flush_total, MetricUnit::OPERATIONS);
-DEFINE_COUNTER_METRIC(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
+DEFINE_COUNTER_METRIC_2ARG(memtable_flush_total, MetricUnit::OPERATIONS);
+DEFINE_COUNTER_METRIC_2ARG(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
 
 DEFINE_GAUGE_METRIC(memory_pool_bytes_total, MetricUnit::BYTES);
 DEFINE_GAUGE_METRIC(process_thread_num, MetricUnit::NOUNIT);
@@ -117,13 +117,13 @@ DEFINE_GAUGE_METRIC(max_disk_io_util_percent, MetricUnit::PERCENT);
 DEFINE_GAUGE_METRIC(max_network_send_bytes_rate, MetricUnit::BYTES);
 DEFINE_GAUGE_METRIC(max_network_receive_bytes_rate, MetricUnit::BYTES);
 
-DEFINE_COUNTER_METRIC(readable_blocks_total, MetricUnit::BLOCKS);
-DEFINE_COUNTER_METRIC(writable_blocks_total, MetricUnit::BLOCKS);
-DEFINE_COUNTER_METRIC(blocks_created_total, MetricUnit::OPERATIONS);
-DEFINE_COUNTER_METRIC(blocks_deleted_total, MetricUnit::OPERATIONS);
-DEFINE_COUNTER_METRIC(bytes_read_total, MetricUnit::BYTES);
-DEFINE_COUNTER_METRIC(bytes_written_total, MetricUnit::BYTES);
-DEFINE_COUNTER_METRIC(disk_sync_total, MetricUnit::OPERATIONS);
+DEFINE_COUNTER_METRIC_2ARG(readable_blocks_total, MetricUnit::BLOCKS);
+DEFINE_COUNTER_METRIC_2ARG(writable_blocks_total, MetricUnit::BLOCKS);
+DEFINE_COUNTER_METRIC_2ARG(blocks_created_total, MetricUnit::OPERATIONS);
+DEFINE_COUNTER_METRIC_2ARG(blocks_deleted_total, MetricUnit::OPERATIONS);
+DEFINE_COUNTER_METRIC_2ARG(bytes_read_total, MetricUnit::BYTES);
+DEFINE_COUNTER_METRIC_2ARG(bytes_written_total, MetricUnit::BYTES);
+DEFINE_COUNTER_METRIC_2ARG(disk_sync_total, MetricUnit::OPERATIONS);
 
 DEFINE_GAUGE_METRIC(blocks_open_reading, MetricUnit::BLOCKS);
 DEFINE_GAUGE_METRIC(blocks_open_writing, MetricUnit::BLOCKS);
