@@ -77,139 +77,140 @@ private:
 
 TEST_F(DorisMetricsTest, Normal) {
     TestMetricsVisitor visitor;
-    auto metrics = DorisMetrics::instance()->metric_registry();
-    metrics->collect(&visitor);
+    auto metric_registry = DorisMetrics::instance()->metric_registry();
+    metric_registry->collect(&visitor);
     LOG(INFO) << "\n" << visitor.to_string();
+    auto server_entity = metric_registry->get_entity("server");
     // check metric
     {
         DorisMetrics::instance()->fragment_requests_total.increment(12);
-        auto metric = metrics->get_entity("server")->get_metric("fragment_requests_total");
+        auto metric = server_entity->get_metric("fragment_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("12", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->fragment_request_duration_us.increment(101);
-        auto metric = metrics->get_metric("fragment_request_duration_us");
+        auto metric = server_entity->get_metric("fragment_request_duration_us");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("101", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->http_requests_total.increment(102);
-        auto metric = metrics->get_metric("http_requests_total");
+        auto metric = server_entity->get_metric("http_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("102", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->http_request_send_bytes.increment(104);
-        auto metric = metrics->get_metric("http_request_send_bytes");
+        auto metric = server_entity->get_metric("http_request_send_bytes");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("104", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->query_scan_bytes.increment(104);
-        auto metric = metrics->get_metric("query_scan_bytes");
+        auto metric = server_entity->get_metric("query_scan_bytes");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("104", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->query_scan_rows.increment(105);
-        auto metric = metrics->get_metric("query_scan_rows");
+        auto metric = server_entity->get_metric("query_scan_rows");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("105", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->push_requests_success_total.increment(106);
-        auto metric = metrics->get_metric("push_requests_total",
-                                          MetricLabels().add("status", "SUCCESS"));
+        auto metric = server_entity->get_metric("push_requests_total",
+                                                  MetricLabels().add("status", "SUCCESS"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("106", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->push_requests_fail_total.increment(107);
-        auto metric = metrics->get_metric("push_requests_total",
-                                          MetricLabels().add("status", "FAIL"));
+        auto metric = server_entity->get_metric("push_requests_total",
+                                                  MetricLabels().add("status", "FAIL"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("107", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->push_request_duration_us.increment(108);
-        auto metric = metrics->get_metric("push_request_duration_us");
+        auto metric = server_entity->get_metric("push_request_duration_us");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("108", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->push_request_write_bytes.increment(109);
-        auto metric = metrics->get_metric("push_request_write_bytes");
+        auto metric = server_entity->get_metric("push_request_write_bytes");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("109", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->push_request_write_rows.increment(110);
-        auto metric = metrics->get_metric("push_request_write_rows");
+        auto metric = server_entity->get_metric("push_request_write_rows");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("110", metric->to_string().c_str());
     }
     // engine request
     {
         DorisMetrics::instance()->create_tablet_requests_total.increment(15);
-        auto metric = metrics->get_metric("engine_requests_total",
-                                          MetricLabels().add("type", "create_tablet")
+        auto metric = server_entity->get_metric("engine_requests_total",
+                                                  MetricLabels().add("type", "create_tablet")
                                           .add("status", "total"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("15", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->drop_tablet_requests_total.increment(16);
-        auto metric = metrics->get_metric("engine_requests_total",
-                                          MetricLabels().add("type", "drop_tablet")
+        auto metric = server_entity->get_metric("engine_requests_total",
+                                                  MetricLabels().add("type", "drop_tablet")
                                           .add("status", "total"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("16", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->report_all_tablets_requests_total.increment(17);
-        auto metric = metrics->get_metric("engine_requests_total",
-                                          MetricLabels().add("type", "report_all_tablets")
+        auto metric = server_entity->get_metric("engine_requests_total",
+                                                  MetricLabels().add("type", "report_all_tablets")
                                           .add("status", "total"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("17", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->report_tablet_requests_total.increment(18);
-        auto metric = metrics->get_metric("engine_requests_total",
-                                          MetricLabels().add("type", "report_tablet")
+        auto metric = server_entity->get_metric("engine_requests_total",
+                                                  MetricLabels().add("type", "report_tablet")
                                           .add("status", "total"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("18", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->schema_change_requests_total.increment(19);
-        auto metric = metrics->get_metric("engine_requests_total",
-                                          MetricLabels().add("type", "schema_change")
+        auto metric = server_entity->get_metric("engine_requests_total",
+                                                  MetricLabels().add("type", "schema_change")
                                           .add("status", "total"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("19", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->create_rollup_requests_total.increment(20);
-        auto metric = metrics->get_metric("engine_requests_total",
-                                          MetricLabels().add("type", "create_rollup")
+        auto metric = server_entity->get_metric("engine_requests_total",
+                                                  MetricLabels().add("type", "create_rollup")
                                           .add("status", "total"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("20", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->storage_migrate_requests_total.increment(21);
-        auto metric = metrics->get_metric("engine_requests_total",
-                                          MetricLabels().add("type", "storage_migrate")
+        auto metric = server_entity->get_metric("engine_requests_total",
+                                                  MetricLabels().add("type", "storage_migrate")
                                           .add("status", "total"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("21", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->delete_requests_total.increment(22);
-        auto metric = metrics->get_metric("engine_requests_total",
-                                          MetricLabels().add("type", "delete")
+        auto metric = server_entity->get_metric("engine_requests_total",
+                                                  MetricLabels().add("type", "delete")
                                           .add("status", "total"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("22", metric->to_string().c_str());
@@ -217,36 +218,36 @@ TEST_F(DorisMetricsTest, Normal) {
     //  comapction
     {
         DorisMetrics::instance()->base_compaction_deltas_total.increment(30);
-        auto metric = metrics->get_metric("compaction_deltas_total",
-                                          MetricLabels().add("type", "base"));
+        auto metric = server_entity->get_metric("compaction_deltas_total",
+                                                  MetricLabels().add("type", "base"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("30", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->cumulative_compaction_deltas_total.increment(31);
-        auto metric = metrics->get_metric("compaction_deltas_total",
-                                          MetricLabels().add("type", "cumulative"));
+        auto metric = server_entity->get_metric("compaction_deltas_total",
+                                                  MetricLabels().add("type", "cumulative"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("31", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->base_compaction_bytes_total.increment(32);
-        auto metric = metrics->get_metric("compaction_bytes_total",
-                                          MetricLabels().add("type", "base"));
+        auto metric = server_entity->get_metric("compaction_bytes_total",
+                                                  MetricLabels().add("type", "base"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("32", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->cumulative_compaction_bytes_total.increment(33);
-        auto metric = metrics->get_metric("compaction_bytes_total",
-                                          MetricLabels().add("type", "cumulative"));
+        auto metric = server_entity->get_metric("compaction_bytes_total",
+                                                  MetricLabels().add("type", "cumulative"));
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("33", metric->to_string().c_str());
     }
     // Gauge
     {
         DorisMetrics::instance()->memory_pool_bytes_total.increment(40);
-        auto metric = metrics->get_metric("memory_pool_bytes_total");
+        auto metric = server_entity->get_metric("memory_pool_bytes_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("40", metric->to_string().c_str());
     }
