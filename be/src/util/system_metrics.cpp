@@ -28,7 +28,7 @@
 namespace doris {
 
 #define DEFINE_CPU_COUNTER_METRIC(metric)  \
-    DEFINE_COUNTER_METRIC_5ARG(cpu_##metric, MetricUnit::PERCENT, "", "cpu", Labels({{"mode", #metric}}));
+    DEFINE_COUNTER_METRIC_5ARG(cpu_##metric, MetricUnit::PERCENT, "", cpu, Labels({{"mode", #metric}}));
 DEFINE_CPU_COUNTER_METRIC(user);
 DEFINE_CPU_COUNTER_METRIC(nice);
 DEFINE_CPU_COUNTER_METRIC(system);
@@ -306,7 +306,7 @@ void SystemMetrics::_update_memory_metrics() {
     size_t allocated_bytes = 0;
     MallocExtension::instance()->GetNumericProperty(
         "generic.current_allocated_bytes", &allocated_bytes);
-    _memory_metrics->allocated_bytes.set_value(allocated_bytes);
+    _memory_metrics->memory_allocated_bytes.set_value(allocated_bytes);
 #endif
 }
 

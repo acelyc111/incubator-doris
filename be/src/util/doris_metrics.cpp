@@ -40,7 +40,7 @@ DEFINE_COUNTER_METRIC_2ARG(push_request_write_bytes, MetricUnit::BYTES);
 DEFINE_COUNTER_METRIC_2ARG(push_request_write_rows, MetricUnit::ROWS);
 
 #define DEFINE_ENGINE_COUNTER_METRIC(name, type, status)  \
-    DEFINE_COUNTER_METRIC_5ARG(name, MetricUnit::REQUESTS, "", "engine_requests_total", Labels({{"type", #type}, {"status", #status}}));
+    DEFINE_COUNTER_METRIC_5ARG(name, MetricUnit::REQUESTS, "", engine_requests_total, Labels({{"type", #type}, {"status", #status}}));
 
 DEFINE_ENGINE_COUNTER_METRIC(create_tablet_requests_total, create_tablet, total);
 DEFINE_ENGINE_COUNTER_METRIC(create_tablet_requests_failed, create_tablet, failed);
