@@ -86,13 +86,13 @@ void Metric::hide() {
 
 std::string MetricPrototype::to_string(const std::string& registry_name) const {
     std::stringstream ss;
-    std::string full_name = registry_name + name;
+    std::string full_name = registry_name + "_" + name;
 
     ss << "# TYPE " << full_name << " " << type << "\n";
     switch (type) {
         case MetricType::COUNTER:
         case MetricType::GAUGE:
-            ss << name << labels_string() << "\n";
+            ss << (group_name.empty() ? full_name : group_name) << labels_string();
             break;
         default:
             break;
