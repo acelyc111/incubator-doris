@@ -193,8 +193,19 @@ struct FileDescriptorMetrics {
 
 const char* SystemMetrics::_s_hook_name = "system_metrics";
 
-SystemMetrics::SystemMetrics() {
+SystemMetrics::SystemMetrics(const std::set<std::string>& disk_devices,
+                             const std::vector<std::string>& network_interfaces) {
     _registry = DorisMetrics::instance()->metric_registry();
+    if (!_registry->register_hook(_s_hook_name, std::bind(&SystemMetrics::update, this))) {
+        return;
+    }
+    auto entity = DorisMetrics::instance()->server_entity();
+    _install_cpu_metrics(entity);
+    _install_memory_metrics(entity);
+    _install_disk_metrics(disk_devices);
+    _install_net_metrics(network_interfaces);
+    _install_fd_metrics(entity);
+    _install_snmp_metrics(entity);
 }
 
 SystemMetrics::~SystemMetrics() {
@@ -212,20 +223,6 @@ SystemMetrics::~SystemMetrics() {
     if (_line_ptr != nullptr) {
         free(_line_ptr);
     }
-}
-
-void SystemMetrics::install(const std::set<std::string>& disk_devices,
-                            const std::vector<std::string>& network_interfaces) {
-    if (!_registry->register_hook(_s_hook_name, std::bind(&SystemMetrics::update, this))) {
-        return;
-    }
-    auto entity = DorisMetrics::instance()->server_entity();
-    _install_cpu_metrics(entity);
-    _install_memory_metrics(entity);
-    _install_disk_metrics(disk_devices);
-    _install_net_metrics(network_interfaces);
-    _install_fd_metrics(entity);
-    _install_snmp_metrics(entity);
 }
 
 void SystemMetrics::update() {

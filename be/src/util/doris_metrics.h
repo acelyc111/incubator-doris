@@ -189,7 +189,7 @@ public:
         const std::vector<std::string>& network_interfaces = std::vector<std::string>());
 
     MetricRegistry* metric_registry() { return &_metric_registry; }
-    SystemMetrics* system_metrics() { return &_system_metrics; }
+    SystemMetrics* system_metrics() { return _system_metrics.get(); }
     MetricEntity* server_entity() { return _server_metric_entity; }
 
 private:
@@ -206,7 +206,7 @@ private:
 
     MetricRegistry _metric_registry;
 
-    SystemMetrics _system_metrics;
+    std:unique_ptr<SystemMetrics> _system_metrics;
 
     MetricEntity* _server_metric_entity;
 };

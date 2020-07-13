@@ -32,12 +32,9 @@ class SnmpMetrics;
 
 class SystemMetrics {
 public:
-    SystemMetrics();
+    SystemMetrics(const std::set<std::string>& disk_devices,
+                  const std::vector<std::string>& network_interfaces);
     ~SystemMetrics();
-
-    // install system metric
-    void install(const std::set<std::string>& disk_devices,
-                 const std::vector<std::string>& network_interfaces);
 
     // update metrics
     void update();
