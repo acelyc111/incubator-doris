@@ -271,4 +271,18 @@ void MetricRegistry::deregister_hook(const std::string& name) {
     _hooks.erase(name);
 }
 
+std::string MetricRegistry::to_prometheus() const {
+    std::lock_guard<SpinLock> l(_lock);
+    if (!config::enable_metric_calculator) {
+        // Before we collect, need to call hooks
+        unprotected_trigger_hook();
+    }
+
+    std::stringstream ss;
+    for (auto& entity : _entities) {
+        ss << entity.second->to_prometheus(_name);
+    }
+    return ss.str();
+}
+
 }

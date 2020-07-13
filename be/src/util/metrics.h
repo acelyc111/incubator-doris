@@ -442,11 +442,9 @@ public:
         for (auto& it : _collectors) {
             it.second->collect(_name, it.first, visitor);
         }
-
-        for (auto& entity : _entities) {
-            entity.second->to_prometheus(_name);
-        }
     }
+
+    std::string to_prometheus() const;
 
     void trigger_hook() {
         std::lock_guard<SpinLock> l(_lock);

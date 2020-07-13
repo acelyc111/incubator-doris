@@ -217,7 +217,7 @@ void MetricsAction::handle(HttpRequest* req) {
     } else {
         PrometheusMetricsVisitor visitor;
         _metric_registry->collect(&visitor);
-        str.assign(visitor.to_string());
+        str = _metric_registry->to_prometheus();
     }
 
     req->add_output_header(HttpHeaders::CONTENT_TYPE, "text/plain; version=0.0.4");
