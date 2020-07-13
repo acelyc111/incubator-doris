@@ -105,13 +105,15 @@ TEST_F(SystemMetricsTest, normal) {
     k_ut_net_snmp_path = net_snmp_path.c_str();
 
     MetricRegistry registry("test");
+    auto entity = registry.get_entity("server");
+    ASSERT_TRUE(entity != nullptr);
+
     {
         std::set<std::string> disk_devices;
         disk_devices.emplace("sda");
         std::vector<std::string> network_interfaces;
         network_interfaces.emplace_back("xgbe0");
-        SystemMetrics metrics;
-        metrics.install(disk_devices, network_interfaces);
+        SystemMetrics metrics(disk_devices, network_interfaces);
         metrics.update();
 
         TestMetricsVisitor visitor;
@@ -119,102 +121,101 @@ TEST_F(SystemMetricsTest, normal) {
         LOG(INFO) << "\n" << visitor.to_string();
 
         // cpu
-        Metric* cpu_user = registry.get_metric("cpu", MetricLabels().add("mode", "user"));
+        Metric* cpu_user = entity->get_metric("cpu_user");
         ASSERT_TRUE(cpu_user != nullptr);
         // ASSERT_STREQ("57199151", cpu_user->to_string().c_str());
-        Metric* cpu_nice = registry.get_metric("cpu", MetricLabels().add("mode", "nice"));
+        Metric* cpu_nice = entity->get_metric("cpu_nice");
         ASSERT_TRUE(cpu_nice != nullptr);
         ASSERT_STREQ("2616310", cpu_nice->to_string().c_str());
-        Metric* cpu_system = registry.get_metric("cpu", MetricLabels().add("mode", "system"));
+        Metric* cpu_system = entity->get_metric("cpu_system");
         ASSERT_TRUE(cpu_system != nullptr);
         ASSERT_STREQ("10600935", cpu_system->to_string().c_str());
-        Metric* cpu_idle = registry.get_metric("cpu", MetricLabels().add("mode", "idle"));
+        Metric* cpu_idle = entity->get_metric("cpu_idle");
         ASSERT_TRUE(cpu_idle != nullptr);
         ASSERT_STREQ("1517505423", cpu_idle->to_string().c_str());
-        Metric* cpu_iowait = registry.get_metric("cpu", MetricLabels().add("mode", "iowait"));
+        Metric* cpu_iowait = entity->get_metric("cpu_iowait");
         ASSERT_TRUE(cpu_iowait != nullptr);
         ASSERT_STREQ("2137148", cpu_iowait->to_string().c_str());
-        Metric* cpu_irq = registry.get_metric("cpu", MetricLabels().add("mode", "irq"));
+        Metric* cpu_irq = entity->get_metric("cpu_irq");
         ASSERT_TRUE(cpu_irq != nullptr);
         ASSERT_STREQ("0", cpu_irq->to_string().c_str());
-        Metric* cpu_softirq = registry.get_metric("cpu", MetricLabels().add("mode", "soft_irq"));
+        Metric* cpu_softirq = entity->get_metric("cpu_soft_irq");
         ASSERT_TRUE(cpu_softirq != nullptr);
         ASSERT_STREQ("108277", cpu_softirq->to_string().c_str());
-        Metric* cpu_steal = registry.get_metric("cpu", MetricLabels().add("mode", "steal"));
+        Metric* cpu_steal = entity->get_metric("cpu_steal");
         ASSERT_TRUE(cpu_steal != nullptr);
         ASSERT_STREQ("0", cpu_steal->to_string().c_str());
-        Metric* cpu_guest = registry.get_metric("cpu", MetricLabels().add("mode", "guest"));
+        Metric* cpu_guest = entity->get_metric("cpu_guest");
         ASSERT_TRUE(cpu_guest != nullptr);
         ASSERT_STREQ("0", cpu_guest->to_string().c_str());
         // memroy
-        Metric* memory_allocated_bytes = registry.get_metric("memory_allocated_bytes");
+        Metric* memory_allocated_bytes = entity->get_metric("memory_allocated_bytes");
         ASSERT_TRUE(memory_allocated_bytes != nullptr);
         // network
         Metric* receive_bytes =
-                registry.get_metric("network_receive_bytes", MetricLabels().add("device", "xgbe0"));
+                entity->get_metric("network_receive_bytes_xgbe0");
         ASSERT_TRUE(receive_bytes != nullptr);
         ASSERT_STREQ("52567436039", receive_bytes->to_string().c_str());
-        Metric* receive_packets = registry.get_metric("network_receive_packets",
-                                                      MetricLabels().add("device", "xgbe0"));
+        Metric* receive_packets = entity->get_metric("network_receive_packets_xgbe0");
         ASSERT_TRUE(receive_packets != nullptr);
         ASSERT_STREQ("65066152", receive_packets->to_string().c_str());
         Metric* send_bytes =
-                registry.get_metric("network_send_bytes", MetricLabels().add("device", "xgbe0"));
+                entity->get_metric("network_send_bytes_xgbe0");
         ASSERT_TRUE(send_bytes != nullptr);
         ASSERT_STREQ("45480856156", send_bytes->to_string().c_str());
         Metric* send_packets =
-                registry.get_metric("network_send_packets", MetricLabels().add("device", "xgbe0"));
+                entity->get_metric("network_send_packets_xgbe0");
         ASSERT_TRUE(send_packets != nullptr);
         ASSERT_STREQ("88277614", send_packets->to_string().c_str());
         // disk
         Metric* bytes_read =
-                registry.get_metric("disk_bytes_read", MetricLabels().add("device", "sda"));
+                entity->get_metric("disk_bytes_read_sda");
         ASSERT_TRUE(bytes_read != nullptr);
         ASSERT_STREQ("20142745600", bytes_read->to_string().c_str());
         Metric* reads_completed =
-                registry.get_metric("disk_reads_completed", MetricLabels().add("device", "sda"));
+                entity->get_metric("disk_reads_completed_sda");
         ASSERT_TRUE(reads_completed != nullptr);
         ASSERT_STREQ("759548", reads_completed->to_string().c_str());
         Metric* read_time_ms =
-                registry.get_metric("disk_read_time_ms", MetricLabels().add("device", "sda"));
+                entity->get_metric("disk_read_time_ms_sda");
         ASSERT_TRUE(read_time_ms != nullptr);
         ASSERT_STREQ("4308146", read_time_ms->to_string().c_str());
 
         Metric* bytes_written =
-                registry.get_metric("disk_bytes_written", MetricLabels().add("device", "sda"));
+                entity->get_metric("disk_bytes_written_sda");
         ASSERT_TRUE(bytes_written != nullptr);
         ASSERT_STREQ("1624753500160", bytes_written->to_string().c_str());
         Metric* writes_completed =
-                registry.get_metric("disk_writes_completed", MetricLabels().add("device", "sda"));
+                entity->get_metric("disk_writes_completed_sda");
         ASSERT_TRUE(writes_completed != nullptr);
         ASSERT_STREQ("18282936", writes_completed->to_string().c_str());
         Metric* write_time_ms =
-                registry.get_metric("disk_write_time_ms", MetricLabels().add("device", "sda"));
+                entity->get_metric("disk_write_time_ms_sda");
         ASSERT_TRUE(write_time_ms != nullptr);
         ASSERT_STREQ("1907755230", write_time_ms->to_string().c_str());
         Metric* io_time_ms =
-                registry.get_metric("disk_io_time_ms", MetricLabels().add("device", "sda"));
+                entity->get_metric("disk_io_time_ms_sda");
         ASSERT_TRUE(io_time_ms != nullptr);
         ASSERT_STREQ("19003350", io_time_ms->to_string().c_str());
         Metric* io_time_weigthed =
-                registry.get_metric("disk_io_time_weigthed", MetricLabels().add("device", "sda"));
+                entity->get_metric("disk_io_time_weigthed_sda");
         ASSERT_TRUE(write_time_ms != nullptr);
         ASSERT_STREQ("1912122964", io_time_weigthed->to_string().c_str());
 
         // fd
-        Metric* fd_metric = registry.get_metric("fd_num_limit");
+        Metric* fd_metric = entity->get_metric("fd_num_limit");
         ASSERT_TRUE(fd_metric != nullptr);
         ASSERT_STREQ("13052138", fd_metric->to_string().c_str());
-        fd_metric = registry.get_metric("fd_num_used");
+        fd_metric = entity->get_metric("fd_num_used");
         ASSERT_TRUE(fd_metric != nullptr);
         ASSERT_STREQ("19520", fd_metric->to_string().c_str());
 
         // net snmp
         Metric* tcp_retrans_segs =
-                registry.get_metric("snmp", MetricLabels().add("name", "tcp_retrans_segs"));
+                entity->get_metric("snmp_tcp_retrans_segs");
         ASSERT_TRUE(tcp_retrans_segs != nullptr);
         Metric* tcp_in_errs =
-                registry.get_metric("snmp", MetricLabels().add("name", "tcp_in_errs"));
+                entity->get_metric("snmp_tcp_in_errs");
         ASSERT_TRUE(tcp_in_errs != nullptr);
         ASSERT_STREQ("826271", tcp_retrans_segs->to_string().c_str());
         ASSERT_STREQ("12712", tcp_in_errs->to_string().c_str());
@@ -224,11 +225,11 @@ TEST_F(SystemMetricsTest, normal) {
         registry.collect(&visitor);
         ASSERT_TRUE(visitor.to_string().empty());
 
-        Metric* cpu_idle = registry.get_metric("cpu", MetricLabels().add("mode", "idle"));
+        Metric* cpu_idle = entity->get_metric("cpu_idle");
         ASSERT_TRUE(cpu_idle == nullptr);
-        Metric* cpu_user = registry.get_metric("cpu", MetricLabels().add("mode", "user"));
+        Metric* cpu_user = entity->get_metric("cpu_user");
         ASSERT_TRUE(cpu_user == nullptr);
-        Metric* memory_allocated_bytes = registry.get_metric("memory_allocated_bytes");
+        Metric* memory_allocated_bytes = entity->get_metric("memory_allocated_bytes");
         ASSERT_TRUE(memory_allocated_bytes == nullptr);
     }
 }
@@ -256,15 +257,14 @@ TEST_F(SystemMetricsTest, no_proc_file) {
         disk_devices.emplace("sda");
         std::vector<std::string> network_interfaces;
         network_interfaces.emplace_back("xgbe0");
-        SystemMetrics metrics;
-        metrics.install(disk_devices, network_interfaces);
+        SystemMetrics metrics(disk_devices, network_interfaces);
 
         TestMetricsVisitor visitor;
         registry.collect(&visitor);
         LOG(INFO) << "\n" << visitor.to_string();
 
         // cpu
-        Metric* cpu_user = registry.get_metric("cpu", MetricLabels().add("mode", "user"));
+        Metric* cpu_user = registry.get_metric("cpu_user");
         ASSERT_TRUE(cpu_user != nullptr);
         ASSERT_STREQ("0", cpu_user->to_string().c_str());
         // memroy
@@ -272,12 +272,12 @@ TEST_F(SystemMetricsTest, no_proc_file) {
         ASSERT_TRUE(memory_allocated_bytes != nullptr);
         // network
         Metric* receive_bytes =
-                registry.get_metric("network_receive_bytes", MetricLabels().add("device", "xgbe0"));
+                registry.get_metric("network_receive_bytes_xgbe0");
         ASSERT_TRUE(receive_bytes != nullptr);
         ASSERT_STREQ("0", receive_bytes->to_string().c_str());
         // disk
         Metric* bytes_read =
-                registry.get_metric("disk_bytes_read", MetricLabels().add("device", "sda"));
+                registry.get_metric("disk_bytes_read_sda");
         ASSERT_TRUE(bytes_read != nullptr);
         ASSERT_STREQ("0", bytes_read->to_string().c_str());
     }

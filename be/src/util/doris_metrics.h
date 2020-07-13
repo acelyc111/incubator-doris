@@ -206,7 +206,7 @@ private:
 
     MetricRegistry _metric_registry;
 
-    std:unique_ptr<SystemMetrics> _system_metrics;
+    std::unique_ptr<SystemMetrics> _system_metrics;
 
     MetricEntity* _server_metric_entity;
 };
