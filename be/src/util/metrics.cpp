@@ -84,6 +84,42 @@ void Metric::hide() {
     _registry = nullptr;
 }
 
+std::string MetricPrototype::to_string(const std::string& registry_name) const {
+    std::stringstream ss;
+    std::string full_name = registry_name + _name;
+
+    ss << "# TYPE " << full_name << " " << type << "\n";
+    switch (type) {
+        case MetricType::COUNTER:
+        case MetricType::GAUGE:
+            ss << metric.first->name << metric.first->labels_string() << "\n";
+            break;
+        default:
+            break;
+    }
+
+    return ss.str();
+}
+
+std::string MetricPrototype::labels_string() const {
+    if (labels.empty()) {
+        return std::string();
+    }
+
+    std::stringstream ss;
+    ss << "{";
+    int i = 0;
+    for (const auto& label : labels) {
+        if (i++ > 0) {
+            ss << ",";
+        }
+        ss << label.first << "=\"" << label.second << "\"";
+    }
+    ss << "}";
+
+    return ss.str();
+}
+
 void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* metric) {
     DCHECK(_metrics.find(metric_type) == _metrics.end());
     _metrics.emplace(metric_type, metric);
@@ -96,6 +132,14 @@ Metric* MetricEntity::get_metric(const std::string& name) const {
         return nullptr;
     }
     return it->second;
+}
+
+std::string MetricEntity::to_prometheus(const std::string& registry_name) const {
+    std::stringstream ss;
+    for (const auto& metric : _metrics) {
+        ss << metric.first->to_string() << metric.second->to_string() << "\n";
+    }
+    return ss;
 }
 
 bool MetricCollector::add_metic(const MetricLabels& labels, Metric* metric) {

@@ -291,6 +291,7 @@ class MetricCollector;
 
 using Labels = std::vector<std::pair<std::string, std::string>>;
 struct MetricPrototype {
+public:
     MetricPrototype(MetricType type_,
                     MetricUnit unit_,
                     std::string name_,
@@ -304,6 +305,12 @@ struct MetricPrototype {
           group_name(std::move(group_name_)),
           labels(std::move(labels)) {}
 
+    std::string to_string(const std::string& registry_name) const;
+
+private:
+    std::string labels_string() const;
+
+public:
     MetricType type;
     MetricUnit unit;
     std::string name;
@@ -354,6 +361,8 @@ public:
 
     void register_metric(const MetricPrototype* metric_type, Metric* metric);
     Metric* get_metric(const std::string& name) const;
+
+    std::string to_prometheus(const std::string& registry_name) const;
 
 private:
     std::string _name;
@@ -432,6 +441,10 @@ public:
 
         for (auto& it : _collectors) {
             it.second->collect(_name, it.first, visitor);
+        }
+
+        for (auto& entity : _entities) {
+            entity.second->to_prometheus(_name);
         }
     }
 
