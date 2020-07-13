@@ -208,15 +208,15 @@ void MetricsAction::handle(HttpRequest* req) {
     std::string str;
     if (type == "core") {
         SimpleCoreMetricsVisitor visitor;
-        _metrics->collect(&visitor);
+        _metric_registry->collect(&visitor);
         str.assign(visitor.to_string());
     } else if (type == "json") {
         JsonMetricsVisitor visitor;
-        _metrics->collect(&visitor);
+        _metric_registry->collect(&visitor);
         str.assign(visitor.to_string());
     } else {
         PrometheusMetricsVisitor visitor;
-        _metrics->collect(&visitor);
+        _metric_registry->collect(&visitor);
         str.assign(visitor.to_string());
     }
 

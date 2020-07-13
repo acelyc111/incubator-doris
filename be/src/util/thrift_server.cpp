@@ -32,6 +32,8 @@
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TServerSocket.h>
 
+#include "util/doris_metrics.h"
+
 namespace doris {
 
 DEFINE_COUNTER_METRIC_3ARG(thrift_current_connections, MetricUnit::CONNECTIONS, "Number of currently active connections");
