@@ -270,7 +270,7 @@ void DorisMetrics::initialize(
         const std::set<std::string>& disk_devices,
         const std::vector<std::string>& network_interfaces) {
     if (init_system_metrics) {
-        _system_metrics.reset(new SystemMetrics(disk_devices, network_interfaces));
+        _system_metrics.reset(new SystemMetrics(&_metric_registry, disk_devices, network_interfaces));
     }
 }
 

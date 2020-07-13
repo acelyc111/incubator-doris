@@ -32,7 +32,8 @@ class SnmpMetrics;
 
 class SystemMetrics {
 public:
-    SystemMetrics(const std::set<std::string>& disk_devices,
+    SystemMetrics(MetricRegistry* registry,
+                  const std::set<std::string>& disk_devices,
                   const std::vector<std::string>& network_interfaces);
     ~SystemMetrics();
 

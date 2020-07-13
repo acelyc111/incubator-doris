@@ -105,15 +105,15 @@ TEST_F(SystemMetricsTest, normal) {
     k_ut_net_snmp_path = net_snmp_path.c_str();
 
     MetricRegistry registry("test");
-    auto entity = registry.get_entity("server");
-    ASSERT_TRUE(entity != nullptr);
-
     {
         std::set<std::string> disk_devices;
         disk_devices.emplace("sda");
         std::vector<std::string> network_interfaces;
         network_interfaces.emplace_back("xgbe0");
-        SystemMetrics metrics(disk_devices, network_interfaces);
+        SystemMetrics metrics(&registry, disk_devices, network_interfaces);
+        auto entity = registry.get_entity("server");
+        ASSERT_TRUE(entity != nullptr);
+
         metrics.update();
 
         TestMetricsVisitor visitor;
@@ -225,6 +225,9 @@ TEST_F(SystemMetricsTest, normal) {
         registry.collect(&visitor);
         ASSERT_TRUE(visitor.to_string().empty());
 
+        auto entity = registry.get_entity("server");
+        ASSERT_TRUE(entity != nullptr);
+
         Metric* cpu_idle = entity->get_metric("cpu_idle");
         ASSERT_TRUE(cpu_idle == nullptr);
         Metric* cpu_user = entity->get_metric("cpu_user");
@@ -257,7 +260,10 @@ TEST_F(SystemMetricsTest, no_proc_file) {
         disk_devices.emplace("sda");
         std::vector<std::string> network_interfaces;
         network_interfaces.emplace_back("xgbe0");
-        SystemMetrics metrics(disk_devices, network_interfaces);
+        SystemMetrics metrics(&registry, disk_devices, network_interfaces);
+
+        auto entity = registry.get_entity("server");
+        ASSERT_TRUE(entity != nullptr);
 
         TestMetricsVisitor visitor;
         registry.collect(&visitor);

@@ -193,9 +193,11 @@ struct FileDescriptorMetrics {
 
 const char* SystemMetrics::_s_hook_name = "system_metrics";
 
-SystemMetrics::SystemMetrics(const std::set<std::string>& disk_devices,
+SystemMetrics::SystemMetrics(MetricRegistry* registry,
+                             const std::set<std::string>& disk_devices,
                              const std::vector<std::string>& network_interfaces) {
-    _registry = DorisMetrics::instance()->metric_registry();
+    DCHECK(registry);
+    _registry = registry;
     if (!_registry->register_hook(_s_hook_name, std::bind(&SystemMetrics::update, this))) {
         return;
     }
