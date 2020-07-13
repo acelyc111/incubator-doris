@@ -196,12 +196,17 @@ const char* SystemMetrics::_s_hook_name = "system_metrics";
 SystemMetrics::SystemMetrics(MetricRegistry* registry,
                              const std::set<std::string>& disk_devices,
                              const std::vector<std::string>& network_interfaces) {
-    DCHECK(registry);
+    DCHECK(registry != nullptr);
     _registry = registry;
     if (!_registry->register_hook(_s_hook_name, std::bind(&SystemMetrics::update, this))) {
         return;
     }
+#ifndef BE_TEST
     auto entity = DorisMetrics::instance()->server_entity();
+#else
+    auto entity = _registry->register_entity("server", {});
+#endif
+    DCHECK(entity != nullptr);
     _install_cpu_metrics(entity);
     _install_memory_metrics(entity);
     _install_disk_metrics(disk_devices);
@@ -307,7 +312,7 @@ void SystemMetrics::_update_memory_metrics() {
 
 void SystemMetrics::_install_disk_metrics(const std::set<std::string>& disk_devices) {
     for (auto& disk_device : disk_devices) {
-        auto disk_entity = DorisMetrics::instance()->metric_registry()->register_entity(disk_device, {});
+        auto disk_entity = _registry->register_entity(disk_device, {});
         DiskMetrics* metrics = new DiskMetrics(disk_entity);
         _disk_metrics.emplace(disk_device, metrics);
     }
@@ -393,7 +398,7 @@ void SystemMetrics::_update_disk_metrics() {
 
 void SystemMetrics::_install_net_metrics(const std::vector<std::string>& interfaces) {
     for (auto& interface : interfaces) {
-        auto interface_entity = DorisMetrics::instance()->metric_registry()->register_entity(interface, {});
+        auto interface_entity = _registry->register_entity(interface, {});
         NetMetrics* metrics = new NetMetrics(interface_entity);
         _net_metrics.emplace(interface, metrics);
     }

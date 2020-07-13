@@ -151,54 +151,61 @@ TEST_F(SystemMetricsTest, normal) {
         // memroy
         Metric* memory_allocated_bytes = entity->get_metric("memory_allocated_bytes");
         ASSERT_TRUE(memory_allocated_bytes != nullptr);
+
         // network
+        auto net_entity = registry.get_entity("xgbe0");
+        ASSERT_TRUE(net_entity != nullptr);
+
         Metric* receive_bytes =
-                entity->get_metric("network_receive_bytes_xgbe0");
+                net_entity->get_metric("net_receive_bytes");
         ASSERT_TRUE(receive_bytes != nullptr);
         ASSERT_STREQ("52567436039", receive_bytes->to_string().c_str());
-        Metric* receive_packets = entity->get_metric("network_receive_packets_xgbe0");
+        Metric* receive_packets = net_entity->get_metric("net_receive_packets");
         ASSERT_TRUE(receive_packets != nullptr);
         ASSERT_STREQ("65066152", receive_packets->to_string().c_str());
         Metric* send_bytes =
-                entity->get_metric("network_send_bytes_xgbe0");
+                net_entity->get_metric("net_send_bytes");
         ASSERT_TRUE(send_bytes != nullptr);
         ASSERT_STREQ("45480856156", send_bytes->to_string().c_str());
         Metric* send_packets =
-                entity->get_metric("network_send_packets_xgbe0");
+                net_entity->get_metric("net_send_packets");
         ASSERT_TRUE(send_packets != nullptr);
         ASSERT_STREQ("88277614", send_packets->to_string().c_str());
+
         // disk
+        auto disk_entity = registry.get_entity("sda");
+        ASSERT_TRUE(disk_entity != nullptr);
         Metric* bytes_read =
-                entity->get_metric("disk_bytes_read_sda");
+                disk_entity->get_metric("disk_bytes_read");
         ASSERT_TRUE(bytes_read != nullptr);
         ASSERT_STREQ("20142745600", bytes_read->to_string().c_str());
         Metric* reads_completed =
-                entity->get_metric("disk_reads_completed_sda");
+                disk_entity->get_metric("disk_reads_completed");
         ASSERT_TRUE(reads_completed != nullptr);
         ASSERT_STREQ("759548", reads_completed->to_string().c_str());
         Metric* read_time_ms =
-                entity->get_metric("disk_read_time_ms_sda");
+                disk_entity->get_metric("disk_read_time_ms");
         ASSERT_TRUE(read_time_ms != nullptr);
         ASSERT_STREQ("4308146", read_time_ms->to_string().c_str());
 
         Metric* bytes_written =
-                entity->get_metric("disk_bytes_written_sda");
+                disk_entity->get_metric("disk_bytes_written");
         ASSERT_TRUE(bytes_written != nullptr);
         ASSERT_STREQ("1624753500160", bytes_written->to_string().c_str());
         Metric* writes_completed =
-                entity->get_metric("disk_writes_completed_sda");
+                disk_entity->get_metric("disk_writes_completed");
         ASSERT_TRUE(writes_completed != nullptr);
         ASSERT_STREQ("18282936", writes_completed->to_string().c_str());
         Metric* write_time_ms =
-                entity->get_metric("disk_write_time_ms_sda");
+                disk_entity->get_metric("disk_write_time_ms");
         ASSERT_TRUE(write_time_ms != nullptr);
         ASSERT_STREQ("1907755230", write_time_ms->to_string().c_str());
         Metric* io_time_ms =
-                entity->get_metric("disk_io_time_ms_sda");
+                disk_entity->get_metric("disk_io_time_ms");
         ASSERT_TRUE(io_time_ms != nullptr);
         ASSERT_STREQ("19003350", io_time_ms->to_string().c_str());
         Metric* io_time_weigthed =
-                entity->get_metric("disk_io_time_weigthed_sda");
+                disk_entity->get_metric("disk_io_time_weigthed");
         ASSERT_TRUE(write_time_ms != nullptr);
         ASSERT_STREQ("1912122964", io_time_weigthed->to_string().c_str());
 
@@ -219,21 +226,6 @@ TEST_F(SystemMetricsTest, normal) {
         ASSERT_TRUE(tcp_in_errs != nullptr);
         ASSERT_STREQ("826271", tcp_retrans_segs->to_string().c_str());
         ASSERT_STREQ("12712", tcp_in_errs->to_string().c_str());
-    }
-    {
-        TestMetricsVisitor visitor;
-        registry.collect(&visitor);
-        ASSERT_TRUE(visitor.to_string().empty());
-
-        auto entity = registry.get_entity("server");
-        ASSERT_TRUE(entity != nullptr);
-
-        Metric* cpu_idle = entity->get_metric("cpu_idle");
-        ASSERT_TRUE(cpu_idle == nullptr);
-        Metric* cpu_user = entity->get_metric("cpu_user");
-        ASSERT_TRUE(cpu_user == nullptr);
-        Metric* memory_allocated_bytes = entity->get_metric("memory_allocated_bytes");
-        ASSERT_TRUE(memory_allocated_bytes == nullptr);
     }
 }
 
@@ -270,20 +262,24 @@ TEST_F(SystemMetricsTest, no_proc_file) {
         LOG(INFO) << "\n" << visitor.to_string();
 
         // cpu
-        Metric* cpu_user = registry.get_metric("cpu_user");
+        Metric* cpu_user = entity->get_metric("cpu_user");
         ASSERT_TRUE(cpu_user != nullptr);
         ASSERT_STREQ("0", cpu_user->to_string().c_str());
         // memroy
-        Metric* memory_allocated_bytes = registry.get_metric("memory_allocated_bytes");
+        Metric* memory_allocated_bytes = entity->get_metric("memory_allocated_bytes");
         ASSERT_TRUE(memory_allocated_bytes != nullptr);
         // network
+        auto net_entity = registry.get_entity("xgbe0");
+        ASSERT_TRUE(net_entity != nullptr);
         Metric* receive_bytes =
-                registry.get_metric("network_receive_bytes_xgbe0");
+                net_entity->get_metric("net_receive_bytes");
         ASSERT_TRUE(receive_bytes != nullptr);
         ASSERT_STREQ("0", receive_bytes->to_string().c_str());
         // disk
+        auto disk_entity = registry.get_entity("sda");
+        ASSERT_TRUE(disk_entity != nullptr);
         Metric* bytes_read =
-                registry.get_metric("disk_bytes_read_sda");
+                disk_entity->get_metric("disk_bytes_read");
         ASSERT_TRUE(bytes_read != nullptr);
         ASSERT_STREQ("0", bytes_read->to_string().c_str());
     }
