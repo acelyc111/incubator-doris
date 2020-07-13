@@ -86,13 +86,13 @@ void Metric::hide() {
 
 std::string MetricPrototype::to_string(const std::string& registry_name) const {
     std::stringstream ss;
-    std::string full_name = registry_name + _name;
+    std::string full_name = registry_name + name;
 
     ss << "# TYPE " << full_name << " " << type << "\n";
     switch (type) {
         case MetricType::COUNTER:
         case MetricType::GAUGE:
-            ss << metric.first->name << metric.first->labels_string() << "\n";
+            ss << name << labels_string() << "\n";
             break;
         default:
             break;
@@ -137,9 +137,9 @@ Metric* MetricEntity::get_metric(const std::string& name) const {
 std::string MetricEntity::to_prometheus(const std::string& registry_name) const {
     std::stringstream ss;
     for (const auto& metric : _metrics) {
-        ss << metric.first->to_string() << metric.second->to_string() << "\n";
+        ss << metric.first->to_string(registry_name) << metric.second->to_string() << "\n";
     }
-    return ss;
+    return ss.str();
 }
 
 bool MetricCollector::add_metic(const MetricLabels& labels, Metric* metric) {

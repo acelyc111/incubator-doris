@@ -452,9 +452,9 @@ public:
     }
 
 private:
-    void unprotected_trigger_hook() {
-        for (auto& it : _hooks) {
-            it.second();
+    void unprotected_trigger_hook() const {
+        for (const auto& hook : _hooks) {
+            hook.second();
         }
     }
 
