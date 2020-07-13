@@ -190,7 +190,7 @@ public:
 
     MetricRegistry* metric_registry() { return &_metric_registry; }
     SystemMetrics* system_metrics() { return &_system_metrics; }
-    MetricEntity* server_entity() { return &_server_metric_entity; }
+    MetricEntity* server_entity() { return _server_metric_entity; }
 
 private:
     // Don't allow constrctor

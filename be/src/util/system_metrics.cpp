@@ -16,13 +16,14 @@
 // under the License.
 
 #include "util/system_metrics.h"
-#include "gutil/strings/split.h" // for string split
-#include "gutil/strtoint.h" //  for atoi64
 
 #include <stdio.h>
+#include <functional>
 #include <gperftools/malloc_extension.h>
 
-#include <functional>
+#include "gutil/strings/split.h" // for string split
+#include "gutil/strtoint.h" //  for atoi64
+#include "util/doris_metrics.h"
 
 namespace doris {
 
@@ -161,17 +162,17 @@ DEFINE_SNMP_COUNTER_METRIC(tcp_out_segs, MetricUnit::NOUNIT, "All send TCP packe
 // metrics read from /proc/net/snmp
 struct SnmpMetrics {
     SnmpMetrics(MetricEntity* ent) : entity(ent) {
-        METRIC_REGISTER(entity, tcp_in_errs);
-        METRIC_REGISTER(entity, tcp_retrans_segs);
-        METRIC_REGISTER(entity, tcp_in_segs);
-        METRIC_REGISTER(entity, tcp_out_segs);
+        METRIC_REGISTER(entity, snmp_tcp_in_errs);
+        METRIC_REGISTER(entity, snmp_tcp_retrans_segs);
+        METRIC_REGISTER(entity, snmp_tcp_in_segs);
+        METRIC_REGISTER(entity, snmp_tcp_out_segs);
     }
 
     MetricEntity* entity = nullptr;
-    IntLockCounter tcp_in_errs;
-    IntLockCounter tcp_retrans_segs;
-    IntLockCounter tcp_in_segs;
-    IntLockCounter tcp_out_segs;
+    IntLockCounter snmp_tcp_in_errs;
+    IntLockCounter snmp_tcp_retrans_segs;
+    IntLockCounter snmp_tcp_in_segs;
+    IntLockCounter snmp_tcp_out_segs;
 };
 
 #define DEFINE_FD_COUNTER_METRIC(metric, unit)  \
@@ -215,7 +216,7 @@ SystemMetrics::~SystemMetrics() {
 
 void SystemMetrics::install(const std::set<std::string>& disk_devices,
                             const std::vector<std::string>& network_interfaces) {
-    if (!registry->register_hook(_s_hook_name, std::bind(&SystemMetrics::update, this))) {
+    if (!_registry->register_hook(_s_hook_name, std::bind(&SystemMetrics::update, this))) {
         return;
     }
     auto entity = DorisMetrics::instance()->server_entity();
@@ -307,7 +308,7 @@ void SystemMetrics::_update_memory_metrics() {
 
 void SystemMetrics::_install_disk_metrics(const std::set<std::string>& disk_devices) {
     for (auto& disk_device : disk_devices) {
-        auto disk_entity = _metric_registry.register_entity(disk_device, {});
+        auto disk_entity = DorisMetrics::instance()->metric_registry()->register_entity(disk_device, {});
         DiskMetrics* metrics = new DiskMetrics(disk_entity);
         _disk_metrics.emplace(disk_device, metrics);
     }
@@ -367,21 +368,21 @@ void SystemMetrics::_update_disk_metrics() {
         }
         // update disk metrics
         // reads_completed: 4 reads completed successfully
-        it->second->reads_completed.set_value(values[0]);
+        it->second->disk_reads_completed.set_value(values[0]);
         // bytes_read: 6 sectors read * 512; 5 reads merged is ignored
-        it->second->bytes_read.set_value(values[2] * 512);
+        it->second->disk_bytes_read.set_value(values[2] * 512);
         // read_time_ms: 7 time spent reading (ms)
-        it->second->read_time_ms.set_value(values[3]);
+        it->second->disk_read_time_ms.set_value(values[3]);
         // writes_completed: 8 writes completed
-        it->second->writes_completed.set_value(values[4]);
+        it->second->disk_writes_completed.set_value(values[4]);
         // bytes_written: 10 sectors write * 512; 9 writes merged is ignored
-        it->second->bytes_written.set_value(values[6] * 512);
+        it->second->disk_bytes_written.set_value(values[6] * 512);
         // write_time_ms: 11 time spent writing (ms)
-        it->second->write_time_ms.set_value(values[7]);
+        it->second->disk_write_time_ms.set_value(values[7]);
         // io_time_ms: 13 time spent doing I/Os (ms)
-        it->second->io_time_ms.set_value(values[9]);
+        it->second->disk_io_time_ms.set_value(values[9]);
         // io_time_weigthed: 14 - weighted time spent doing I/Os (ms)
-        it->second->io_time_weigthed.set_value(values[10]);
+        it->second->disk_io_time_weigthed.set_value(values[10]);
     }
     if (ferror(fp) != 0) {
         char buf[64];
@@ -393,7 +394,7 @@ void SystemMetrics::_update_disk_metrics() {
 
 void SystemMetrics::_install_net_metrics(const std::vector<std::string>& interfaces) {
     for (auto& interface : interfaces) {
-        auto interface_entity = _metric_registry.register_entity(interface, {});
+        auto interface_entity = DorisMetrics::instance()->metric_registry()->register_entity(interface, {});
         NetMetrics* metrics = new NetMetrics(interface_entity);
         _net_metrics.emplace(interface, metrics);
     }
@@ -485,10 +486,10 @@ void SystemMetrics::_update_net_metrics() {
         default:
             break;
         }
-        it->second->receive_bytes.set_value(receive_bytes);
-        it->second->receive_packets.set_value(receive_packets);
-        it->second->send_bytes.set_value(send_bytes);
-        it->second->send_packets.set_value(send_packets);
+        it->second->net_receive_bytes.set_value(receive_bytes);
+        it->second->net_receive_packets.set_value(receive_packets);
+        it->second->net_send_bytes.set_value(send_bytes);
+        it->second->net_send_packets.set_value(send_packets);
     }
     if (ferror(fp) != 0) {
         char buf[64];
@@ -557,10 +558,10 @@ void SystemMetrics::_update_snmp_metrics() {
     int64_t in_errs = atoi64(metrics[header_map["InErrs"]]);
     int64_t in_segs = atoi64(metrics[header_map["InSegs"]]);
     int64_t out_segs = atoi64(metrics[header_map["OutSegs"]]);
-    _snmp_metrics->tcp_retrans_segs.set_value(retrans_segs);
-    _snmp_metrics->tcp_in_errs.set_value(in_errs);
-    _snmp_metrics->tcp_in_segs.set_value(in_segs);
-    _snmp_metrics->tcp_out_segs.set_value(out_segs);
+    _snmp_metrics->snmp_tcp_retrans_segs.set_value(retrans_segs);
+    _snmp_metrics->snmp_tcp_in_errs.set_value(in_errs);
+    _snmp_metrics->snmp_tcp_in_segs.set_value(in_segs);
+    _snmp_metrics->snmp_tcp_out_segs.set_value(out_segs);
 
     if (ferror(fp) != 0) {
         char buf[64];
@@ -615,7 +616,7 @@ int64_t SystemMetrics::get_max_io_util(
         const std::map<std::string, int64_t>& lst_value, int64_t interval_sec) {
     int64_t max = 0;
     for (auto& it : _disk_metrics) {
-        int64_t cur = it.second->io_time_ms.value();
+        int64_t cur = it.second->disk_io_time_ms.value();
         const auto find = lst_value.find(it.first);
         if (find == lst_value.end()) {
             continue;
@@ -629,7 +630,7 @@ int64_t SystemMetrics::get_max_io_util(
 void SystemMetrics::get_disks_io_time(std::map<std::string, int64_t>* map) {
     map->clear();
     for (auto& it : _disk_metrics) {
-        map->emplace(it.first, it.second->io_time_ms.value());
+        map->emplace(it.first, it.second->disk_io_time_ms.value());
     }
 }
 
@@ -640,8 +641,8 @@ void SystemMetrics::get_network_traffic(
     rcv_map->clear();
     for (auto& it : _net_metrics) {
         if (it.first == "lo") { continue; }
-        send_map->emplace(it.first, it.second->send_bytes.value());
-        rcv_map->emplace(it.first, it.second->receive_bytes.value());
+        send_map->emplace(it.first, it.second->net_send_bytes.value());
+        rcv_map->emplace(it.first, it.second->net_receive_bytes.value());
     }
 }
 
@@ -653,8 +654,8 @@ void SystemMetrics::get_max_net_traffic(
     int64_t max_send = 0;
     int64_t max_rcv = 0;
     for (auto& it : _net_metrics) {
-        int64_t cur_send = it.second->send_bytes.value();
-        int64_t cur_rcv = it.second->receive_bytes.value();
+        int64_t cur_send = it.second->net_send_bytes.value();
+        int64_t cur_rcv = it.second->net_receive_bytes.value();
 
         const auto find_send = lst_send_map.find(it.first);
         if (find_send != lst_send_map.end()) {
