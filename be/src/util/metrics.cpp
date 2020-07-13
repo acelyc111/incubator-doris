@@ -86,13 +86,13 @@ void Metric::hide() {
 
 std::string MetricPrototype::to_string(const std::string& registry_name) const {
     std::stringstream ss;
-    std::string full_name = registry_name + "_" + name;
+    std::string display_name = (registry_name.empty() ? std::string() : registry_name  + "_") + (group_name.empty() ? name : group_name);
 
-    ss << "# TYPE " << full_name << " " << type << "\n";
+    ss << "# TYPE " << display_name << " " << type << "\n";
     switch (type) {
         case MetricType::COUNTER:
         case MetricType::GAUGE:
-            ss << (group_name.empty() ? full_name : group_name) << labels_string();
+            ss << display_name << labels_string();
             break;
         default:
             break;
@@ -137,7 +137,7 @@ Metric* MetricEntity::get_metric(const std::string& name) const {
 std::string MetricEntity::to_prometheus(const std::string& registry_name) const {
     std::stringstream ss;
     for (const auto& metric : _metrics) {
-        ss << metric.first->to_string(registry_name) << metric.second->to_string() << "\n";
+        ss << metric.first->to_string(registry_name) << " " << metric.second->to_string() << "\n";
     }
     return ss.str();
 }

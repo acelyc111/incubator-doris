@@ -68,7 +68,7 @@ TEST_F(MetricsActionTest, prometheus_output) {
 
     s_expect_response =
         "# TYPE test_requests_total counter\n"
-        "test_requests_total{path=\"/sports\",type=\"put\"} 2345\n"
+        "test_requests_total{type=\"put\",path=\"/sports\"} 2345\n"
         "# TYPE test_cpu_idle gauge\n"
         "test_cpu_idle 50\n";
     HttpRequest request(_evhttp_req);
@@ -89,22 +89,6 @@ TEST_F(MetricsActionTest, prometheus_no_prefix) {
     s_expect_response =
         "# TYPE cpu_idle gauge\n"
         "cpu_idle 50\n";
-    HttpRequest request(_evhttp_req);
-    MetricsAction action(&metric_registry);
-    action.handle(&request);
-}
-
-TEST_F(MetricsActionTest, prometheus_no_name) {
-    MetricRegistry metric_registry("test");
-    MetricEntity* entity = metric_registry.register_entity("prometheus_no_name", {});
-
-    IntGauge cpu_idle;
-    DEFINE_GAUGE_METRIC_2ARG(cpu_idle, MetricUnit::PERCENT);
-    METRIC_REGISTER(entity, cpu_idle);
-
-    cpu_idle.set_value(50);
-
-    s_expect_response = "";
     HttpRequest request(_evhttp_req);
     MetricsAction action(&metric_registry);
     action.handle(&request);
