@@ -67,12 +67,11 @@ public:
     //  - name: human-readable name of this server. Should not contain spaces
     //  - processor: Thrift processor to handle RPCs
     //  - port: The port the server will listen for connections on
-    //  - metrics: if not NULL, the server will register metrics on this object
     //  - num_worker_threads: the number of worker threads to use in any thread pool
     //  - server_type: the type of IO strategy this server should employ
     ThriftServer(const std::string& name,
                  const boost::shared_ptr<apache::thrift::TProcessor>& processor, int port,
-                 MetricRegistry* metrics = NULL, int num_worker_threads = DEFAULT_WORKER_THREADS,
+                 int num_worker_threads = DEFAULT_WORKER_THREADS,
                  ServerType server_type = THREADED);
 
     ~ThriftServer() { }

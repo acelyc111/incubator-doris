@@ -35,7 +35,7 @@
 namespace doris {
 
 DEFINE_COUNTER_METRIC_3ARG(thrift_current_connections, MetricUnit::CONNECTIONS, "Number of currently active connections");
-DEFINE_GAUGE_METRIC(thrift_connections_total, MetricUnit::CONNECTIONS, "Total connections made over the lifetime of this server");
+DEFINE_GAUGE_METRIC_3ARG(thrift_connections_total, MetricUnit::CONNECTIONS, "Total connections made over the lifetime of this server");
 
 // Helper class that starts a server in a separate thread, and handles
 // the inter-thread communication to monitor whether it started
@@ -225,8 +225,8 @@ void* ThriftServer::ThriftServerEventProcessor::createContext(
     }
 
     if (_thrift_server->_metrics_enabled) {
-        _thrift_server->_connections_total->increment(1L);
-        _thrift_server->_current_connections->increment(1L);
+        _thrift_server->thrift_connections_total->increment(1L);
+        _thrift_server->thrift_current_connections->increment(1L);
     }
 
     // Store the _session_key in the per-client context to avoid recomputing
@@ -257,7 +257,7 @@ void ThriftServer::ThriftServerEventProcessor::deleteContext(
     }
 
     if (_thrift_server->_metrics_enabled) {
-        _thrift_server->_current_connections->increment(-1L);
+        _thrift_server->thrift_current_connections->increment(-1L);
     }
 }
 

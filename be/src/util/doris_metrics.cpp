@@ -15,13 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#include "util/doris_metrics.h"
+
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "util/doris_metrics.h"
-
 #include "env/env.h"
-
 #include "util/debug_util.h"
 #include "util/file_utils.h"
 #include "util/system_metrics.h"
@@ -102,20 +101,20 @@ DEFINE_COUNTER_METRIC_2ARG(load_bytes, MetricUnit::BYTES);
 DEFINE_COUNTER_METRIC_2ARG(memtable_flush_total, MetricUnit::OPERATIONS);
 DEFINE_COUNTER_METRIC_2ARG(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
 
-DEFINE_GAUGE_METRIC(memory_pool_bytes_total, MetricUnit::BYTES);
-DEFINE_GAUGE_METRIC(process_thread_num, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(process_fd_num_used, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(process_fd_num_limit_soft, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(process_fd_num_limit_hard, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(memory_pool_bytes_total, MetricUnit::BYTES);
+DEFINE_GAUGE_METRIC_2ARG(process_thread_num, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(process_fd_num_used, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(process_fd_num_limit_soft, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(process_fd_num_limit_hard, MetricUnit::NOUNIT);
 
-DEFINE_GAUGE_METRIC(tablet_cumulative_max_compaction_score, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(tablet_base_max_compaction_score, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(tablet_cumulative_max_compaction_score, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(tablet_base_max_compaction_score, MetricUnit::NOUNIT);
 
-DEFINE_GAUGE_METRIC(push_request_write_bytes_per_second, MetricUnit::BYTES);
-DEFINE_GAUGE_METRIC(query_scan_bytes_per_second, MetricUnit::BYTES);
-DEFINE_GAUGE_METRIC(max_disk_io_util_percent, MetricUnit::PERCENT);
-DEFINE_GAUGE_METRIC(max_network_send_bytes_rate, MetricUnit::BYTES);
-DEFINE_GAUGE_METRIC(max_network_receive_bytes_rate, MetricUnit::BYTES);
+DEFINE_GAUGE_METRIC_2ARG(push_request_write_bytes_per_second, MetricUnit::BYTES);
+DEFINE_GAUGE_METRIC_2ARG(query_scan_bytes_per_second, MetricUnit::BYTES);
+DEFINE_GAUGE_METRIC_2ARG(max_disk_io_util_percent, MetricUnit::PERCENT);
+DEFINE_GAUGE_METRIC_2ARG(max_network_send_bytes_rate, MetricUnit::BYTES);
+DEFINE_GAUGE_METRIC_2ARG(max_network_receive_bytes_rate, MetricUnit::BYTES);
 
 DEFINE_COUNTER_METRIC_2ARG(readable_blocks_total, MetricUnit::BLOCKS);
 DEFINE_COUNTER_METRIC_2ARG(writable_blocks_total, MetricUnit::BLOCKS);
@@ -125,26 +124,26 @@ DEFINE_COUNTER_METRIC_2ARG(bytes_read_total, MetricUnit::BYTES);
 DEFINE_COUNTER_METRIC_2ARG(bytes_written_total, MetricUnit::BYTES);
 DEFINE_COUNTER_METRIC_2ARG(disk_sync_total, MetricUnit::OPERATIONS);
 
-DEFINE_GAUGE_METRIC(blocks_open_reading, MetricUnit::BLOCKS);
-DEFINE_GAUGE_METRIC(blocks_open_writing, MetricUnit::BLOCKS);
+DEFINE_GAUGE_METRIC_2ARG(blocks_open_reading, MetricUnit::BLOCKS);
+DEFINE_GAUGE_METRIC_2ARG(blocks_open_writing, MetricUnit::BLOCKS);
 
-DEFINE_GAUGE_METRIC(rowset_count_generated_and_in_use, MetricUnit::ROWSETS);
-DEFINE_GAUGE_METRIC(unused_rowsets_count, MetricUnit::ROWSETS);
-DEFINE_GAUGE_METRIC(broker_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(data_stream_receiver_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(fragment_endpoint_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(active_scan_context_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(plan_fragment_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(load_channel_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(result_buffer_block_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(result_block_queue_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(routine_load_task_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(small_file_cache_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(stream_load_pipe_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(brpc_endpoint_stub_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC(tablet_writer_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(rowset_count_generated_and_in_use, MetricUnit::ROWSETS);
+DEFINE_GAUGE_METRIC_2ARG(unused_rowsets_count, MetricUnit::ROWSETS);
+DEFINE_GAUGE_METRIC_2ARG(broker_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(data_stream_receiver_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(fragment_endpoint_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(active_scan_context_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(plan_fragment_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(load_channel_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(result_buffer_block_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(result_block_queue_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(routine_load_task_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(small_file_cache_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(stream_load_pipe_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(brpc_endpoint_stub_count, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(tablet_writer_count, MetricUnit::NOUNIT);
 
-DEFINE_GAUGE_METRIC(active_scratch_dirs, MetricUnit::NOUNIT);
+DEFINE_GAUGE_METRIC_2ARG(active_scratch_dirs, MetricUnit::NOUNIT);
 
 DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _metric_registry(_name) {
     _server_metric_entity = _metric_registry.register_entity("server", {});

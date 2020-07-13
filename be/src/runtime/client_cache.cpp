@@ -28,14 +28,15 @@
 
 #include "common/logging.h"
 #include "util/container_util.hpp"
+#include "util/doris_metrics.h"
 #include "util/network_util.h"
 #include "util/thrift_util.h"
 #include "gen_cpp/FrontendService.h"
 
 namespace doris {
 
-DEFINE_GAUGE_METRIC(thrift_used_clients, MetricUnit::NOUNIT, "Number of clients 'checked-out' from the cache");
-DEFINE_GAUGE_METRIC(thrift_opened_clients, MetricUnit::NOUNIT, "Total clients in the cache, including those in use");
+DEFINE_GAUGE_METRIC_3ARG(thrift_used_clients, MetricUnit::NOUNIT, "Number of clients 'checked-out' from the cache");
+DEFINE_GAUGE_METRIC_3ARG(thrift_opened_clients, MetricUnit::NOUNIT, "Total clients in the cache, including those in use");
 
 ClientCacheHelper::~ClientCacheHelper() {
     for (auto& it : _client_map) {
@@ -70,7 +71,7 @@ Status ClientCacheHelper::get_client(
     _client_map[*client_key]->set_recv_timeout(timeout_ms);
 
     if (_metrics_enabled) {
-        _used_clients->increment(1);
+        used_clients->increment(1);
     }
 
     return Status::OK();
@@ -95,7 +96,7 @@ Status ClientCacheHelper::reopen_client(client_factory factory_method, void** cl
     *client_key = NULL;
 
     if (_metrics_enabled) {
-        _opened_clients->increment(-1);
+        thrift_opened_clients->increment(-1);
     }
 
     RETURN_IF_ERROR(create_client(make_network_address(
@@ -126,7 +127,7 @@ Status ClientCacheHelper::create_client(
     _client_map[*client_key] = client_impl.release();
 
     if (_metrics_enabled) {
-        _opened_clients->increment(1);
+        thrift_opened_clients->increment(1);
     }
 
     return Status::OK();
@@ -148,14 +149,14 @@ void ClientCacheHelper::release_client(void** client_key) {
         delete info;
 
         if (_metrics_enabled) {
-            _opened_clients->increment(-1);
+            thrift_opened_clients->increment(-1);
         }
     } else {
         j->second.push_back(*client_key);
     }
 
     if (_metrics_enabled) {
-        _used_clients->increment(-1);
+        thrift_used_clients->increment(-1);
     }
 
     *client_key = NULL;
@@ -214,7 +215,6 @@ void ClientCacheHelper::test_shutdown() {
 }
 
 void ClientCacheHelper::init_metrics(const std::string& name) {
-    DCHECK(metrics != NULL);
     // Not strictly needed if init_metrics is called before any cache
     // usage, but ensures that _metrics_enabled is published.
     boost::lock_guard<boost::mutex> lock(_lock);
