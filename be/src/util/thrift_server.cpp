@@ -227,8 +227,8 @@ void* ThriftServer::ThriftServerEventProcessor::createContext(
     }
 
     if (_thrift_server->_metrics_enabled) {
-        _thrift_server->thrift_connections_total->increment(1L);
-        _thrift_server->thrift_current_connections->increment(1L);
+        _thrift_server->thrift_connections_total.increment(1L);
+        _thrift_server->thrift_current_connections.increment(1L);
     }
 
     // Store the _session_key in the per-client context to avoid recomputing
@@ -259,7 +259,7 @@ void ThriftServer::ThriftServerEventProcessor::deleteContext(
     }
 
     if (_thrift_server->_metrics_enabled) {
-        _thrift_server->thrift_current_connections->increment(-1L);
+        _thrift_server->thrift_current_connections.increment(-1L);
     }
 }
 
