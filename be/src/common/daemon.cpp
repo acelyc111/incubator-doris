@@ -204,7 +204,7 @@ static void init_doris_metrics(const std::vector<StorePath>& store_paths) {
         }
     }
     DorisMetrics::instance()->initialize(
-        paths, init_system_metrics, disk_devices, network_interfaces);
+        init_system_metrics, disk_devices, network_interfaces);
 
     if (config::enable_metric_calculator) {
         pthread_t calculator_pid;

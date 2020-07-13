@@ -266,12 +266,11 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
 }
 
 void DorisMetrics::initialize(
-        const std::vector<std::string>& paths,
         bool init_system_metrics,
         const std::set<std::string>& disk_devices,
         const std::vector<std::string>& network_interfaces) {
     if (init_system_metrics) {
-        _system_metrics.install(&_metric_registry, disk_devices, network_interfaces);
+        _system_metrics.install(disk_devices, network_interfaces);
     }
 }
 

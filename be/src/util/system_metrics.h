@@ -35,9 +35,8 @@ public:
     SystemMetrics();
     ~SystemMetrics();
 
-    // install system metrics to registry
-    void install(MetricRegistry* registry,
-                 const std::set<std::string>& disk_devices,
+    // install system metric
+    void install(const std::set<std::string>& disk_devices,
                  const std::vector<std::string>& network_interfaces);
 
     // update metrics
@@ -57,27 +56,25 @@ public:
             int64_t* send_rate, int64_t* rcv_rate);
 
 private:
-    void _install_cpu_metrics(MetricRegistry*);
+    void _install_cpu_metrics(MetricEntity* entity);
     // On Intel(R) Xeon(R) CPU E5-2450 0 @ 2.10GHz;
     // read /proc/stat would cost about 170us
     void _update_cpu_metrics();
 
-    void _install_memory_metrics(MetricRegistry* registry);
+    void _install_memory_metrics(MetricEntity* entity);
     void _update_memory_metrics();
 
-    void _install_disk_metrics(MetricRegistry* registry,
-                               const std::set<std::string>& devices);
+    void _install_disk_metrics(const std::set<std::string>& disk_devices);
     void _update_disk_metrics();
 
-    void _install_net_metrics(MetricRegistry* registry,
-                              const std::vector<std::string>& interfaces);
+    void _install_net_metrics(const std::vector<std::string>& interfaces);
     void _update_net_metrics();
 
-    void _install_fd_metrics(MetricRegistry* registry);
+    void _install_fd_metrics(MetricEntity* entity);
 
     void _update_fd_metrics();
 
-    void _install_snmp_metrics(MetricRegistry* registry);
+    void _install_snmp_metrics(MetricEntity* entity);
     void _update_snmp_metrics();
 
 private:

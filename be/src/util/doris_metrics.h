@@ -184,13 +184,13 @@ public:
 
     // not thread-safe, call before calling metrics
     void initialize(
-        const std::vector<std::string>& paths = std::vector<std::string>(),
         bool init_system_metrics = false,
         const std::set<std::string>& disk_devices = std::set<std::string>(),
         const std::vector<std::string>& network_interfaces = std::vector<std::string>());
 
     MetricRegistry* metric_registry() { return &_metric_registry; }
     SystemMetrics* system_metrics() { return &_system_metrics; }
+    MetricEntity* server_entity() { return &_server_metric_entity; }
 
 private:
     // Don't allow constrctor

@@ -111,7 +111,7 @@ TEST_F(SystemMetricsTest, normal) {
         std::vector<std::string> network_interfaces;
         network_interfaces.emplace_back("xgbe0");
         SystemMetrics metrics;
-        metrics.install(&registry, disk_devices, network_interfaces);
+        metrics.install(disk_devices, network_interfaces);
         metrics.update();
 
         TestMetricsVisitor visitor;
@@ -257,7 +257,7 @@ TEST_F(SystemMetricsTest, no_proc_file) {
         std::vector<std::string> network_interfaces;
         network_interfaces.emplace_back("xgbe0");
         SystemMetrics metrics;
-        metrics.install(&registry, disk_devices, network_interfaces);
+        metrics.install(disk_devices, network_interfaces);
 
         TestMetricsVisitor visitor;
         registry.collect(&visitor);

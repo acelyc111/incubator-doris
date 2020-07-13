@@ -331,10 +331,10 @@ public:
 #define DEFINE_COUNTER_METRIC_5ARG(name, unit, desc, group, labels)     \
     DEFINE_METRIC(name, MetricType::COUNTER, unit, desc, #group, labels)
 
-#define DEFINE_GAUGE_METRIC_2ARG(name, unit)                                 \
+#define DEFINE_GAUGE_METRIC_2ARG(name, unit)                            \
     DEFINE_METRIC(name, MetricType::GAUGE, unit, "", "", Labels())
 
-#define DEFINE_GAUGE_METRIC_3ARG(name, unit, desc)                                 \
+#define DEFINE_GAUGE_METRIC_3ARG(name, unit, desc)                      \
     DEFINE_METRIC(name, MetricType::GAUGE, unit, desc, "", Labels())
 
 #define METRIC_REGISTER(entity, metric)                                 \
