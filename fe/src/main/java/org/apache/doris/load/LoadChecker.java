@@ -110,6 +110,11 @@ public class LoadChecker extends MasterDaemon {
         for (LoadChecker loadChecker : checkers.values()) {
             loadChecker.start();
         }
+        for (Map<TPriority, MasterTaskExecutor> priorityMasterTaskExecutorMap : executors.values()) {
+            for (MasterTaskExecutor executor : priorityMasterTaskExecutorMap.values()) {
+                executor.start();
+            }
+        }
     }
     
     @Override

@@ -1214,6 +1214,7 @@ public class Catalog {
         LoadChecker.init(Config.load_checker_interval_second * 1000L);
         LoadChecker.startAll();
         // New load scheduler
+        loadTaskScheduler.start();
         loadManager.prepareJobs();
         loadJobScheduler.start();
         loadTimeoutChecker.start();

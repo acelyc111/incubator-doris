@@ -34,6 +34,7 @@ public class MasterTaskExecutorTest {
     @Before
     public void setUp() {
         executor = new MasterTaskExecutor(THREAD_NUM);
+        executor.start();
     }
     
     @After

@@ -19,27 +19,40 @@ package org.apache.doris.task;
 
 import com.google.common.collect.Maps;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class MasterTaskExecutor {
     private static final Logger LOG = LogManager.getLogger(MasterTaskExecutor.class);
 
-    private ScheduledExecutorService executor;
+    private ScheduledExecutorService scheduledExecutorService;
+    private ThreadPoolExecutor executor;
     private Map<Long, Future<?>> runningTasks;
 
     public MasterTaskExecutor(int threadNum) {
-        executor = Executors.newScheduledThreadPool(threadNum);
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("master-task-executor" + "-%d").build();
+        executor = new ThreadPoolExecutor(threadNum, threadNum, 60, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(threadNum * 2), threadFactory);
         runningTasks = Maps.newHashMap();
-        executor.scheduleAtFixedRate(new TaskChecker(), 0L, 1000L, TimeUnit.MILLISECONDS);
+        ThreadFactory scheduledThreadPoolFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("scheduledThreadPool" + "-%d").build();
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1, scheduledThreadPoolFactory);
+
+    }
+
+    public void start() {
+        scheduledExecutorService.scheduleAtFixedRate(new TaskChecker(), 0L, 1000L, TimeUnit.MILLISECONDS);
     }
     
     /**

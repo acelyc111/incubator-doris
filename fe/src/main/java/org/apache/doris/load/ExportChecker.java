@@ -55,9 +55,10 @@ public final class ExportChecker extends MasterDaemon {
         int poolSize = Config.export_running_job_num_limit == 0 ? 5 : Config.export_running_job_num_limit;
         MasterTaskExecutor pendingTaskExecutor = new MasterTaskExecutor(poolSize);
         executors.put(JobState.PENDING, pendingTaskExecutor);
-
+        pendingTaskExecutor.start();
         MasterTaskExecutor exportingTaskExecutor = new MasterTaskExecutor(poolSize);
         executors.put(JobState.EXPORTING, exportingTaskExecutor);
+        exportingTaskExecutor.start();
     }
 
     public static void startAll() {
