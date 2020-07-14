@@ -110,15 +110,23 @@ void Metric::hide() {
     _registry = nullptr;
 }
 
+std::string MetricPrototype::display_name(const std::string& registry_name) const {
+    return (registry_name.empty() ? std::string() : registry_name  + "_") + (group_name.empty() ? name : group_name);
+}
+
+std::string MetricPrototype::TYPE_line(const std::string& registry_name) const {
+    std::stringstream ss;
+    ss << "# TYPE " << display_name() << " " << type << "\n";
+    return ss.str();
+}
+
 std::string MetricPrototype::to_string(const std::string& registry_name) const {
     std::stringstream ss;
-    std::string display_name = (registry_name.empty() ? std::string() : registry_name  + "_") + (group_name.empty() ? name : group_name);
-
-    ss << "# TYPE " << display_name << " " << type << "\n";
+    ss << TYPE_line();
     switch (type) {
         case MetricType::COUNTER:
         case MetricType::GAUGE:
-            ss << display_name;
+            ss << display_name();
             break;
         default:
             break;
@@ -286,9 +294,32 @@ std::string MetricRegistry::to_prometheus() const {
     }
 
     std::stringstream ss;
-    for (auto& entity : _entities) {
-        ss << entity.second->to_prometheus(_name);
+//    for (const auto& entity : _entities) {
+//        ss << entity.second->to_prometheus(_name);
+//    }
+
+    EntityMetricsByType entity_metrics_by_types;
+    for (const auto& entity : _entities) {
+        for (const auto& metric : entity._metrics) {
+            std::pair<MetricEntity*, Metric*> new_elem = std:make_pair(entity.second->get(), metric.second);
+            auto found = entity_metrics_by_types.find(metric.first);
+            if (found == entity_metrics_by_types.end()) {
+                entity_metrics_by_types.emplace(std::make_pair(metric.first, {new_elem}));
+            } else {
+                found.second.emplace_back(new_elem);
+            }
+        }
     }
+    for (const auto& entity_metrics_by_type : entity_metrics_by_types) {
+        ss << entity_metrics_by_type.first->TYPE_line(_name);  // metric TYPE line
+        std::string display_name = entity_metrics_by_type.first->display_name(_name);
+        for (const auto& entity_metric : entity_metrics_by_type.second) {
+            ss << display_name                                                                           // metric name
+               << labels_to_string(entity_metric.first->_labels, entity_metrics_by_type.first->labels)   // metric labels
+               << " " << entity_metric.second->to_string();                                              // metric value
+        }
+    }
+
     return ss.str();
 }
 

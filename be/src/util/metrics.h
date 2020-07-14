@@ -306,6 +306,8 @@ public:
           labels(std::move(labels)) {}
 
     std::string to_string(const std::string& registry_name) const;
+    std::string display_name(const std::string& registry_name) const;
+    std::string TYPE_line(const std::string& registry_name) const;
 
     MetricType type;
     MetricUnit unit;
@@ -349,6 +351,9 @@ struct MetricPrototypeEqualTo {
     }
 };
 
+using MetricByType = std::unordered_map<const MetricPrototype*, Metric*, MetricPrototypeHash, MetricPrototypeEqualTo>;
+using EntityMetricsByType = std::unordered_map<const MetricPrototype*, std::vector<std::pair<MetricEntity*, Metric*>>, MetricPrototypeHash, MetricPrototypeEqualTo>;
+
 class MetricEntity {
 public:
     MetricEntity(const std::string& name, const Labels& labels)
@@ -360,9 +365,11 @@ public:
     std::string to_prometheus(const std::string& registry_name) const;
 
 private:
+    friend class MetricRegistry;
+
     std::string _name;
     Labels _labels;
-    std::unordered_map<const MetricPrototype*, Metric*, MetricPrototypeHash, MetricPrototypeEqualTo> _metrics;
+    MetricByType _metrics;
 
     std::function<void()> _hook;
 };
@@ -460,6 +467,7 @@ private:
 
     mutable SpinLock _lock;
     std::map<std::string, MetricCollector*> _collectors;
+    // TODO(yingchun): hooks are also need to bind to MetricEntity
     std::map<std::string, std::function<void()>> _hooks;
 
     std::unordered_map<std::string, std::shared_ptr<MetricEntity>> _entities;
