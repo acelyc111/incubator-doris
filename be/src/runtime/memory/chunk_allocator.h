@@ -27,6 +27,7 @@ namespace doris {
 
 class Chunk;
 class ChunkArena;
+class MetricEntity;
 
 // Used to allocate memory with power-of-two length.
 // This Allocator allocate memory from system and cache free chunks for

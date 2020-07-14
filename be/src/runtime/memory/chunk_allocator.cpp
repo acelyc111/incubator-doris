@@ -108,15 +108,6 @@ private:
 void ChunkAllocator::init_instance(size_t reserve_limit) {
     if (_s_instance != nullptr) return;
     _s_instance = new ChunkAllocator(reserve_limit);
-
-    _chunk_allocator_metric_entity = DorisMetrics::instance()->metric_registry()->register_entity("chunk_allocator", {});
-
-    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_local_core_alloc_count);
-    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_other_core_alloc_count);
-    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_system_alloc_count);
-    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_system_free_count);
-    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_system_alloc_cost_ns);
-    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_system_free_cost_ns);
 }
 
 ChunkAllocator::ChunkAllocator(size_t reserve_limit)
@@ -126,6 +117,14 @@ ChunkAllocator::ChunkAllocator(size_t reserve_limit)
     for (int i = 0; i < _arenas.size(); ++i) {
         _arenas[i].reset(new ChunkArena());
     }
+
+    _chunk_allocator_metric_entity = DorisMetrics::instance()->metric_registry()->register_entity("chunk_allocator", {});
+    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_local_core_alloc_count);
+    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_other_core_alloc_count);
+    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_system_alloc_count);
+    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_system_free_count);
+    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_system_alloc_cost_ns);
+    METRIC_REGISTER(_chunk_allocator_metric_entity, chunk_pool_system_free_cost_ns);
 }
 
 bool ChunkAllocator::allocate(size_t size, Chunk* chunk) {

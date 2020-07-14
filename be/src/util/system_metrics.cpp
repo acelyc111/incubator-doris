@@ -312,7 +312,7 @@ void SystemMetrics::_update_memory_metrics() {
 
 void SystemMetrics::_install_disk_metrics(const std::set<std::string>& disk_devices) {
     for (auto& disk_device : disk_devices) {
-        auto disk_entity = _registry->register_entity(std:string("disk_metrics.") + disk_device, {{"device", disk_device}});
+        auto disk_entity = _registry->register_entity(std::string("disk_metrics.") + disk_device, {{"device", disk_device}});
         DiskMetrics* metrics = new DiskMetrics(disk_entity);
         _disk_metrics.emplace(disk_device, metrics);
     }
@@ -398,7 +398,7 @@ void SystemMetrics::_update_disk_metrics() {
 
 void SystemMetrics::_install_net_metrics(const std::vector<std::string>& interfaces) {
     for (auto& interface : interfaces) {
-        auto interface_entity = _registry->register_entity(std:string("network_metrics.") + interface, {{"device", interface}});
+        auto interface_entity = _registry->register_entity(std::string("network_metrics.") + interface, {{"device", interface}});
         NetworkMetrics* metrics = new NetworkMetrics(interface_entity);
         _network_metrics.emplace(interface, metrics);
     }

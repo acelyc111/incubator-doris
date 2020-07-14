@@ -144,7 +144,7 @@ Metric* MetricEntity::get_metric(const std::string& name) const {
 std::string MetricEntity::to_prometheus(const std::string& registry_name) const {
     std::stringstream ss;
     for (const auto& metric : _metrics) {
-        ss << metric.first->to_string(registry_name) << labels_to_string(_labels, metric->first->labels) << " " << metric.second->to_string() << "\n";
+        ss << metric.first->to_string(registry_name) << labels_to_string(_labels, metric.first->labels) << " " << metric.second->to_string() << "\n";
     }
     return ss.str();
 }
