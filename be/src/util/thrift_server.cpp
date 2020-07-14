@@ -283,7 +283,7 @@ ThriftServer::ThriftServer(
         _metrics_enabled = true;
 
         // TODO(yingchun): these metrics are not compaitable with old versions
-        _thrift_server_metric_entity = DorisMetrics::instance()->metric_registry()->register_entity(std::string("thrift_server.") + name, {});
+        _thrift_server_metric_entity = DorisMetrics::instance()->metric_registry()->register_entity(std::string("thrift_server.") + name, {{"name", name}});
         METRIC_REGISTER(_thrift_server_metric_entity, thrift_current_connections);
         METRIC_REGISTER(_thrift_server_metric_entity, thrift_connections_total);
     } else {

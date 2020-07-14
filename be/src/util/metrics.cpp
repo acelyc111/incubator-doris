@@ -76,6 +76,32 @@ const char* unit_name(MetricUnit unit) {
     }
 }
 
+// TODO(yingchun): need optimize: duplicate keys, order, reduce copy
+std::string labels_to_string(const Labels& entity_labels, const Labels& metric_labels) {
+    if (entity_labels.empty() && metric_labels.empty()) {
+        return std::string();
+    }
+
+    std::stringstream ss;
+    ss << "{";
+    int i = 0;
+    for (const auto& label : entity_labels) {
+        if (i++ > 0) {
+            ss << ",";
+        }
+        ss << label.first << "=\"" << label.second << "\"";
+    }
+    for (const auto& label : metric_labels) {
+        if (i++ > 0) {
+            ss << ",";
+        }
+        ss << label.first << "=\"" << label.second << "\"";
+    }
+    ss << "}";
+
+    return ss.str();
+}
+
 void Metric::hide() {
     if (_registry == nullptr) {
         return;
@@ -92,30 +118,11 @@ std::string MetricPrototype::to_string(const std::string& registry_name) const {
     switch (type) {
         case MetricType::COUNTER:
         case MetricType::GAUGE:
-            ss << display_name << labels_string();
+            ss << display_name;
             break;
         default:
             break;
     }
-
-    return ss.str();
-}
-
-std::string MetricPrototype::labels_string() const {
-    if (labels.empty()) {
-        return std::string();
-    }
-
-    std::stringstream ss;
-    ss << "{";
-    int i = 0;
-    for (const auto& label : labels) {
-        if (i++ > 0) {
-            ss << ",";
-        }
-        ss << label.first << "=\"" << label.second << "\"";
-    }
-    ss << "}";
 
     return ss.str();
 }
@@ -137,7 +144,7 @@ Metric* MetricEntity::get_metric(const std::string& name) const {
 std::string MetricEntity::to_prometheus(const std::string& registry_name) const {
     std::stringstream ss;
     for (const auto& metric : _metrics) {
-        ss << metric.first->to_string(registry_name) << " " << metric.second->to_string() << "\n";
+        ss << metric.first->to_string(registry_name) << labels_to_string(_labels, metric->first->labels) << " " << metric.second->to_string() << "\n";
     }
     return ss.str();
 }
@@ -193,8 +200,8 @@ MetricRegistry::~MetricRegistry() {
     DCHECK(_collectors.empty()) << "_collectors not empty, size=" << _collectors.size();
 }
 
-MetricEntity* MetricRegistry::register_entity(const std::string& name, const AttributeMap& attributes) {
-    std::shared_ptr<MetricEntity> entity = std::make_shared<MetricEntity>(name, attributes);
+MetricEntity* MetricRegistry::register_entity(const std::string& name, const Labels& labels) {
+    std::shared_ptr<MetricEntity> entity = std::make_shared<MetricEntity>(name, labels);
 
     std::lock_guard<SpinLock> l(_lock);
     DCHECK(_entities.find(name) == _entities.end());

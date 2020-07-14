@@ -157,18 +157,18 @@ TEST_F(SystemMetricsTest, normal) {
         ASSERT_TRUE(net_entity != nullptr);
 
         Metric* receive_bytes =
-                net_entity->get_metric("net_receive_bytes");
+                net_entity->get_metric("network_receive_bytes");
         ASSERT_TRUE(receive_bytes != nullptr);
         ASSERT_STREQ("52567436039", receive_bytes->to_string().c_str());
-        Metric* receive_packets = net_entity->get_metric("net_receive_packets");
+        Metric* receive_packets = net_entity->get_metric("network_receive_packets");
         ASSERT_TRUE(receive_packets != nullptr);
         ASSERT_STREQ("65066152", receive_packets->to_string().c_str());
         Metric* send_bytes =
-                net_entity->get_metric("net_send_bytes");
+                net_entity->get_metric("network_send_bytes");
         ASSERT_TRUE(send_bytes != nullptr);
         ASSERT_STREQ("45480856156", send_bytes->to_string().c_str());
         Metric* send_packets =
-                net_entity->get_metric("net_send_packets");
+                net_entity->get_metric("network_send_packets");
         ASSERT_TRUE(send_packets != nullptr);
         ASSERT_STREQ("88277614", send_packets->to_string().c_str());
 
@@ -272,7 +272,7 @@ TEST_F(SystemMetricsTest, no_proc_file) {
         auto net_entity = registry.get_entity("xgbe0");
         ASSERT_TRUE(net_entity != nullptr);
         Metric* receive_bytes =
-                net_entity->get_metric("net_receive_bytes");
+                net_entity->get_metric("network_receive_bytes");
         ASSERT_TRUE(receive_bytes != nullptr);
         ASSERT_STREQ("0", receive_bytes->to_string().c_str());
         // disk

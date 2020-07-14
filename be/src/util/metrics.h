@@ -289,7 +289,7 @@ struct MetricLabels {
 
 class MetricCollector;
 
-using Labels = std::vector<std::pair<std::string, std::string>>;
+using Labels = std::unordered_map<std::string, std::string>;
 struct MetricPrototype {
 public:
     MetricPrototype(MetricType type_,
@@ -307,10 +307,6 @@ public:
 
     std::string to_string(const std::string& registry_name) const;
 
-private:
-    std::string labels_string() const;
-
-public:
     MetricType type;
     MetricUnit unit;
     std::string name;
@@ -353,11 +349,10 @@ struct MetricPrototypeEqualTo {
     }
 };
 
-using AttributeMap = std::unordered_map<std::string, std::string>;
 class MetricEntity {
 public:
-    MetricEntity(const std::string& name, const AttributeMap& attributes)
-        : _name(name), _attributes(attributes) {}
+    MetricEntity(const std::string& name, const Labels& labels)
+        : _name(name), _labels(labels) {}
 
     void register_metric(const MetricPrototype* metric_type, Metric* metric);
     Metric* get_metric(const std::string& name) const;
@@ -366,7 +361,7 @@ public:
 
 private:
     std::string _name;
-    AttributeMap _attributes;
+    Labels _labels;
     std::unordered_map<const MetricPrototype*, Metric*, MetricPrototypeHash, MetricPrototypeEqualTo> _metrics;
 
     std::function<void()> _hook;
@@ -410,7 +405,7 @@ public:
     MetricRegistry(const std::string& name) : _name(name) { }
     ~MetricRegistry();
 
-    MetricEntity* register_entity(const std::string& name, const AttributeMap& attributes);
+    MetricEntity* register_entity(const std::string& name, const Labels& labels);
     void deregister_entity(const std::string& name);
     std::shared_ptr<MetricEntity> get_entity(const std::string& name);
 

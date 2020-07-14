@@ -83,9 +83,9 @@ struct CpuMetrics {
     IntLockCounter* metrics[cpu_num_metrics];
 };
 
-#define DEFINE_MEM_GAUGE_METRIC(metric, unit)  \
+#define DEFINE_MEMORY_GAUGE_METRIC(metric, unit)  \
     DEFINE_GAUGE_METRIC_2ARG(memory_##metric, unit);
-DEFINE_MEM_GAUGE_METRIC(allocated_bytes, MetricUnit::BYTES);
+DEFINE_MEMORY_GAUGE_METRIC(allocated_bytes, MetricUnit::BYTES);
 
 struct MemoryMetrics {
     MemoryMetrics(MetricEntity* ent) : entity(ent) {
@@ -130,26 +130,26 @@ struct DiskMetrics {
     IntLockCounter disk_io_time_weigthed;
 };
 
-#define DEFINE_NET_COUNTER_METRIC(metric, unit)  \
-    DEFINE_COUNTER_METRIC_2ARG(net_##metric, unit);
-DEFINE_NET_COUNTER_METRIC(receive_bytes, MetricUnit::BYTES);
-DEFINE_NET_COUNTER_METRIC(receive_packets, MetricUnit::PACKETS);
-DEFINE_NET_COUNTER_METRIC(send_bytes, MetricUnit::BYTES);
-DEFINE_NET_COUNTER_METRIC(send_packets, MetricUnit::PACKETS);
+#define DEFINE_NETWORK_COUNTER_METRIC(metric, unit)  \
+    DEFINE_COUNTER_METRIC_2ARG(network_##metric, unit);
+DEFINE_NETWORK_COUNTER_METRIC(receive_bytes, MetricUnit::BYTES);
+DEFINE_NETWORK_COUNTER_METRIC(receive_packets, MetricUnit::PACKETS);
+DEFINE_NETWORK_COUNTER_METRIC(send_bytes, MetricUnit::BYTES);
+DEFINE_NETWORK_COUNTER_METRIC(send_packets, MetricUnit::PACKETS);
 
-struct NetMetrics {
-    NetMetrics(MetricEntity* ent) : entity(ent) {
-        METRIC_REGISTER(entity, net_receive_bytes);
-        METRIC_REGISTER(entity, net_receive_packets);
-        METRIC_REGISTER(entity, net_send_bytes);
-        METRIC_REGISTER(entity, net_send_packets);
+struct NetworkMetrics {
+    NetworkMetrics(MetricEntity* ent) : entity(ent) {
+        METRIC_REGISTER(entity, network_receive_bytes);
+        METRIC_REGISTER(entity, network_receive_packets);
+        METRIC_REGISTER(entity, network_send_bytes);
+        METRIC_REGISTER(entity, network_send_packets);
     }
 
     MetricEntity* entity = nullptr;
-    IntLockCounter net_receive_bytes;
-    IntLockCounter net_receive_packets;
-    IntLockCounter net_send_bytes;
-    IntLockCounter net_send_packets;
+    IntLockCounter network_receive_bytes;
+    IntLockCounter network_receive_packets;
+    IntLockCounter network_send_bytes;
+    IntLockCounter network_send_packets;
 };
 
 #define DEFINE_SNMP_COUNTER_METRIC(metric, unit, desc)  \
@@ -224,7 +224,7 @@ SystemMetrics::~SystemMetrics() {
     for (auto& it : _disk_metrics) {
         delete it.second;
     }
-    for (auto& it : _net_metrics) {
+    for (auto& it : _network_metrics) {
         delete it.second;
     }
     if (_line_ptr != nullptr) {
@@ -312,7 +312,7 @@ void SystemMetrics::_update_memory_metrics() {
 
 void SystemMetrics::_install_disk_metrics(const std::set<std::string>& disk_devices) {
     for (auto& disk_device : disk_devices) {
-        auto disk_entity = _registry->register_entity(disk_device, {});
+        auto disk_entity = _registry->register_entity(std:string("disk_metrics.") + disk_device, {{"device", disk_device}});
         DiskMetrics* metrics = new DiskMetrics(disk_entity);
         _disk_metrics.emplace(disk_device, metrics);
     }
@@ -367,7 +367,7 @@ void SystemMetrics::_update_disk_metrics() {
             continue;
         }
         auto it = _disk_metrics.find(device);
-        if (it == std::end(_disk_metrics)) {
+        if (it == _disk_metrics.end()) {
             continue;
         }
         // update disk metrics
@@ -398,9 +398,9 @@ void SystemMetrics::_update_disk_metrics() {
 
 void SystemMetrics::_install_net_metrics(const std::vector<std::string>& interfaces) {
     for (auto& interface : interfaces) {
-        auto interface_entity = _registry->register_entity(interface, {});
-        NetMetrics* metrics = new NetMetrics(interface_entity);
-        _net_metrics.emplace(interface, metrics);
+        auto interface_entity = _registry->register_entity(std:string("network_metrics.") + interface, {{"device", interface}});
+        NetworkMetrics* metrics = new NetworkMetrics(interface_entity);
+        _network_metrics.emplace(interface, metrics);
     }
 }
 
@@ -451,8 +451,8 @@ void SystemMetrics::_update_net_metrics() {
             start++;
         }
         std::string interface(start, ptr - start);
-        auto it = _net_metrics.find(interface);
-        if (it == std::end(_net_metrics)) {
+        auto it = _network_metrics.find(interface);
+        if (it == _network_metrics.end()) {
             continue;
         }
         ptr++;
@@ -490,10 +490,10 @@ void SystemMetrics::_update_net_metrics() {
         default:
             break;
         }
-        it->second->net_receive_bytes.set_value(receive_bytes);
-        it->second->net_receive_packets.set_value(receive_packets);
-        it->second->net_send_bytes.set_value(send_bytes);
-        it->second->net_send_packets.set_value(send_packets);
+        it->second->network_receive_bytes.set_value(receive_bytes);
+        it->second->network_receive_packets.set_value(receive_packets);
+        it->second->network_send_bytes.set_value(send_bytes);
+        it->second->network_send_packets.set_value(send_packets);
     }
     if (ferror(fp) != 0) {
         char buf[64];
@@ -643,10 +643,10 @@ void SystemMetrics::get_network_traffic(
             std::map<std::string, int64_t>* rcv_map) {
     send_map->clear();
     rcv_map->clear();
-    for (auto& it : _net_metrics) {
+    for (auto& it : _network_metrics) {
         if (it.first == "lo") { continue; }
-        send_map->emplace(it.first, it.second->net_send_bytes.value());
-        rcv_map->emplace(it.first, it.second->net_receive_bytes.value());
+        send_map->emplace(it.first, it.second->network_send_bytes.value());
+        rcv_map->emplace(it.first, it.second->network_receive_bytes.value());
     }
 }
 
@@ -657,9 +657,9 @@ void SystemMetrics::get_max_net_traffic(
             int64_t* send_rate, int64_t* rcv_rate) {
     int64_t max_send = 0;
     int64_t max_rcv = 0;
-    for (auto& it : _net_metrics) {
-        int64_t cur_send = it.second->net_send_bytes.value();
-        int64_t cur_rcv = it.second->net_receive_bytes.value();
+    for (auto& it : _network_metrics) {
+        int64_t cur_send = it.second->network_send_bytes.value();
+        int64_t cur_rcv = it.second->network_receive_bytes.value();
 
         const auto find_send = lst_send_map.find(it.first);
         if (find_send != lst_send_map.end()) {

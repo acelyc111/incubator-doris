@@ -75,6 +75,8 @@ private:
     std::atomic<int64_t> _reserved_bytes;
     // each core has a ChunkArena
     std::vector<std::unique_ptr<ChunkArena>> _arenas;
+
+    MetricEntity* _chunk_allocator_metric_entity;
 };
 
 }
