@@ -133,7 +133,7 @@ std::string MetricPrototype::to_string(const std::string& registry_name) const {
 }
 
 void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* metric) {
-    DCHECK(_metrics.find(metric_type) == _metrics.end());
+    DCHECK(_metrics.find(metric_type) == _metrics.end()) << _name << ":" << metric_type->name;
     _metrics.emplace(metric_type, metric);
 }
 
@@ -161,7 +161,7 @@ MetricEntity* MetricRegistry::register_entity(const std::string& name, const Lab
     std::shared_ptr<MetricEntity> entity = std::make_shared<MetricEntity>(name, labels);
 
     std::lock_guard<SpinLock> l(_lock);
-    DCHECK(_entities.find(name) == _entities.end());
+    DCHECK(_entities.find(name) == _entities.end()) << name;
     _entities.insert(std::make_pair(name, entity));
     return entity.get();
 }
