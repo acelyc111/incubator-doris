@@ -27,21 +27,13 @@
 
 namespace doris {
 
-DEFINE_GAUGE_METRIC_2ARG(stream_load_pipe_count, MetricUnit::NOUNIT);
-
 // used to register all streams in process so that other module can get this stream
 class LoadStreamMgr {
 public:
-    LoadStreamMgr() {
-        // Each StreamLoadPipe has a limited buffer size (default 1M), it's not needed to count the
-        // actual size of all StreamLoadPipe.
-        REGISTER_HOOK_METRIC(stream_load_pipe_count, [this]() {
-            std::lock_guard<std::mutex> l(_lock);
-            return _stream_map.size();
-        });
-    }
+    LoadStreamMgr();
     ~LoadStreamMgr() { }
 
+    // TODO(yingchun): move body to cpp file
     Status put(const UniqueId& id,
                std::shared_ptr<StreamLoadPipe> stream) {
         std::lock_guard<std::mutex> l(_lock);

@@ -30,8 +30,6 @@
 
 namespace doris {
 
-DEFINE_GAUGE_METRIC_2ARG(routine_load_task_count, MetricUnit::NOUNIT);
-
 class ExecEnv;
 class Status;
 class StreamLoadContext;
@@ -45,17 +43,7 @@ class RoutineLoadTaskExecutor {
 public:
     typedef std::function<void(StreamLoadContext*)> ExecFinishCallback;
 
-    RoutineLoadTaskExecutor(ExecEnv* exec_env)
-            : _exec_env(exec_env),
-              _thread_pool(config::routine_load_thread_pool_size, 1),
-              _data_consumer_pool(10) {
-        REGISTER_HOOK_METRIC(routine_load_task_count, [this]() {
-            std::lock_guard<std::mutex> l(_lock);
-            return _task_map.size();
-        });
-
-        _data_consumer_pool.start_bg_worker();
-    }
+    RoutineLoadTaskExecutor(ExecEnv* exec_env);
 
     ~RoutineLoadTaskExecutor() {
         _thread_pool.shutdown();
