@@ -120,6 +120,10 @@ std::string MetricPrototype::TYPE_line(const std::string& registry_name) const {
     return ss.str();
 }
 
+std::string MetricPrototype::json_metric_name() const {
+    return group_name.empty() ? name : group_name;
+}
+
 std::string MetricPrototype::to_string(const std::string& registry_name) const {
     std::stringstream ss;
     ss << TYPE_line(registry_name);
@@ -158,13 +162,6 @@ std::string MetricEntity::to_prometheus(const std::string& registry_name) const 
 }
 
 bool MetricCollector::add_metic(const MetricLabels& labels, Metric* metric) {
-    if (empty()) {
-        _type = metric->type();
-    } else {
-        if (metric->type() != _type) {
-            return false;
-        }
-    }
     auto it = _metrics.emplace(labels, metric);
     return it.second;
 }
@@ -294,10 +291,6 @@ std::string MetricRegistry::to_prometheus() const {
     }
 
     std::stringstream ss;
-//    for (const auto& entity : _entities) {
-//        ss << entity.second->to_prometheus(_name);
-//    }
-
     // Reorder by MetricPrototype
     EntityMetricsByType entity_metrics_by_types;
     for (const auto& entity : _entities) {
@@ -327,6 +320,52 @@ std::string MetricRegistry::to_prometheus() const {
     }
 
     return ss.str();
+}
+
+std::string MetricRegistry::to_json() const {
+    std::lock_guard<SpinLock> l(_lock);
+    if (!config::enable_metric_calculator) {
+        // Before we collect, need to call hooks
+        unprotected_trigger_hook();
+    }
+
+    // Output
+    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    for (const auto& entity : _entities) {
+        for (const auto& metric : entity.second->_metrics) {
+            rapidjson::Value metric_obj(rapidjson::kObjectType);
+            // tags
+            rapidjson::Value tag_obj(rapidjson::kObjectType);
+            tag_obj.AddMember("metric", rapidjson::Value(metric.first->json_metric_name().c_str(), allocator), allocator);
+            // MetricPrototype's labels
+            for (auto& label : metric.first->labels) {
+                tag_obj.AddMember(
+                        rapidjson::Value(label.first.c_str(), allocator),
+                        rapidjson::Value(label.second.c_str(), allocator),
+                        allocator);
+            }
+            // MetricEntity's labels
+            for (auto& label : entity.second->_labels) {
+                tag_obj.AddMember(
+                        rapidjson::Value(label.first.c_str(), allocator),
+                        rapidjson::Value(label.second.c_str(), allocator),
+                        allocator);
+            }
+            metric_obj.AddMember("tags", tag_obj, allocator);
+            // unit
+            rapidjson::Value unit_val(unit_name(metric.first->unit), allocator);
+            metric_obj.AddMember("unit", unit_val, allocator);
+            // value
+            metric_obj.AddMember("value", rj::Value(metric.second->to_string()), allocator);
+            doc.PushBack(metric_obj, allocator);
+        }
+    }
+
+    rapidjson::Document doc{rapidjson::kArrayType};
+    rapidjson::StringBuffer strBuf;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(strBuf);
+    doc.Accept(writer);
+    return strBuf.GetString();
 }
 
 }

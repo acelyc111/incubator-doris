@@ -46,8 +46,8 @@ private:
     std::unordered_map<std::string, IntGauge> metrics;
 };
 
-#define REGISTER_GAUGE_DORIS_METRIC(name, func) \
-  DorisMetrics::instance()->metric_registry()->register_metric(#name, &DorisMetrics::instance()->name); \
+#define REGISTER_HOOK_METRIC(name, func) \
+  DorisMetrics::instance()->server_entity()->register_metric(&METRIC_##name, &DorisMetrics::instance()->name); \
   DorisMetrics::instance()->metric_registry()->register_hook(#name, [&]() { \
       DorisMetrics::instance()->name.set_value(func());  \
 });

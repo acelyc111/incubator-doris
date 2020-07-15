@@ -23,9 +23,11 @@
 
 namespace doris {
 
+DEFINE_GAUGE_METRIC_2ARG(rowset_count_generated_and_in_use, MetricUnit::ROWSETS);
+
 UniqueRowsetIdGenerator::UniqueRowsetIdGenerator(const UniqueId& backend_uid)
         : _backend_uid(backend_uid), _inc_id(0) {
-    REGISTER_GAUGE_DORIS_METRIC(rowset_count_generated_and_in_use, [this]() {
+    REGISTER_HOOK_METRIC(rowset_count_generated_and_in_use, [this]() {
         std::lock_guard<SpinLock> l(_lock);
         return _valid_rowset_id_hi.size();
     });

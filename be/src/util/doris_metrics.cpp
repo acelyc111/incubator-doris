@@ -127,22 +127,6 @@ DEFINE_COUNTER_METRIC_2ARG(disk_sync_total, MetricUnit::OPERATIONS);
 DEFINE_GAUGE_METRIC_2ARG(blocks_open_reading, MetricUnit::BLOCKS);
 DEFINE_GAUGE_METRIC_2ARG(blocks_open_writing, MetricUnit::BLOCKS);
 
-DEFINE_GAUGE_METRIC_2ARG(rowset_count_generated_and_in_use, MetricUnit::ROWSETS);
-DEFINE_GAUGE_METRIC_2ARG(unused_rowsets_count, MetricUnit::ROWSETS);
-DEFINE_GAUGE_METRIC_2ARG(broker_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(data_stream_receiver_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(fragment_endpoint_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(active_scan_context_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(plan_fragment_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(load_channel_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(result_buffer_block_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(result_block_queue_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(routine_load_task_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(small_file_cache_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(stream_load_pipe_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(brpc_endpoint_stub_count, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(tablet_writer_count, MetricUnit::NOUNIT);
-
 DEFINE_GAUGE_METRIC_2ARG(active_scratch_dirs, MetricUnit::NOUNIT);
 
 DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _metric_registry(_name) {
@@ -240,22 +224,6 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, disk_sync_total);
     METRIC_REGISTER(_server_metric_entity, blocks_open_reading);
     METRIC_REGISTER(_server_metric_entity, blocks_open_writing);
-
-    METRIC_REGISTER(_server_metric_entity, rowset_count_generated_and_in_use);
-    METRIC_REGISTER(_server_metric_entity, unused_rowsets_count);
-    METRIC_REGISTER(_server_metric_entity, broker_count);
-    METRIC_REGISTER(_server_metric_entity, data_stream_receiver_count);
-    METRIC_REGISTER(_server_metric_entity, fragment_endpoint_count);
-    METRIC_REGISTER(_server_metric_entity, active_scan_context_count);
-    METRIC_REGISTER(_server_metric_entity, plan_fragment_count);
-    METRIC_REGISTER(_server_metric_entity, load_channel_count);
-    METRIC_REGISTER(_server_metric_entity, result_buffer_block_count);
-    METRIC_REGISTER(_server_metric_entity, result_block_queue_count);
-    METRIC_REGISTER(_server_metric_entity, routine_load_task_count);
-    METRIC_REGISTER(_server_metric_entity, small_file_cache_count);
-    METRIC_REGISTER(_server_metric_entity, stream_load_pipe_count);
-    METRIC_REGISTER(_server_metric_entity, brpc_endpoint_stub_count);
-    METRIC_REGISTER(_server_metric_entity, tablet_writer_count);
 
     METRIC_REGISTER(_server_metric_entity, active_scratch_dirs);
 

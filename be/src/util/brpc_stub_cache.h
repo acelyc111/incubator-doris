@@ -29,12 +29,14 @@
 
 namespace doris {
 
+DEFINE_GAUGE_METRIC_2ARG(brpc_endpoint_stub_count, MetricUnit::NOUNIT);
+
 // map used 
 class BrpcStubCache {
 public:
     BrpcStubCache() {
         _stub_map.init(239);
-        REGISTER_GAUGE_DORIS_METRIC(brpc_endpoint_stub_count, [this]() {
+        REGISTER_HOOK_METRIC(brpc_endpoint_stub_count, [this]() {
             std::lock_guard<SpinLock> l(_lock);
             return _stub_map.size();
         });

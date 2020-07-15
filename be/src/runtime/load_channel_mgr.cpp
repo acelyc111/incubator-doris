@@ -27,6 +27,8 @@
 
 namespace doris {
 
+DEFINE_GAUGE_METRIC_2ARG(load_channel_count, MetricUnit::NOUNIT);
+
 // Calculate the total memory limit of all load tasks on this BE
 static int64_t calc_process_max_load_memory(int64_t process_mem_limit) {
     if (process_mem_limit == -1) {
@@ -62,7 +64,7 @@ static int64_t calc_job_timeout_s(int64_t timeout_in_req_s) {
 }
 
 LoadChannelMgr::LoadChannelMgr() : _is_stopped(false) {
-    REGISTER_GAUGE_DORIS_METRIC(load_channel_count, [this]() {
+    REGISTER_HOOK_METRIC(load_channel_count, [this]() {
         std::lock_guard<std::mutex> l(_lock);
         return _load_channels.size();
     });

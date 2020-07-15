@@ -71,13 +71,9 @@ const char* unit_name(MetricUnit unit);
 class Metric {
 public:
     Metric(MetricType type, MetricUnit unit)
-      : _type(type),
-        _unit(unit),
-        _registry(nullptr) {}
+      : _registry(nullptr) {}
     virtual ~Metric() { hide(); }
     virtual std::string to_string() const = 0;
-    MetricType type() const { return _type; }
-    MetricUnit unit() const { return _unit; }
     void hide();
     virtual void write_value(rj::Value& metric_obj,
                              rj::Document::AllocatorType& allocator) = 0;
@@ -85,7 +81,6 @@ private:
     friend class MetricRegistry;
 
     // TODO: remove
-    MetricType _type = MetricType::UNTYPED;
     MetricUnit _unit = MetricUnit::NOUNIT;
     MetricRegistry* _registry;
 };
@@ -309,6 +304,8 @@ public:
     std::string display_name(const std::string& registry_name) const;
     std::string TYPE_line(const std::string& registry_name) const;
 
+    std::string json_metric_name() const;
+
     MetricType type;
     MetricUnit unit;
     std::string name;
@@ -448,6 +445,7 @@ public:
     }
 
     std::string to_prometheus() const;
+    std::string to_json() const;
 
     void trigger_hook() {
         std::lock_guard<SpinLock> l(_lock);
@@ -483,25 +481,3 @@ using UIntGauge = LockGauge<uint64_t>;
 using DoubleGauge = LockGauge<double>;
 
 } // namespace doris
-
-// Convenience macros to metric
-#define METRIC_DEFINE_INT_COUNTER(metric_name, unit)        \
-    doris::IntCounter metric_name{unit}
-
-#define METRIC_DEFINE_INT_LOCK_COUNTER(metric_name, unit)   \
-    doris::IntLockCounter metric_name{unit}
-
-#define METRIC_DEFINE_UINT_COUNTER(metric_name, unit)       \
-    doris::UIntCounter metric_name{unit}
-
-#define METRIC_DEFINE_DOUBLE_COUNTER(metric_name, unit)     \
-    doris::DoubleCounter metric_name{unit}
-
-#define METRIC_DEFINE_INT_GAUGE(metric_name, unit)          \
-    doris::IntGauge metric_name{unit}
-
-#define METRIC_DEFINE_UINT_GAUGE(metric_name, unit)         \
-    doris::UIntGauge metric_name{unit}
-
-#define METRIC_DEFINE_DOUBLE_GAUGE(metric_name, unit)       \
-    doris::DoubleGauge metric_name{unit}

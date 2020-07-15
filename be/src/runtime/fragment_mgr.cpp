@@ -50,6 +50,8 @@
 
 namespace doris {
 
+DEFINE_GAUGE_METRIC_2ARG(plan_fragment_count, MetricUnit::NOUNIT);
+
 std::string to_load_error_http_path(const std::string& file_name) {
     if (file_name.empty()) {
         return "";
@@ -372,7 +374,7 @@ FragmentMgr::FragmentMgr(ExecEnv* exec_env) :
         // TODO(zc): we need a better thread-pool
         // now one user can use all the thread pool, others have no resource.
         _thread_pool(config::fragment_pool_thread_num, config::fragment_pool_queue_size) {
-    REGISTER_GAUGE_DORIS_METRIC(plan_fragment_count, [this]() {
+    REGISTER_HOOK_METRIC(plan_fragment_count, [this]() {
         std::lock_guard<std::mutex> lock(_lock);
         return _fragment_map.size();
     });

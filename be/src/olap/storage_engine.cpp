@@ -82,6 +82,8 @@ using strings::Substitute;
 
 namespace doris {
 
+DEFINE_GAUGE_METRIC_2ARG(unused_rowsets_count, MetricUnit::ROWSETS);
+
 StorageEngine* StorageEngine::_s_instance = nullptr;
 
 static Status _validate_options(const EngineOptions& options) {
@@ -118,7 +120,7 @@ StorageEngine::StorageEngine(const EngineOptions& options)
     if (_s_instance == nullptr) {
         _s_instance = this;
     }
-    REGISTER_GAUGE_DORIS_METRIC(unused_rowsets_count, [this]() {
+    REGISTER_HOOK_METRIC(unused_rowsets_count, [this]() {
         MutexLock lock(&_gc_mutex);
         return _unused_rowsets.size();
     });

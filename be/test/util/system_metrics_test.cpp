@@ -40,7 +40,7 @@ public:
         for (auto& it : collector->metrics()) {
             Metric* metric = it.second;
             auto& labels = it.first;
-            switch (metric->type()) {
+            switch () {
             case MetricType::GAUGE:
             case MetricType::COUNTER: {
                 bool has_prev = false;
