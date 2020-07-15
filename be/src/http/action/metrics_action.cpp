@@ -147,62 +147,6 @@ void SimpleCoreMetricsVisitor::visit(const std::string& prefix,
     }
 }
 
-class JsonMetricsVisitor : public MetricsVisitor {
-public:
-    JsonMetricsVisitor() {
-    }
-    virtual ~JsonMetricsVisitor() {}
-    void visit(const std::string& prefix, const std::string& name,
-               MetricCollector* collector) override;
-    std::string to_string() { 
-        rapidjson::StringBuffer strBuf;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(strBuf);
-        doc.Accept(writer);
-        return strBuf.GetString();
-    }
-
-private:
-    rapidjson::Document doc{rapidjson::kArrayType};
-};
-
-void JsonMetricsVisitor::visit(const std::string& prefix,
-                               const std::string& name,
-                               MetricCollector* collector) {
-    if (collector->empty() || name.empty()) {
-        return;
-    }
-
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
-    switch (collector->type()) {
-    case MetricType::COUNTER:
-    case MetricType::GAUGE:
-        for (auto& it : collector->metrics()) {
-            const MetricLabels& labels = it.first;
-            Metric* metric = reinterpret_cast<Metric*>(it.second);
-            rapidjson::Value metric_obj(rapidjson::kObjectType);
-            rapidjson::Value tag_obj(rapidjson::kObjectType);
-            tag_obj.AddMember("metric", rapidjson::Value(name.c_str(), allocator), allocator);
-            // labels
-            if (!labels.empty()) {
-                for (auto& label : labels.labels) {
-                    tag_obj.AddMember(
-                                rapidjson::Value(label.name.c_str(), allocator),
-                                rapidjson::Value(label.value.c_str(), allocator),
-                                allocator);
-                }
-            }
-            metric_obj.AddMember("tags", tag_obj, allocator);
-            rapidjson::Value unit_val(unit_name(metric->unit()), allocator); 
-            metric_obj.AddMember("unit", unit_val, allocator);
-            metric->write_value(metric_obj, allocator);
-            doc.PushBack(metric_obj, allocator);
-        }
-        break;
-    default:
-        break;
-    }
-}
-
 void MetricsAction::handle(HttpRequest* req) {
     const std::string& type = req->param("type");
     std::string str;
@@ -211,12 +155,8 @@ void MetricsAction::handle(HttpRequest* req) {
         _metric_registry->collect(&visitor);
         str.assign(visitor.to_string());
     } else if (type == "json") {
-        JsonMetricsVisitor visitor;
-        _metric_registry->collect(&visitor);
-        str.assign(visitor.to_string());
+        str = _metric_registry->to_json();
     } else {
-        PrometheusMetricsVisitor visitor;
-        _metric_registry->collect(&visitor);
         str = _metric_registry->to_prometheus();
     }
 
