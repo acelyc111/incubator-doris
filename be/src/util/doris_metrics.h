@@ -54,8 +54,7 @@ private:
 
 #define DEREGISTER_HOOK_METRIC(name) \
   DorisMetrics::instance()->server_entity()->deregister_metric(&METRIC_##name); \
-  DorisMetrics::instance()->metric_registry()->deregister_hook(#name);  \
-});
+  DorisMetrics::instance()->metric_registry()->deregister_hook(#name);
 
 class DorisMetrics {
 public:
