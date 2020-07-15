@@ -125,29 +125,6 @@ TEST_F(MetricsTest, Gauge) {
     }
 }
 
-TEST_F(MetricsTest, MetricLabels) {
-    MetricLabels empty_labels;
-
-    ASSERT_TRUE(empty_labels == MetricLabels());
-    ASSERT_TRUE(empty_labels < MetricLabels().add("type", "put"));
-    ASSERT_TRUE(empty_labels.empty());
-
-    ASSERT_STREQ("", empty_labels.to_string().c_str());
-
-    MetricLabels labels;
-    labels.add("path", "/home").add("type", "put");
-
-    ASSERT_TRUE(labels == MetricLabels().add("path", "/home").add("type", "put"));
-    ASSERT_FALSE(labels == MetricLabels().add("path", "/home").add("type", "get"));
-    ASSERT_FALSE(labels == MetricLabels().add("path", "/home"));
-    ASSERT_TRUE(labels < MetricLabels().add("path", "/sports"));
-    ASSERT_TRUE(labels < MetricLabels().add("path", "/home").add("type", "put").add("xstatus", "404"));
-    ASSERT_FALSE(labels < MetricLabels().add("path", "/abc"));
-    ASSERT_FALSE(labels < MetricLabels().add("path", "/home").add("type", "put"));
-
-    ASSERT_STREQ("path=/home,type=put", labels.to_string().c_str());
-}
-
 TEST_F(MetricsTest, MetricRegistry) {
     // TODO(yingchun): Add test for MetricRegistry
 //    MetricRegistry registry("test");

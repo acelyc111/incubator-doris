@@ -175,13 +175,13 @@ public:
                     std::string group_name_ = "",
                     Labels labels_ = Labels(),
                     bool is_core_metric_ = false)
-        : type(type_),
+        : is_core_metric(is_core_metric_),
+          type(type_),
           unit(unit_),
           name(std::move(name_)),
           description(std::move(description_)),
           group_name(std::move(group_name_)),
-          labels(std::move(labels_)),
-          is_core_metric(is_core_metric_) {}
+          labels(std::move(labels_)) {}
 
     std::string to_string(const std::string& registry_name) const;
     std::string display_name(const std::string& registry_name) const;

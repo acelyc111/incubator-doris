@@ -96,6 +96,7 @@ set(UTIL_FILES
   trace.cpp
   trace_metrics.cpp
   timezone_utils.cpp
+  brpc_stub_cache.cpp
 )
 
 if (WITH_MYSQL)

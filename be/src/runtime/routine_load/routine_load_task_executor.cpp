@@ -36,7 +36,7 @@ namespace doris {
 
 DEFINE_GAUGE_METRIC_2ARG(routine_load_task_count, MetricUnit::NOUNIT);
 
-RoutineLoadTaskExecutor(ExecEnv* exec_env)
+RoutineLoadTaskExecutor::RoutineLoadTaskExecutor(ExecEnv* exec_env)
     : _exec_env(exec_env),
       _thread_pool(config::routine_load_thread_pool_size, 1),
       _data_consumer_pool(10) {

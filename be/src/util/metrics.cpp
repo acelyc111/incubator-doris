@@ -17,6 +17,9 @@
 
 #include "util/metrics.h"
 
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 namespace doris {
 
 std::ostream& operator<<(std::ostream& os, MetricType type) {
@@ -235,6 +238,7 @@ std::string MetricRegistry::to_json() const {
     }
 
     // Output
+    rapidjson::Document doc{rapidjson::kArrayType};
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     for (const auto& entity : _entities) {
         for (const auto& metric : entity.second->_metrics) {
@@ -261,12 +265,11 @@ std::string MetricRegistry::to_json() const {
             rapidjson::Value unit_val(unit_name(metric.first->unit), allocator);
             metric_obj.AddMember("unit", unit_val, allocator);
             // value
-            metric_obj.AddMember("value", rj::Value(metric.second->to_string()), allocator);
+            metric_obj.AddMember("value", rapidjson::Value(metric.second->to_string().c_str(), allocator), allocator);
             doc.PushBack(metric_obj, allocator);
         }
     }
 
-    rapidjson::Document doc{rapidjson::kArrayType};
     rapidjson::StringBuffer strBuf;
     rapidjson::Writer<rapidjson::StringBuffer> writer(strBuf);
     doc.Accept(writer);
