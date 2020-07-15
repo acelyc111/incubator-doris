@@ -43,7 +43,6 @@ TabletsChannel::TabletsChannel(const TabletsChannelKey& key, MemTracker* mem_tra
 }
 
 TabletsChannel::~TabletsChannel() {
-    DEREGISTER_HOOK_METRIC(tablet_writer_count);
     _s_tablet_writer_count -= _tablet_writers.size();
     for (auto& it : _tablet_writers) {
         delete it.second;

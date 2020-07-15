@@ -291,7 +291,9 @@ std::string MetricRegistry::to_core_string() const {
     EntityMetricsByType entity_metrics_by_types;
     for (const auto& entity : _entities) {
         for (const auto &metric : entity.second->_metrics) {
-            ss << metric.first->display_name(_name) << " LONG " << metric.second->to_string() << "\n";
+            if (metric.first->is_core_metric) {
+                ss << metric.first->display_name(_name) << " LONG " << metric.second->to_string() << "\n";
+            }
         }
     }
 
