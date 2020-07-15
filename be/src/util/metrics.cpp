@@ -298,6 +298,7 @@ std::string MetricRegistry::to_prometheus() const {
 //        ss << entity.second->to_prometheus(_name);
 //    }
 
+    // Reorder by MetricPrototype
     EntityMetricsByType entity_metrics_by_types;
     for (const auto& entity : _entities) {
         for (const auto& metric : entity.second->_metrics) {
@@ -310,8 +311,13 @@ std::string MetricRegistry::to_prometheus() const {
             }
         }
     }
+    // Output
+    std::string last_group_name;
     for (const auto& entity_metrics_by_type : entity_metrics_by_types) {
-        ss << entity_metrics_by_type.first->TYPE_line(_name);  // metric TYPE line
+        if (last_group_name.empty() || last_group_name != entity_metrics_by_type.first->group_name) {
+            ss << entity_metrics_by_type.first->TYPE_line(_name);                                        // metric TYPE line
+        }
+        last_group_name = entity_metrics_by_type.first->group_name;
         std::string display_name = entity_metrics_by_type.first->display_name(_name);
         for (const auto& entity_metric : entity_metrics_by_type.second) {
             ss << display_name                                                                           // metric name

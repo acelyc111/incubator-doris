@@ -341,13 +341,13 @@ public:
 // For 'metrics' in MetricEntity.
 struct MetricPrototypeHash {
     size_t operator()(const MetricPrototype* metric_prototype) const {
-        return std::hash<std::string>()(metric_prototype->name);
+        return std::hash<std::string>()(metric_prototype->group_name.empty() ? metric_prototype->name : metric_prototype->group_name);
     }
 };
 
 struct MetricPrototypeEqualTo {
     bool operator()(const MetricPrototype* first, const MetricPrototype* second) const {
-        return first->name == second->name;
+        return first->group_name == second->group_name && first->name == second->name;
     }
 };
 
