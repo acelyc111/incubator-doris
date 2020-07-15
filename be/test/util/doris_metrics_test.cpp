@@ -200,25 +200,25 @@ TEST_F(DorisMetricsTest, Normal) {
     //  comapction
     {
         DorisMetrics::instance()->base_compaction_deltas_total.increment(30);
-        auto metric = server_entity->get_metric("base_compaction_deltas_total");
+        auto metric = server_entity->get_metric("base_compaction_deltas_total", "compaction_deltas_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("30", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->cumulative_compaction_deltas_total.increment(31);
-        auto metric = server_entity->get_metric("cumulative_compaction_deltas_total");
+        auto metric = server_entity->get_metric("cumulative_compaction_deltas_total", "compaction_deltas_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("31", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->base_compaction_bytes_total.increment(32);
-        auto metric = server_entity->get_metric("base_compaction_bytes_total");
+        auto metric = server_entity->get_metric("base_compaction_bytes_total", "compaction_bytes_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("32", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->cumulative_compaction_bytes_total.increment(33);
-        auto metric = server_entity->get_metric("cumulative_compaction_bytes_total");
+        auto metric = server_entity->get_metric("cumulative_compaction_bytes_total", "compaction_bytes_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("33", metric->to_string().c_str());
     }

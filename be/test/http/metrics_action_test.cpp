@@ -67,10 +67,10 @@ TEST_F(MetricsActionTest, prometheus_output) {
     put_requests_total.increment(2345);
 
     s_expect_response =
-        "# TYPE test_requests_total counter\n"
-        "test_requests_total{type=\"put\",path=\"/sports\"} 2345\n"
         "# TYPE test_cpu_idle gauge\n"
-        "test_cpu_idle 50\n";
+        "test_cpu_idle 50\n"
+        "# TYPE test_requests_total counter\n"
+        "test_requests_total{path=\"/sports\",type=\"put\"} 2345\n";
     HttpRequest request(_evhttp_req);
     MetricsAction action(&metric_registry);
     action.handle(&request);

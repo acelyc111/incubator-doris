@@ -86,7 +86,7 @@ DataDir::DataDir(const std::string& path, int64_t capacity_bytes,
 }
 
 DataDir::~DataDir() {
-    DorisMetrics::instance()->metric_registry()->deregister_entity(_path);
+    DorisMetrics::instance()->metric_registry()->deregister_entity(std::string("data_dir.") + _path);
     delete _id_generator;
     delete _meta;
 }
