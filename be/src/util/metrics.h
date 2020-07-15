@@ -352,7 +352,6 @@ struct MetricPrototypeEqualTo {
 };
 
 using MetricByType = std::unordered_map<const MetricPrototype*, Metric*, MetricPrototypeHash, MetricPrototypeEqualTo>;
-using EntityMetricsByType = std::unordered_map<const MetricPrototype*, std::vector<std::pair<MetricEntity*, Metric*>>, MetricPrototypeHash, MetricPrototypeEqualTo>;
 
 class MetricEntity {
 public:
@@ -373,6 +372,8 @@ private:
 
     std::function<void()> _hook;
 };
+
+using EntityMetricsByType = std::unordered_map<const MetricPrototype*, std::vector<std::pair<MetricEntity*, Metric*>>, MetricPrototypeHash, MetricPrototypeEqualTo>;
 
 class MetricsVisitor {
 public:
