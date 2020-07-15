@@ -120,13 +120,13 @@ TEST_F(DorisMetricsTest, Normal) {
     }
     {
         DorisMetrics::instance()->push_requests_success_total.increment(106);
-        auto metric = server_entity->get_metric("push_requests_success_total");
+        auto metric = server_entity->get_metric("push_requests_success_total", "push_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("106", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->push_requests_fail_total.increment(107);
-        auto metric = server_entity->get_metric("push_requests_fail_total");
+        auto metric = server_entity->get_metric("push_requests_fail_total", "push_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("107", metric->to_string().c_str());
     }
@@ -151,49 +151,49 @@ TEST_F(DorisMetricsTest, Normal) {
     // engine request
     {
         DorisMetrics::instance()->create_tablet_requests_total.increment(15);
-        auto metric = server_entity->get_metric("create_tablet_requests_total");
+        auto metric = server_entity->get_metric("create_tablet_requests_total", "engine_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("15", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->drop_tablet_requests_total.increment(16);
-        auto metric = server_entity->get_metric("drop_tablet_requests_total");
+        auto metric = server_entity->get_metric("drop_tablet_requests_total", "engine_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("16", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->report_all_tablets_requests_total.increment(17);
-        auto metric = server_entity->get_metric("report_all_tablets_requests_total");
+        auto metric = server_entity->get_metric("report_all_tablets_requests_total", "engine_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("17", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->report_tablet_requests_total.increment(18);
-        auto metric = server_entity->get_metric("report_tablet_requests_total");
+        auto metric = server_entity->get_metric("report_tablet_requests_total", "engine_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("18", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->schema_change_requests_total.increment(19);
-        auto metric = server_entity->get_metric("schema_change_requests_total");
+        auto metric = server_entity->get_metric("schema_change_requests_total", "engine_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("19", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->create_rollup_requests_total.increment(20);
-        auto metric = server_entity->get_metric("create_rollup_requests_total");
+        auto metric = server_entity->get_metric("create_rollup_requests_total", "engine_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("20", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->storage_migrate_requests_total.increment(21);
-        auto metric = server_entity->get_metric("storage_migrate_requests_total");
+        auto metric = server_entity->get_metric("storage_migrate_requests_total", "engine_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("21", metric->to_string().c_str());
     }
     {
         DorisMetrics::instance()->delete_requests_total.increment(22);
-        auto metric = server_entity->get_metric("delete_requests_total");
+        auto metric = server_entity->get_metric("delete_requests_total", "engine_requests_total");
         ASSERT_TRUE(metric != nullptr);
         ASSERT_STREQ("22", metric->to_string().c_str());
     }

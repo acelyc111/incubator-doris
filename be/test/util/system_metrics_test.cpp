@@ -121,33 +121,36 @@ TEST_F(SystemMetricsTest, normal) {
         LOG(INFO) << "\n" << visitor.to_string();
 
         // cpu
-        Metric* cpu_user = entity->get_metric("cpu_user");
+        Metric* cpu_user = entity->get_metric("cpu_user", "cpu");
         ASSERT_TRUE(cpu_user != nullptr);
         // ASSERT_STREQ("57199151", cpu_user->to_string().c_str());
-        Metric* cpu_nice = entity->get_metric("cpu_nice");
+        Metric* cpu_nice = entity->get_metric("cpu_nice", "cpu");
         ASSERT_TRUE(cpu_nice != nullptr);
         ASSERT_STREQ("2616310", cpu_nice->to_string().c_str());
-        Metric* cpu_system = entity->get_metric("cpu_system");
+        Metric* cpu_system = entity->get_metric("cpu_system", "cpu");
         ASSERT_TRUE(cpu_system != nullptr);
         ASSERT_STREQ("10600935", cpu_system->to_string().c_str());
-        Metric* cpu_idle = entity->get_metric("cpu_idle");
+        Metric* cpu_idle = entity->get_metric("cpu_idle", "cpu");
         ASSERT_TRUE(cpu_idle != nullptr);
         ASSERT_STREQ("1517505423", cpu_idle->to_string().c_str());
-        Metric* cpu_iowait = entity->get_metric("cpu_iowait");
+        Metric* cpu_iowait = entity->get_metric("cpu_iowait", "cpu");
         ASSERT_TRUE(cpu_iowait != nullptr);
         ASSERT_STREQ("2137148", cpu_iowait->to_string().c_str());
-        Metric* cpu_irq = entity->get_metric("cpu_irq");
+        Metric* cpu_irq = entity->get_metric("cpu_irq", "cpu");
         ASSERT_TRUE(cpu_irq != nullptr);
         ASSERT_STREQ("0", cpu_irq->to_string().c_str());
-        Metric* cpu_softirq = entity->get_metric("cpu_soft_irq");
+        Metric* cpu_softirq = entity->get_metric("cpu_soft_irq", "cpu");
         ASSERT_TRUE(cpu_softirq != nullptr);
         ASSERT_STREQ("108277", cpu_softirq->to_string().c_str());
-        Metric* cpu_steal = entity->get_metric("cpu_steal");
+        Metric* cpu_steal = entity->get_metric("cpu_steal", "cpu");
         ASSERT_TRUE(cpu_steal != nullptr);
         ASSERT_STREQ("0", cpu_steal->to_string().c_str());
-        Metric* cpu_guest = entity->get_metric("cpu_guest");
+        Metric* cpu_guest = entity->get_metric("cpu_guest", "cpu");
         ASSERT_TRUE(cpu_guest != nullptr);
         ASSERT_STREQ("0", cpu_guest->to_string().c_str());
+        Metric* cpu_guest_nice = entity->get_metric("cpu_guest_nice", "cpu");
+        ASSERT_TRUE(cpu_guest_nice != nullptr);
+        ASSERT_STREQ("0", cpu_guest_nice->to_string().c_str());
         // memroy
         Metric* memory_allocated_bytes = entity->get_metric("memory_allocated_bytes");
         ASSERT_TRUE(memory_allocated_bytes != nullptr);
@@ -262,7 +265,7 @@ TEST_F(SystemMetricsTest, no_proc_file) {
         LOG(INFO) << "\n" << visitor.to_string();
 
         // cpu
-        Metric* cpu_user = entity->get_metric("cpu_user");
+        Metric* cpu_user = entity->get_metric("cpu_user", "cpu");
         ASSERT_TRUE(cpu_user != nullptr);
         ASSERT_STREQ("0", cpu_user->to_string().c_str());
         // memroy
