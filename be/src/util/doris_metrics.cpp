@@ -102,19 +102,19 @@ DEFINE_COUNTER_METRIC_2ARG(memtable_flush_total, MetricUnit::OPERATIONS);
 DEFINE_COUNTER_METRIC_2ARG(memtable_flush_duration_us, MetricUnit::MICROSECONDS);
 
 DEFINE_GAUGE_METRIC_2ARG(memory_pool_bytes_total, MetricUnit::BYTES);
-DEFINE_GAUGE_METRIC_2ARG(process_thread_num, MetricUnit::NOUNIT);
-DEFINE_GAUGE_METRIC_2ARG(process_fd_num_used, MetricUnit::NOUNIT);
+DEFINE_CORE_GAUGE_METRIC_2ARG(process_thread_num, MetricUnit::NOUNIT);
+DEFINE_CORE_GAUGE_METRIC_2ARG(process_fd_num_used, MetricUnit::NOUNIT);
 DEFINE_GAUGE_METRIC_2ARG(process_fd_num_limit_soft, MetricUnit::NOUNIT);
 DEFINE_GAUGE_METRIC_2ARG(process_fd_num_limit_hard, MetricUnit::NOUNIT);
 
 DEFINE_GAUGE_METRIC_2ARG(tablet_cumulative_max_compaction_score, MetricUnit::NOUNIT);
 DEFINE_GAUGE_METRIC_2ARG(tablet_base_max_compaction_score, MetricUnit::NOUNIT);
 
-DEFINE_GAUGE_METRIC_2ARG(push_request_write_bytes_per_second, MetricUnit::BYTES);
-DEFINE_GAUGE_METRIC_2ARG(query_scan_bytes_per_second, MetricUnit::BYTES);
-DEFINE_GAUGE_METRIC_2ARG(max_disk_io_util_percent, MetricUnit::PERCENT);
-DEFINE_GAUGE_METRIC_2ARG(max_network_send_bytes_rate, MetricUnit::BYTES);
-DEFINE_GAUGE_METRIC_2ARG(max_network_receive_bytes_rate, MetricUnit::BYTES);
+DEFINE_CORE_GAUGE_METRIC_2ARG(push_request_write_bytes_per_second, MetricUnit::BYTES);
+DEFINE_CORE_GAUGE_METRIC_2ARG(query_scan_bytes_per_second, MetricUnit::BYTES);
+DEFINE_CORE_GAUGE_METRIC_2ARG(max_disk_io_util_percent, MetricUnit::PERCENT);
+DEFINE_CORE_GAUGE_METRIC_2ARG(max_network_send_bytes_rate, MetricUnit::BYTES);
+DEFINE_CORE_GAUGE_METRIC_2ARG(max_network_receive_bytes_rate, MetricUnit::BYTES);
 
 DEFINE_COUNTER_METRIC_2ARG(readable_blocks_total, MetricUnit::BLOCKS);
 DEFINE_COUNTER_METRIC_2ARG(writable_blocks_total, MetricUnit::BLOCKS);

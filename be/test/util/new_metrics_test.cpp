@@ -125,20 +125,6 @@ TEST_F(MetricsTest, Gauge) {
     }
 }
 
-TEST_F(MetricsTest, MetricLabel) {
-    std::string put("put");
-    MetricLabel label("type", put);
-
-    ASSERT_TRUE(label == MetricLabel("type", "put"));
-    ASSERT_TRUE(label != MetricLabel("type", "get"));
-    ASSERT_TRUE(label < MetricLabel("type", "quit"));
-    ASSERT_TRUE(label < MetricLabel("typee", "put"));
-    ASSERT_TRUE(label.compare(MetricLabel("type", "put")) == 0);
-    ASSERT_TRUE(label.compare(MetricLabel("typee", "put")) < 0);
-
-    ASSERT_STREQ("type=put", label.to_string().c_str());
-}
-
 TEST_F(MetricsTest, MetricLabels) {
     MetricLabels empty_labels;
 
@@ -162,131 +148,56 @@ TEST_F(MetricsTest, MetricLabels) {
     ASSERT_STREQ("path=/home,type=put", labels.to_string().c_str());
 }
 
-class TestMetricsVisitor : public MetricsVisitor {
-public:
-    virtual ~TestMetricsVisitor() { }
-    void visit(const std::string& prefix, const std::string& name,
-               MetricCollector* collector) {
-        for (auto& it : collector->metrics()) {
-            Metric* metric = it.second;
-            auto& labels = it.first;
-            switch (metric->type()) {
-            case MetricType::COUNTER: {
-                bool has_prev = false;
-                if (!prefix.empty()) {
-                    _ss << prefix;
-                    has_prev = true;
-                }
-                if (!name.empty()) {
-                    if (has_prev) {
-                        _ss << "_";
-                    }
-                    _ss << name;
-                }
-                if (!labels.empty()) {
-                    if (has_prev) {
-                        _ss << "_";
-                    }
-                    _ss << labels.to_string();
-                }
-                _ss << " " << metric->to_string() << std::endl;
-                break;
-            }
-            default:
-                break;
-            }
-        }
-    }
-    std::string to_string() {
-        return _ss.str();
-    }
-private:
-    std::stringstream _ss;
-};
-
-TEST_F(MetricsTest, MetricCollector) {
-    IntCounter puts(MetricUnit::NOUNIT);
-    puts.increment(101);
-    IntCounter gets(MetricUnit::NOUNIT);
-    gets.increment(201);
-    MetricCollector collector;
-    ASSERT_TRUE(collector.add_metic(MetricLabels().add("type", "put"), &puts));
-    ASSERT_TRUE(collector.add_metic(MetricLabels().add("type", "get"), &gets));
-    ASSERT_FALSE(collector.add_metic(MetricLabels().add("type", "get"), &gets));
-
-    {
-        // Can't add different type to one collector
-        IntGauge post(MetricUnit::NOUNIT);
-        ASSERT_FALSE(collector.add_metic(MetricLabels().add("type", "post"), &post));
-    }
-
-    {
-        TestMetricsVisitor visitor;
-        collector.collect("", "", &visitor);
-        ASSERT_STREQ("type=get 201\ntype=put 101\n", visitor.to_string().c_str());
-    }
-    collector.remove_metric(&puts);
-    {
-        TestMetricsVisitor visitor;
-        collector.collect("", "", &visitor);
-        ASSERT_STREQ("type=get 201\n", visitor.to_string().c_str());
-    }
-    // test get_metric
-    ASSERT_TRUE(collector.get_metric(MetricLabels()) == nullptr);
-    ASSERT_TRUE(collector.get_metric(MetricLabels().add("type" ,"get")) != nullptr);
-    std::vector<Metric*> metrics;
-    collector.get_metrics(&metrics);
-    ASSERT_EQ(1, metrics.size());
-}
-
 TEST_F(MetricsTest, MetricRegistry) {
-    MetricRegistry registry("test");
-    IntCounter cpu_idle(MetricUnit::PERCENT);
-    cpu_idle.increment(12);
-    ASSERT_TRUE(registry.register_metric("cpu_idle", &cpu_idle));
-    // registry failed
-    IntCounter dummy(MetricUnit::PERCENT);
-    ASSERT_FALSE(registry.register_metric("cpu_idle", &dummy));
-    IntCounter memory_usage(MetricUnit::BYTES);
-    memory_usage.increment(24);
-    ASSERT_TRUE(registry.register_metric("memory_usage", &memory_usage));
-    {
-        TestMetricsVisitor visitor;
-        registry.collect(&visitor);
-        ASSERT_STREQ("test_cpu_idle 12\ntest_memory_usage 24\n", visitor.to_string().c_str());
-    }
-    registry.deregister_metric(&memory_usage);
-    {
-        TestMetricsVisitor visitor;
-        registry.collect(&visitor);
-        ASSERT_STREQ("test_cpu_idle 12\n", visitor.to_string().c_str());
-    }
-    // test get_metric
-    ASSERT_TRUE(registry.get_metric("cpu_idle") != nullptr);
-    ASSERT_TRUE(registry.get_metric("memory_usage") == nullptr);
+    // TODO(yingchun): Add test for MetricRegistry
+//    MetricRegistry registry("test");
+//    IntCounter cpu_idle(MetricUnit::PERCENT);
+//    cpu_idle.increment(12);
+//    ASSERT_TRUE(registry.register_metric("cpu_idle", &cpu_idle));
+//    // registry failed
+//    IntCounter dummy(MetricUnit::PERCENT);
+//    ASSERT_FALSE(registry.register_metric("cpu_idle", &dummy));
+//    IntCounter memory_usage(MetricUnit::BYTES);
+//    memory_usage.increment(24);
+//    ASSERT_TRUE(registry.register_metric("memory_usage", &memory_usage));
+//    {
+//        TestMetricsVisitor visitor;
+//        registry.collect(&visitor);
+//        ASSERT_STREQ("test_cpu_idle 12\ntest_memory_usage 24\n", visitor.to_string().c_str());
+//    }
+//    registry.deregister_metric(&memory_usage);
+//    {
+//        TestMetricsVisitor visitor;
+//        registry.collect(&visitor);
+//        ASSERT_STREQ("test_cpu_idle 12\n", visitor.to_string().c_str());
+//    }
+//    // test get_metric
+//    ASSERT_TRUE(registry.get_metric("cpu_idle") != nullptr);
+//    ASSERT_TRUE(registry.get_metric("memory_usage") == nullptr);
 }
 
 TEST_F(MetricsTest, MetricRegistry2) {
-    MetricRegistry registry("test");
-    IntCounter cpu_idle(MetricUnit::PERCENT);
-    cpu_idle.increment(12);
-    ASSERT_TRUE(registry.register_metric("cpu_idle", &cpu_idle));
-
-    {
-        // memory_usage will deregister after this block
-        IntCounter memory_usage(MetricUnit::BYTES);
-        memory_usage.increment(24);
-        ASSERT_TRUE(registry.register_metric("memory_usage", &memory_usage));
-        TestMetricsVisitor visitor;
-        registry.collect(&visitor);
-        ASSERT_STREQ("test_cpu_idle 12\ntest_memory_usage 24\n", visitor.to_string().c_str());
-    }
-
-    {
-        TestMetricsVisitor visitor;
-        registry.collect(&visitor);
-        ASSERT_STREQ("test_cpu_idle 12\n", visitor.to_string().c_str());
-    }
+    // TODO(yingchun): Add test for MetricEntity
+//    MetricRegistry registry("test");
+//    IntCounter cpu_idle(MetricUnit::PERCENT);
+//    cpu_idle.increment(12);
+//    ASSERT_TRUE(registry.register_metric("cpu_idle", &cpu_idle));
+//
+//    {
+//        // memory_usage will deregister after this block
+//        IntCounter memory_usage(MetricUnit::BYTES);
+//        memory_usage.increment(24);
+//        ASSERT_TRUE(registry.register_metric("memory_usage", &memory_usage));
+//        TestMetricsVisitor visitor;
+//        registry.collect(&visitor);
+//        ASSERT_STREQ("test_cpu_idle 12\ntest_memory_usage 24\n", visitor.to_string().c_str());
+//    }
+//
+//    {
+//        TestMetricsVisitor visitor;
+//        registry.collect(&visitor);
+//        ASSERT_STREQ("test_cpu_idle 12\n", visitor.to_string().c_str());
+//    }
 }
 
 }

@@ -33,50 +33,6 @@ public:
     virtual ~SystemMetricsTest() {}
 };
 
-class TestMetricsVisitor : public MetricsVisitor {
-public:
-    virtual ~TestMetricsVisitor() {}
-    void visit(const std::string& prefix, const std::string& name, MetricCollector* collector) {
-        for (auto& it : collector->metrics()) {
-            Metric* metric = it.second;
-            auto& labels = it.first;
-            switch () {
-            case MetricType::GAUGE:
-            case MetricType::COUNTER: {
-                bool has_prev = false;
-                if (!prefix.empty()) {
-                    _ss << prefix;
-                    has_prev = true;
-                }
-                if (!name.empty()) {
-                    if (has_prev) {
-                        _ss << "_";
-                    }
-                    _ss << name;
-                }
-                if (!labels.empty()) {
-                    if (has_prev) {
-                        _ss << "{";
-                    }
-                    _ss << labels.to_string();
-                    if (has_prev) {
-                        _ss << "}";
-                    }
-                }
-                _ss << " " << metric->to_string() << std::endl;
-                break;
-            }
-            default:
-                break;
-            }
-        }
-    }
-    std::string to_string() { return _ss.str(); }
-
-private:
-    std::stringstream _ss;
-};
-
 extern const char* k_ut_stat_path;
 extern const char* k_ut_diskstats_path;
 extern const char* k_ut_net_dev_path;
@@ -115,10 +71,6 @@ TEST_F(SystemMetricsTest, normal) {
         ASSERT_TRUE(entity != nullptr);
 
         metrics.update();
-
-        TestMetricsVisitor visitor;
-        registry.collect(&visitor);
-        LOG(INFO) << "\n" << visitor.to_string();
 
         // cpu
         Metric* cpu_user = entity->get_metric("cpu_user", "cpu");
@@ -259,10 +211,6 @@ TEST_F(SystemMetricsTest, no_proc_file) {
 
         auto entity = registry.get_entity("server");
         ASSERT_TRUE(entity != nullptr);
-
-        TestMetricsVisitor visitor;
-        registry.collect(&visitor);
-        LOG(INFO) << "\n" << visitor.to_string();
 
         // cpu
         Metric* cpu_user = entity->get_metric("cpu_user", "cpu");
