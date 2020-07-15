@@ -45,19 +45,7 @@ public:
 
     RoutineLoadTaskExecutor(ExecEnv* exec_env);
 
-    ~RoutineLoadTaskExecutor() {
-        _thread_pool.shutdown();
-        _thread_pool.join();
-
-        LOG(INFO) << _task_map.size() << " not executed tasks left, cleanup";
-        for (auto it = _task_map.begin(); it != _task_map.end(); ++it) {
-            auto ctx = it->second;
-            if (ctx->unref()) {
-                delete ctx;
-            }
-        }
-        _task_map.clear();
-    }
+    ~RoutineLoadTaskExecutor();
 
     // submit a routine load task
     Status submit_task(const TRoutineLoadTask& task);

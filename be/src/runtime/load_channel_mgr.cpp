@@ -72,6 +72,7 @@ LoadChannelMgr::LoadChannelMgr() : _is_stopped(false) {
 }
 
 LoadChannelMgr::~LoadChannelMgr() {
+    DEREGISTER_HOOK_METRIC(load_channel_count);
     _is_stopped.store(true);
     if (_load_channels_clean_thread.joinable()) {
         _load_channels_clean_thread.join();

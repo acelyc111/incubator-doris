@@ -45,6 +45,7 @@ ResultBufferMgr::ResultBufferMgr()
 }
 
 ResultBufferMgr::~ResultBufferMgr() {
+    DEREGISTER_HOOK_METRIC(result_buffer_block_count);
     _is_stop = true;
     _cancel_thread->join();
 }

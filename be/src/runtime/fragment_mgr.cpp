@@ -381,6 +381,7 @@ FragmentMgr::FragmentMgr(ExecEnv* exec_env) :
 }
 
 FragmentMgr::~FragmentMgr() {
+    DEREGISTER_HOOK_METRIC(plan_fragment_count);
     // stop thread
     _stop = true;
     _cancel_thread.join();

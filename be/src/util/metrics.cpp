@@ -137,6 +137,10 @@ void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* m
     _metrics.emplace(metric_type, metric);
 }
 
+void MetricEntity::deregister_metric(const MetricPrototype* metric_type) {
+    _metrics.erase(metric_type);
+}
+
 Metric* MetricEntity::get_metric(const std::string& name, const std::string& group_name) const {
     MetricPrototype dummy(MetricType::UNTYPED, MetricUnit::NOUNIT, name, "", group_name);
     auto it = _metrics.find(&dummy);

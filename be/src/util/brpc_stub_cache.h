@@ -33,11 +33,7 @@ namespace doris {
 class BrpcStubCache {
 public:
     BrpcStubCache();
-    ~BrpcStubCache() {
-        for (auto& stub : _stub_map) {
-            delete stub.second;
-        }
-    }
+    ~BrpcStubCache();
 
     palo::PInternalService_Stub* get_stub(const butil::EndPoint& endpoint) {
         std::lock_guard<SpinLock> l(_lock);

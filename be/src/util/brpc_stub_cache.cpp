@@ -29,4 +29,10 @@ BrpcStubCache::BrpcStubCache() {
     });
 }
 
+BrpcStubCache::~BrpcStubCache() {
+    DEREGISTER_HOOK_METRIC(brpc_endpoint_stub_count);
+    for (auto& stub : _stub_map) {
+        delete stub.second;
+    }
+}
 }

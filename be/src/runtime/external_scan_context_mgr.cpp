@@ -41,6 +41,12 @@ ExternalScanContextMgr::ExternalScanContextMgr(ExecEnv* exec_env) : _exec_env(ex
     });
 }
 
+ExternalScanContextMgr::~ExternalScanContextMgr() {
+    DEREGISTER_HOOK_METRIC(active_scan_context_count);
+    _is_stop = true;
+    _keep_alive_reaper->join();
+}
+
 Status ExternalScanContextMgr::create_scan_context(std::shared_ptr<ScanContext>* p_context) {
     std::string context_id = generate_uuid_string();
     std::shared_ptr<ScanContext> context(new ScanContext(context_id));

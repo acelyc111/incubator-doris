@@ -30,4 +30,7 @@ LoadStreamMgr::LoadStreamMgr() {
     });
 }
 
+LoadStreamMgr::LoadStreamMgr() {
+    DEREGISTER_HOOK_METRIC(stream_load_pipe_count);
+}
 }

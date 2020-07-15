@@ -52,6 +52,7 @@ SmallFileMgr::SmallFileMgr(
 }
 
 SmallFileMgr::~SmallFileMgr() {
+    DEREGISTER_HOOK_METRIC(small_file_cache_count);
 }
 
 Status SmallFileMgr::init() {

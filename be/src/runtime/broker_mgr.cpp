@@ -41,6 +41,7 @@ BrokerMgr::BrokerMgr(ExecEnv* exec_env) :
 }
 
 BrokerMgr::~BrokerMgr() {
+    DEREGISTER_HOOK_METRIC(broker_count);
     _thread_stop = true;
     _ping_thread.join();
 }

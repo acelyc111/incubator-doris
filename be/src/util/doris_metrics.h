@@ -52,6 +52,11 @@ private:
       DorisMetrics::instance()->name.set_value(func());  \
 });
 
+#define DEREGISTER_HOOK_METRIC(name) \
+  DorisMetrics::instance()->server_entity()->deregister_metric(&METRIC_##name); \
+  DorisMetrics::instance()->metric_registry()->deregister_hook(#name);  \
+});
+
 class DorisMetrics {
 public:
     IntCounter fragment_requests_total;

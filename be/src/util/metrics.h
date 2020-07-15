@@ -243,6 +243,7 @@ public:
         : _name(name), _labels(labels) {}
 
     void register_metric(const MetricPrototype* metric_type, Metric* metric);
+    void deregister_metric(const MetricPrototype* metric_type);
     Metric* get_metric(const std::string& name, const std::string& group_name = "") const;
 
     std::string to_prometheus(const std::string& registry_name) const;

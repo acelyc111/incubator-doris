@@ -40,6 +40,7 @@ ResultQueueMgr::ResultQueueMgr() {
 }
 
 ResultQueueMgr::~ResultQueueMgr() {
+    DEREGISTER_HOOK_METRIC(result_block_queue_count);
 }
 
 Status ResultQueueMgr::fetch_result(const TUniqueId& fragment_instance_id, std::shared_ptr<arrow::RecordBatch>* result, bool *eos) {

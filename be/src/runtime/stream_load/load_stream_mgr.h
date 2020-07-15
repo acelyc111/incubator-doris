@@ -31,7 +31,7 @@ namespace doris {
 class LoadStreamMgr {
 public:
     LoadStreamMgr();
-    ~LoadStreamMgr() { }
+    ~LoadStreamMgr();
 
     // TODO(yingchun): move body to cpp file
     Status put(const UniqueId& id,

@@ -55,6 +55,10 @@ DataStreamMgr::DataStreamMgr() {
     });
 }
 
+DataStreamMgr::~DataStreamMgr() {
+    DEREGISTER_HOOK_METRIC(data_stream_receiver_count);
+    DEREGISTER_HOOK_METRIC(fragment_endpoint_count);
+}
 inline uint32_t DataStreamMgr::get_hash_value(
         const TUniqueId& fragment_instance_id, PlanNodeId node_id) {
     uint32_t value = RawValue::get_hash_value(&fragment_instance_id.lo, TYPE_BIGINT, 0);

@@ -33,6 +33,10 @@ UniqueRowsetIdGenerator::UniqueRowsetIdGenerator(const UniqueId& backend_uid)
     });
 }
 
+UniqueRowsetIdGenerator::~UniqueRowsetIdGenerator() {
+    DEREGISTER_HOOK_METRIC(rowset_count_generated_and_in_use);
+}
+
 // generate a unique rowset id and save it in a set to check whether it is valid in the future
 RowsetId UniqueRowsetIdGenerator::next_id() {
     RowsetId rowset_id;
