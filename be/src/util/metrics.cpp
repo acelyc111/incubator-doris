@@ -155,7 +155,7 @@ Metric* MetricEntity::get_metric(const std::string& name, const std::string& gro
 
 void MetricEntity::register_hook(const std::string& name, const std::function<void()>& hook) {
     std::lock_guard<SpinLock> l(_lock);
-    DCHECK(_hooks.find(name) == _hooks.end()) << "hook is already exist!  << _name << ":" << name;
+    DCHECK(_hooks.find(name) == _hooks.end()) << "hook is already exist! " << _name << ":" << name;
     _hooks.emplace(name, hook);
 }
 
@@ -199,6 +199,14 @@ std::shared_ptr<MetricEntity> MetricRegistry::get_entity(const std::string& name
         return std::shared_ptr<MetricEntity>();
     }
     return entity->second;
+}
+
+void MetricRegistry::trigger_all_hooks() const {
+    std::lock_guard<SpinLock> l(_lock);
+    for (const auto& entity : _entities) {
+        std::lock_guard<SpinLock> l(entity.second->_lock);
+        entity.second->trigger_hook_unlocked();
+    }
 }
 
 std::string MetricRegistry::to_prometheus() const {

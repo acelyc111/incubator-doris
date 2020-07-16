@@ -273,6 +273,8 @@ public:
     void deregister_entity(const std::string& name);
     std::shared_ptr<MetricEntity> get_entity(const std::string& name);
 
+    void trigger_all_hooks() const;
+
     std::string to_prometheus() const;
     std::string to_json() const;
     std::string to_core_string() const;
