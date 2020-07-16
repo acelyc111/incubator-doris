@@ -95,6 +95,8 @@ set(UTIL_FILES
   threadpool.cpp
   trace.cpp
   trace_metrics.cpp
+  easy_json.cc
+  mustache/mustache.cc
 )
 
 if (WITH_MYSQL)
