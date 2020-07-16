@@ -73,6 +73,7 @@ public:
     Metric(MetricType type, MetricUnit unit) {}
     virtual ~Metric() {}
     virtual std::string to_string() const = 0;
+    virtual rapidjson::Value to_json_value(rapidjson::Document::AllocatorType& allocator) const = 0;
 
 private:
     friend class MetricRegistry;
@@ -102,10 +103,16 @@ public:
         std::lock_guard<SpinLock> l(this->_lock);
         this->_value += delta;
     }
+
     void set_value(const T& value) {
         std::lock_guard<SpinLock> l(this->_lock);
         this->_value = value;
     }
+
+    rapidjson::Value to_json_value(rapidjson::Document::AllocatorType& allocator) const override {
+        return rapidjson::Value(value(), allocator);
+    }
+
 protected:
     // We use spinlock instead of std::atomic is because atomic don't support
     // double's fetch_add
@@ -144,6 +151,11 @@ public:
     void increment(const T& delta) {
         __sync_fetch_and_add(_value.access(), delta);
     }
+
+    rapidjson::Value to_json_value(rapidjson::Document::AllocatorType& allocator) const override {
+        return rapidjson::Value(value(), allocator);
+    }
+
 protected:
     CoreLocalValue<T> _value;
 };
