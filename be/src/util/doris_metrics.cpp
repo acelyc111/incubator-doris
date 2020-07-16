@@ -230,7 +230,7 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, load_rows);
     METRIC_REGISTER(_server_metric_entity, load_bytes);
 
-    _metric_registry.register_hook(_hook_name, std::bind(&DorisMetrics::_update, this));
+    _server_metric_entity->register_hook(_hook_name, std::bind(&DorisMetrics::_update, this));
 }
 
 void DorisMetrics::initialize(

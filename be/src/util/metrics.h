@@ -246,16 +246,20 @@ public:
     void deregister_metric(const MetricPrototype* metric_type);
     Metric* get_metric(const std::string& name, const std::string& group_name = "") const;
 
-    std::string to_prometheus(const std::string& registry_name) const;
+    // Register a hook, this hook will called before get_metric is called
+    void register_hook(const std::string& name, const std::function<void()>& hook);
+    void deregister_hook(const std::string& name);
+    void trigger_hook_unlocked();
 
 private:
     friend class MetricRegistry;
 
     std::string _name;
     Labels _labels;
-    MetricByType _metrics;
 
-    std::function<void()> _hook;
+    mutable SpinLock _lock;
+    MetricByType _metrics;
+    std::map<std::string, std::function<void()>> _hooks;
 };
 
 using EntityMetricsByType = std::unordered_map<const MetricPrototype*, std::vector<std::pair<MetricEntity*, Metric*>>, MetricPrototypeHash, MetricPrototypeEqualTo>;
@@ -269,35 +273,14 @@ public:
     void deregister_entity(const std::string& name);
     std::shared_ptr<MetricEntity> get_entity(const std::string& name);
 
-    // Register a hook, this hook will called before collect is called
-    bool register_hook(const std::string& name, const std::function<void()>& hook);
-    void deregister_hook(const std::string& name);
-
     std::string to_prometheus() const;
     std::string to_json() const;
     std::string to_core_string() const;
 
-    void trigger_hook() {
-        std::lock_guard<SpinLock> l(_lock);
-        unprotected_trigger_hook();
-    }
-
 private:
-    void unprotected_trigger_hook() const {
-        for (const auto& hook : _hooks) {
-            hook.second();
-        }
-    }
-
-private:
-    void _deregister_locked(Metric* metric);
-
     const std::string _name;
 
     mutable SpinLock _lock;
-    // TODO(yingchun): hooks are also need to bind to MetricEntity
-    std::map<std::string, std::function<void()>> _hooks;
-
     std::unordered_map<std::string, std::shared_ptr<MetricEntity>> _entities;
 };
 

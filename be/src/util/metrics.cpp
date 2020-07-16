@@ -133,16 +133,19 @@ std::string MetricPrototype::to_string(const std::string& registry_name) const {
 }
 
 void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* metric) {
-    DCHECK(_metrics.find(metric_type) == _metrics.end()) << _name << ":" << metric_type->name;
+    std::lock_guard<SpinLock> l(_lock);
+    DCHECK(_metrics.find(metric_type) == _metrics.end()) << "metric is already exist! " << _name << ":" << metric_type->name;
     _metrics.emplace(metric_type, metric);
 }
 
 void MetricEntity::deregister_metric(const MetricPrototype* metric_type) {
+    std::lock_guard<SpinLock> l(_lock);
     _metrics.erase(metric_type);
 }
 
 Metric* MetricEntity::get_metric(const std::string& name, const std::string& group_name) const {
     MetricPrototype dummy(MetricType::UNTYPED, MetricUnit::NOUNIT, name, "", group_name);
+    std::lock_guard<SpinLock> l(_lock);
     auto it = _metrics.find(&dummy);
     if (it == _metrics.end()) {
         return nullptr;
@@ -150,12 +153,26 @@ Metric* MetricEntity::get_metric(const std::string& name, const std::string& gro
     return it->second;
 }
 
-std::string MetricEntity::to_prometheus(const std::string& registry_name) const {
-    std::stringstream ss;
-    for (const auto& metric : _metrics) {
-        ss << metric.first->to_string(registry_name) << labels_to_string(_labels, metric.first->labels) << " " << metric.second->to_string() << "\n";
+void MetricEntity::register_hook(const std::string& name, const std::function<void()>& hook) {
+    std::lock_guard<SpinLock> l(_lock);
+    DCHECK(_hooks.find(name) == _hooks.end()) << "hook is already exist!  << _name << ":" << name;
+    _hooks.emplace(name, hook);
+}
+
+void MetricEntity::deregister_hook(const std::string& name) {
+    std::lock_guard<SpinLock> l(_lock);
+    _hooks.erase(name);
+}
+
+void MetricEntity::trigger_hook_unlocked() {
+    // When 'enable_metric_calculator' is true, hooks will be triggered by a background thread,
+    // see 'calculate_metrics' in daemon.cpp for more details.
+    if (config::enable_metric_calculator) {
+        return;
     }
-    return ss.str();
+    for (const auto& hook : _hooks) {
+        hook.second();
+    }
 }
 
 MetricRegistry::~MetricRegistry() {
@@ -184,28 +201,14 @@ std::shared_ptr<MetricEntity> MetricRegistry::get_entity(const std::string& name
     return entity->second;
 }
 
-bool MetricRegistry::register_hook(const std::string& name, const std::function<void()>& hook) {
-    std::lock_guard<SpinLock> l(_lock);
-    auto it = _hooks.emplace(name, hook);
-    return it.second;
-}
-
-void MetricRegistry::deregister_hook(const std::string& name) {
-    std::lock_guard<SpinLock> l(_lock);
-    _hooks.erase(name);
-}
-
 std::string MetricRegistry::to_prometheus() const {
-    std::lock_guard<SpinLock> l(_lock);
-    if (!config::enable_metric_calculator) {
-        // Before we collect, need to call hooks
-        unprotected_trigger_hook();
-    }
-
     std::stringstream ss;
     // Reorder by MetricPrototype
     EntityMetricsByType entity_metrics_by_types;
+    std::lock_guard<SpinLock> l(_lock);
     for (const auto& entity : _entities) {
+        std::lock_guard<SpinLock> l(entity.second->_lock);
+        entity.second->trigger_hook_unlocked();
         for (const auto& metric : entity.second->_metrics) {
             std::pair<MetricEntity*, Metric*> new_elem = std::make_pair(entity.second.get(), metric.second);
             auto found = entity_metrics_by_types.find(metric.first);
@@ -235,16 +238,12 @@ std::string MetricRegistry::to_prometheus() const {
 }
 
 std::string MetricRegistry::to_json() const {
-    std::lock_guard<SpinLock> l(_lock);
-    if (!config::enable_metric_calculator) {
-        // Before we collect, need to call hooks
-        unprotected_trigger_hook();
-    }
-
-    // Output
     rapidjson::Document doc{rapidjson::kArrayType};
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    std::lock_guard<SpinLock> l(_lock);
     for (const auto& entity : _entities) {
+        std::lock_guard<SpinLock> l(entity.second->_lock);
+        entity.second->trigger_hook_unlocked();
         for (const auto& metric : entity.second->_metrics) {
             rapidjson::Value metric_obj(rapidjson::kObjectType);
             // tags
@@ -281,15 +280,11 @@ std::string MetricRegistry::to_json() const {
 }
 
 std::string MetricRegistry::to_core_string() const {
-    std::lock_guard<SpinLock> l(_lock);
-    if (!config::enable_metric_calculator) {
-        // Before we collect, need to call hooks
-        unprotected_trigger_hook();
-    }
-
     std::stringstream ss;
-    EntityMetricsByType entity_metrics_by_types;
+    std::lock_guard<SpinLock> l(_lock);
     for (const auto& entity : _entities) {
+        std::lock_guard<SpinLock> l(entity.second->_lock);
+        entity.second->trigger_hook_unlocked();
         for (const auto &metric : entity.second->_metrics) {
             if (metric.first->is_core_metric) {
                 ss << metric.first->display_name(_name) << " LONG " << metric.second->to_string() << "\n";

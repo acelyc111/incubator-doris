@@ -198,15 +198,13 @@ SystemMetrics::SystemMetrics(MetricRegistry* registry,
                              const std::vector<std::string>& network_interfaces) {
     DCHECK(registry != nullptr);
     _registry = registry;
-    if (!_registry->register_hook(_s_hook_name, std::bind(&SystemMetrics::update, this))) {
-        return;
-    }
 #ifndef BE_TEST
     auto entity = DorisMetrics::instance()->server_entity();
 #else
     auto entity = _registry->register_entity("server", {});
 #endif
     DCHECK(entity != nullptr);
+    entity->register_hook(_s_hook_name, std::bind(&SystemMetrics::update, this));
     _install_cpu_metrics(entity);
     _install_memory_metrics(entity);
     _install_disk_metrics(disk_devices);
@@ -216,11 +214,9 @@ SystemMetrics::SystemMetrics(MetricRegistry* registry,
 }
 
 SystemMetrics::~SystemMetrics() {
-    // we must deregister us from registry
-    if (_registry != nullptr) {
-        _registry->deregister_hook(_s_hook_name);
-        _registry = nullptr;
-    }
+    DCHECK(_registry != nullptr);
+    _registry->deregister_hook(_s_hook_name);
+
     for (auto& it : _disk_metrics) {
         delete it.second;
     }

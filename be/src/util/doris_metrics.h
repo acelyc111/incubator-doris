@@ -48,13 +48,13 @@ private:
 
 #define REGISTER_HOOK_METRIC(name, func) \
   DorisMetrics::instance()->server_entity()->register_metric(&METRIC_##name, &DorisMetrics::instance()->name); \
-  DorisMetrics::instance()->metric_registry()->register_hook(#name, [&]() { \
+  DorisMetrics::instance()->server_entity()->register_hook(#name, [&]() { \
       DorisMetrics::instance()->name.set_value(func());  \
 });
 
 #define DEREGISTER_HOOK_METRIC(name) \
   DorisMetrics::instance()->server_entity()->deregister_metric(&METRIC_##name); \
-  DorisMetrics::instance()->metric_registry()->deregister_hook(#name);
+  DorisMetrics::instance()->server_entity()->deregister_hook(#name);
 
 class DorisMetrics {
 public:
