@@ -109,7 +109,6 @@ private:
     typedef boost::unordered_map<void*, ThriftClientImpl*> ClientMap;
     ClientMap _client_map;
 
-    // MetricRegistry
     bool _metrics_enabled;
 
     // max connections per host in this cache, -1 means unlimited

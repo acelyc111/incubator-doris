@@ -117,21 +117,6 @@ std::string MetricPrototype::json_metric_name() const {
     return group_name.empty() ? name : group_name;
 }
 
-std::string MetricPrototype::to_string(const std::string& registry_name) const {
-    std::stringstream ss;
-    ss << TYPE_line(registry_name);
-    switch (type) {
-        case MetricType::COUNTER:
-        case MetricType::GAUGE:
-            ss << display_name(registry_name);
-            break;
-        default:
-            break;
-    }
-
-    return ss.str();
-}
-
 void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* metric) {
     std::lock_guard<SpinLock> l(_lock);
     DCHECK(_metrics.find(metric_type) == _metrics.end()) << "metric is already exist! " << _name << ":" << metric_type->name;

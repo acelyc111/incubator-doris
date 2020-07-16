@@ -37,7 +37,6 @@ class FragmentMgr;
 class LoadPathMgr;
 class LoadStreamMgr;
 class MemTracker;
-class MetricRegistry;
 class StorageEngine;
 class PoolMemTrackerRegistry;
 class PriorityThreadPool;

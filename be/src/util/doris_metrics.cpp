@@ -127,8 +127,6 @@ DEFINE_COUNTER_METRIC_2ARG(disk_sync_total, MetricUnit::OPERATIONS);
 DEFINE_GAUGE_METRIC_2ARG(blocks_open_reading, MetricUnit::BLOCKS);
 DEFINE_GAUGE_METRIC_2ARG(blocks_open_writing, MetricUnit::BLOCKS);
 
-DEFINE_GAUGE_METRIC_2ARG(active_scratch_dirs, MetricUnit::NOUNIT);
-
 DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _metric_registry(_name) {
     _server_metric_entity = _metric_registry.register_entity("server", {});
 

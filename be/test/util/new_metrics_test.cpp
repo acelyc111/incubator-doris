@@ -125,56 +125,65 @@ TEST_F(MetricsTest, Gauge) {
     }
 }
 
-TEST_F(MetricsTest, MetricRegistry) {
-    // TODO(yingchun): Add test for MetricRegistry
-//    MetricRegistry registry("test");
-//    IntCounter cpu_idle(MetricUnit::PERCENT);
-//    cpu_idle.increment(12);
-//    ASSERT_TRUE(registry.register_metric("cpu_idle", &cpu_idle));
-//    // registry failed
-//    IntCounter dummy(MetricUnit::PERCENT);
-//    ASSERT_FALSE(registry.register_metric("cpu_idle", &dummy));
-//    IntCounter memory_usage(MetricUnit::BYTES);
-//    memory_usage.increment(24);
-//    ASSERT_TRUE(registry.register_metric("memory_usage", &memory_usage));
-//    {
-//        TestMetricsVisitor visitor;
-//        registry.collect(&visitor);
-//        ASSERT_STREQ("test_cpu_idle 12\ntest_memory_usage 24\n", visitor.to_string().c_str());
-//    }
-//    registry.deregister_metric(&memory_usage);
-//    {
-//        TestMetricsVisitor visitor;
-//        registry.collect(&visitor);
-//        ASSERT_STREQ("test_cpu_idle 12\n", visitor.to_string().c_str());
-//    }
-//    // test get_metric
-//    ASSERT_TRUE(registry.get_metric("cpu_idle") != nullptr);
-//    ASSERT_TRUE(registry.get_metric("memory_usage") == nullptr);
+TEST_F(MetricsTest, MetricPrototype) {
+    MetricPrototype cpu_idle_type(MetricType::COUNTER, MetricUnit::PERCENT, "cpu_idle",
+                                  "CPU's idle time percent", "cpu", {{"mode", "idle"}}, true);
+}
+
+TEST_F(MetricsTest, MetricEntity) {
+    MetricEntity entity("test");
+
+    MetricPrototype cpu_idle_type(MetricType::COUNTER, MetricUnit::PERCENT, "cpu_idle",
+                                  "CPU's idle time percent", "cpu", {{"mode", "idle"}}, true);
+    IntCounter cpu_idle;
+    entity.register_metric(&cpu_idle_type, &cpu_idle));
+    cpu_idle.increment(12);
+
+    IntCounter dummy(MetricUnit::PERCENT);
+    ASSERT_FALSE(entity.register_metric("cpu_idle", &dummy));
+
+    IntCounter memory_usage(MetricUnit::BYTES);
+    memory_usage.increment(24);
+    ASSERT_TRUE(entity.register_metric("memory_usage", &memory_usage));
+
+    {
+        TestMetricsVisitor visitor;
+        entity.collect(&visitor);
+        ASSERT_STREQ("test_cpu_idle 12\ntest_memory_usage 24\n", visitor.to_string().c_str());
+    }
+    entity.deregister_metric(&memory_usage);
+    {
+        TestMetricsVisitor visitor;
+        entity.collect(&visitor);
+        ASSERT_STREQ("test_cpu_idle 12\n", visitor.to_string().c_str());
+    }
+    // test get_metric
+    ASSERT_TRUE(entity.get_metric("cpu_idle") != nullptr);
+    ASSERT_TRUE(entity.get_metric("memory_usage") == nullptr);
 }
 
 TEST_F(MetricsTest, MetricRegistry2) {
     // TODO(yingchun): Add test for MetricEntity
-//    MetricRegistry registry("test");
-//    IntCounter cpu_idle(MetricUnit::PERCENT);
-//    cpu_idle.increment(12);
-//    ASSERT_TRUE(registry.register_metric("cpu_idle", &cpu_idle));
-//
-//    {
-//        // memory_usage will deregister after this block
-//        IntCounter memory_usage(MetricUnit::BYTES);
-//        memory_usage.increment(24);
-//        ASSERT_TRUE(registry.register_metric("memory_usage", &memory_usage));
-//        TestMetricsVisitor visitor;
-//        registry.collect(&visitor);
-//        ASSERT_STREQ("test_cpu_idle 12\ntest_memory_usage 24\n", visitor.to_string().c_str());
-//    }
-//
-//    {
-//        TestMetricsVisitor visitor;
-//        registry.collect(&visitor);
-//        ASSERT_STREQ("test_cpu_idle 12\n", visitor.to_string().c_str());
-//    }
+    MetricRegistry registry("test");
+    IntCounter cpu_idle(MetricUnit::PERCENT);
+    cpu_idle.increment(12);
+    ASSERT_TRUE(registry.register_metric("cpu_idle", &cpu_idle));
+
+    {
+        // memory_usage will deregister after this block
+        IntCounter memory_usage(MetricUnit::BYTES);
+        memory_usage.increment(24);
+        ASSERT_TRUE(registry.register_metric("memory_usage", &memory_usage));
+        TestMetricsVisitor visitor;
+        registry.collect(&visitor);
+        ASSERT_STREQ("test_cpu_idle 12\ntest_memory_usage 24\n", visitor.to_string().c_str());
+    }
+
+    {
+        TestMetricsVisitor visitor;
+        registry.collect(&visitor);
+        ASSERT_STREQ("test_cpu_idle 12\n", visitor.to_string().c_str());
+    }
 }
 
 }

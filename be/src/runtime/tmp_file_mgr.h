@@ -26,7 +26,6 @@
 
 namespace doris {
 
-class MetricRegistry;
 class ExecEnv;
 
 // TmpFileMgr creates and manages temporary files and directories on the local
@@ -115,11 +114,9 @@ public:
     };
 
     TmpFileMgr(ExecEnv* exec_env);
-    TmpFileMgr() { }
+    TmpFileMgr();
 
-    ~TmpFileMgr(){
-        // do nothing.
-    }
+    ~TmpFileMgr();
 
     // Creates the configured tmp directories. If multiple directories are specified per
     // disk, only one is created and used. Must be called after DiskInfo::Init().
@@ -195,7 +192,7 @@ private:
     std::vector<Dir> _tmp_dirs;
 
     // Metric to track active scratch directories.
-    IntGauge* _num_active_scratch_dirs_metric;
+    IntGauge active_scratch_dirs;
 };
 
 } // end namespace doris

@@ -23,12 +23,7 @@ using boost::shared_ptr;
 
 namespace doris {
 
-boost::scoped_ptr<MetricRegistry> TestEnv::_s_static_metrics;
-
 TestEnv::TestEnv() {
-    if (_s_static_metrics == NULL) {
-        _s_static_metrics.reset(new MetricRegistry("test_env"));
-    }
     _exec_env.reset(new ExecEnv());
     // _exec_env->init_for_tests();
     _io_mgr_tracker.reset(new MemTracker(-1));

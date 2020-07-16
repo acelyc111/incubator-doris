@@ -183,10 +183,8 @@ public:
           group_name(std::move(group_name_)),
           labels(std::move(labels_)) {}
 
-    std::string to_string(const std::string& registry_name) const;
     std::string display_name(const std::string& registry_name) const;
     std::string TYPE_line(const std::string& registry_name) const;
-
     std::string json_metric_name() const;
 
     bool is_core_metric;
