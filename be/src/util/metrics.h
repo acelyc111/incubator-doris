@@ -183,9 +183,8 @@ public:
           group_name(std::move(group_name_)),
           labels(std::move(labels_)) {}
 
-    std::string display_name(const std::string& registry_name) const;
-    std::string TYPE_line(const std::string& registry_name) const;
-    std::string json_metric_name() const;
+    std::string simple_name() const;
+    std::string combine_name(const std::string& registry_name) const;
 
     bool is_core_metric;
     MetricType type;
@@ -247,7 +246,7 @@ public:
     // Register a hook, this hook will called before get_metric is called
     void register_hook(const std::string& name, const std::function<void()>& hook);
     void deregister_hook(const std::string& name);
-    void trigger_hook_unlocked();
+    void trigger_hook_unlocked() const;
 
 private:
     friend class MetricRegistry;

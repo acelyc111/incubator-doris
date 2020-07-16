@@ -103,18 +103,12 @@ std::string labels_to_string(const Labels& entity_labels, const Labels& metric_l
     return ss.str();
 }
 
-std::string MetricPrototype::display_name(const std::string& registry_name) const {
-    return (registry_name.empty() ? std::string() : registry_name  + "_") + (group_name.empty() ? name : group_name);
-}
-
-std::string MetricPrototype::TYPE_line(const std::string& registry_name) const {
-    std::stringstream ss;
-    ss << "# TYPE " << display_name(registry_name) << " " << type << "\n";
-    return ss.str();
-}
-
-std::string MetricPrototype::json_metric_name() const {
+std::string MetricPrototype::simple_name() const {
     return group_name.empty() ? name : group_name;
+}
+
+std::string MetricPrototype::combine_name(const std::string& registry_name) const {
+    return (registry_name.empty() ? std::string() : registry_name  + "_") + simple_name();
 }
 
 void MetricEntity::register_metric(const MetricPrototype* metric_type, Metric* metric) {
@@ -149,7 +143,7 @@ void MetricEntity::deregister_hook(const std::string& name) {
     _hooks.erase(name);
 }
 
-void MetricEntity::trigger_hook_unlocked() {
+void MetricEntity::trigger_hook_unlocked() const {
     // When 'enable_metric_calculator' is true, hooks will be triggered by a background thread,
     // see 'calculate_metrics' in daemon.cpp for more details.
     if (config::enable_metric_calculator) {
@@ -216,10 +210,10 @@ std::string MetricRegistry::to_prometheus() const {
     std::string last_group_name;
     for (const auto& entity_metrics_by_type : entity_metrics_by_types) {
         if (last_group_name.empty() || last_group_name != entity_metrics_by_type.first->group_name) {
-            ss << entity_metrics_by_type.first->TYPE_line(_name);                                        // metric TYPE line
+            ss << "# TYPE " << entity_metrics_by_type.first->combine_name(_name) << " " << type << "\n"; // metric TYPE line
         }
         last_group_name = entity_metrics_by_type.first->group_name;
-        std::string display_name = entity_metrics_by_type.first->display_name(_name);
+        std::string display_name = entity_metrics_by_type.first->combine_name(_name);
         for (const auto& entity_metric : entity_metrics_by_type.second) {
             ss << display_name                                                                           // metric name
                << labels_to_string(entity_metric.first->_labels, entity_metrics_by_type.first->labels)   // metric labels
@@ -241,7 +235,7 @@ std::string MetricRegistry::to_json() const {
             rapidjson::Value metric_obj(rapidjson::kObjectType);
             // tags
             rapidjson::Value tag_obj(rapidjson::kObjectType);
-            tag_obj.AddMember("metric", rapidjson::Value(metric.first->json_metric_name().c_str(), allocator), allocator);
+            tag_obj.AddMember("metric", rapidjson::Value(metric.first->simple_name().c_str(), allocator), allocator);
             // MetricPrototype's labels
             for (auto& label : metric.first->labels) {
                 tag_obj.AddMember(
@@ -280,7 +274,7 @@ std::string MetricRegistry::to_core_string() const {
         entity.second->trigger_hook_unlocked();
         for (const auto &metric : entity.second->_metrics) {
             if (metric.first->is_core_metric) {
-                ss << metric.first->display_name(_name) << " LONG " << metric.second->to_string() << "\n";
+                ss << metric.first->combine_name(_name) << " LONG " << metric.second->to_string() << "\n";
             }
         }
     }
