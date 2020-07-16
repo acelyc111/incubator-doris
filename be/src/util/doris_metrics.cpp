@@ -223,8 +223,6 @@ DorisMetrics::DorisMetrics() : _name("doris_be"), _hook_name("doris_metrics"), _
     METRIC_REGISTER(_server_metric_entity, blocks_open_reading);
     METRIC_REGISTER(_server_metric_entity, blocks_open_writing);
 
-    METRIC_REGISTER(_server_metric_entity, active_scratch_dirs);
-
     METRIC_REGISTER(_server_metric_entity, load_rows);
     METRIC_REGISTER(_server_metric_entity, load_bytes);
 

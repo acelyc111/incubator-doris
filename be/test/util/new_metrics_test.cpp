@@ -144,7 +144,7 @@ TEST_F(MetricsTest, MetricPrototype) {
     }
 }
 
-TEST_F(MetricsTest, MetricEntityWithMetrics) {
+TEST_F(MetricsTest, MetricEntityWithMetric) {
     MetricEntity entity("test_entity");
 
     IntCounter cpu_idle;
@@ -173,7 +173,7 @@ TEST_F(MetricsTest, MetricEntityWithMetrics) {
     ASSERT_EQ(nullptr, metric);
 }
 
-TEST_F(MetricsTest, MetricEntityWithMetrics) {
+TEST_F(MetricsTest, MetricEntityWithHook) {
     MetricEntity entity("test_entity");
 
     IntCounter cpu_idle;
@@ -217,11 +217,13 @@ TEST_F(MetricsTest, MetricRegistryRegister) {
     ASSERT_EQ(nullptr, entity);
 
     // Register
-    registry.register_entity("test_entity", {});
+    entity = registry.register_entity("test_entity", {});
+    ASSERT_NE(nullptr, entity);
 
     // After register
-    entity = registry.get_entity("test_entity");
-    ASSERT_NE(nullptr, entity);
+    auto entity1 = registry.get_entity("test_entity");
+    ASSERT_NE(nullptr, entity1);
+    ASSERT_EQ(entity, entity1);
 
     registry.deregister_entity("test_entity");
     entity = registry.get_entity("test_entity");
@@ -236,20 +238,174 @@ TEST_F(MetricsTest, MetricRegistryOutput) {
     ASSERT_EQ("", registry.to_json());
     ASSERT_EQ("", registry.to_core_string());
 
-    // Before register
-    auto entity = registry.get_entity("test_entity");
-    ASSERT_EQ(nullptr, entity);
+    {
+        // Register one entity with no metrics
+        auto entity = registry.register_entity("test_entity", {});
 
-    // Register
-    registry.register_entity("test_entity", {});
+        // One empty entity
+        ASSERT_EQ("", registry.to_prometheus());
+        ASSERT_EQ("", registry.to_json());
+        ASSERT_EQ("", registry.to_core_string());
+    }
 
-    // After register
-    entity = registry.get_entity("test_entity");
-    ASSERT_NE(nullptr, entity);
+    {
+        // Register one common metric to the entity
+        auto entity = registry.register_entity("test_entity", {});
 
-    registry.deregister_entity("test_entity");
-    entity = registry.get_entity("test_entity");
-    ASSERT_EQ(nullptr, entity);
+        IntGauge cpu_idle;
+        MetricPrototype cpu_idle_type(MetricType::GAUGE, MetricUnit::PERCENT, "cpu_idle");
+        entity->register_metric(&cpu_idle_type, &cpu_idle);
+        cpu_idle.increment(8);
+
+        ASSERT_EQ(R"(
+# TYPE test_registry_cpu_idle gauge
+test_registry_cpu_idle 8
+)", registry.to_prometheus());
+        ASSERT_EQ(R"(
+[
+  {
+    "tags": {
+      "metric": "cpu_idle"
+    },
+    "unit": "percent",
+    "value": 8
+  }
+]
+)", registry.to_json());
+        ASSERT_EQ("", registry.to_core_string());
+        registry.deregister_entity("test_entity");
+    }
+
+    {
+        // Register one core metric with group name to the entity
+        auto entity = registry.register_entity("test_entity", {});
+
+        IntGauge cpu_idle;
+        MetricPrototype cpu_idle_type(MetricType::GAUGE, MetricUnit::PERCENT, "cpu_idle", "", "cpu", {{"mode", "idle"}}, true);
+        entity->register_metric(&cpu_idle_type, &cpu_idle);
+        cpu_idle.increment(18);
+
+        ASSERT_EQ(R"(
+# TYPE test_registry_cpu gauge
+test_registry_cpu{mode="idle"} 18
+)", registry.to_prometheus());
+        ASSERT_EQ(R"(
+[
+  {
+    "tags": {
+      "metric": "cpu",
+      "mode": "idle"
+    },
+    "unit": "percent",
+    "value": 18
+  }
+]
+)", registry.to_json());
+        ASSERT_EQ("test_registry_cpu_idle LONG 18\n", registry.to_core_string());
+        registry.deregister_entity("test_entity");
+    }
+
+    {
+        // Register one common metric to an entity with label
+        auto entity = registry.register_entity("test_entity", {{"name", "lable_test"}});
+
+        IntGauge cpu_idle;
+        MetricPrototype cpu_idle_type(MetricType::GAUGE, MetricUnit::PERCENT, "cpu_idle");
+        entity->register_metric(&cpu_idle_type, &cpu_idle);
+        cpu_idle.increment(28);
+
+        ASSERT_EQ(R"(
+# TYPE test_registry_cpu_idle gauge
+test_registry_cpu_idle{name="lable_test"} 28
+)", registry.to_prometheus());
+        ASSERT_EQ(R"(
+[
+  {
+    "tags": {
+      "metric": "cpu_idle",
+      "name": "lable_test"
+    },
+    "unit": "percent",
+    "value": 28
+  }
+]
+)", registry.to_json());
+        ASSERT_EQ("", registry.to_core_string());
+        registry.deregister_entity("test_entity");
+    }
+
+    {
+        // Register one common metric with group name to an entity with label
+        auto entity = registry.register_entity("test_entity", {{"name", "lable_test"}});
+
+        IntGauge cpu_idle;
+        MetricPrototype cpu_idle_type(MetricType::GAUGE, MetricUnit::PERCENT, "cpu_idle", "", "cpu", {{"mode", "idle"}});
+        entity->register_metric(&cpu_idle_type, &cpu_idle);
+        cpu_idle.increment(38);
+
+        ASSERT_EQ(R"(
+# TYPE test_registry_cpu gauge
+test_registry_cpu{mode="idle",name="lable_test"} 38
+)", registry.to_prometheus());
+        ASSERT_EQ(R"(
+[
+  {
+    "tags": {
+      "metric": "cpu",
+      "mode": "idle",
+      "name": "lable_test"
+    },
+    "unit": "percent",
+    "value": 38
+  }
+]
+)", registry.to_json());
+        ASSERT_EQ("", registry.to_core_string());
+        registry.deregister_entity("test_entity");
+    }
+
+    {
+        // Register two common metrics to one entity
+        auto entity = registry.register_entity("test_entity", {});
+
+        IntGauge cpu_idle;
+        MetricPrototype cpu_idle_type(MetricType::GAUGE, MetricUnit::PERCENT, "cpu_idle", "", "cpu", {{"mode", "idle"}});
+        entity->register_metric(&cpu_idle_type, &cpu_idle);
+        cpu_idle.increment(48);
+
+        IntGauge cpu_guest;
+        MetricPrototype cpu_guest_type(MetricType::GAUGE, MetricUnit::PERCENT, "cpu_guest", "", "cpu", {{"mode", "guest"}});
+        entity->register_metric(&cpu_guest_type, &cpu_guest);
+        cpu_guest.increment(58);
+
+        ASSERT_EQ(R"(
+# TYPE test_registry_cpu gauge
+test_registry_cpu{mode="idle"} 48
+test_registry_cpu{mode="guest"} 58
+)", registry.to_prometheus());
+        ASSERT_EQ(R"(
+[
+  {
+    "tags": {
+      "metric": "cpu",
+      "mode": "idle"
+    },
+    "unit": "percent",
+    "value": 48
+  },
+  {
+    "tags": {
+      "metric": "cpu",
+      "mode": "guest"
+    },
+    "unit": "percent",
+    "value": 58
+  }
+]
+)", registry.to_json());
+        ASSERT_EQ("", registry.to_core_string());
+        registry.deregister_entity("test_entity");
+    }
 }
 }
 

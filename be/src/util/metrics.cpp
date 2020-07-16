@@ -210,7 +210,8 @@ std::string MetricRegistry::to_prometheus() const {
     std::string last_group_name;
     for (const auto& entity_metrics_by_type : entity_metrics_by_types) {
         if (last_group_name.empty() || last_group_name != entity_metrics_by_type.first->group_name) {
-            ss << "# TYPE " << entity_metrics_by_type.first->combine_name(_name) << " " << type << "\n"; // metric TYPE line
+            ss << "# TYPE " << entity_metrics_by_type.first->combine_name(_name) << " "
+               << entity_metrics_by_type.first->type << "\n"; // metric TYPE line
         }
         last_group_name = entity_metrics_by_type.first->group_name;
         std::string display_name = entity_metrics_by_type.first->combine_name(_name);

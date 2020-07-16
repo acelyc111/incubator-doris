@@ -219,6 +219,9 @@ public:
 #define METRIC_REGISTER(entity, metric)                                 \
     entity->register_metric(&METRIC_##metric, &metric)
 
+#define METRIC_DEREGISTER(entity, metric)                               \
+    entity->register_metric(&METRIC_##metric)
+
 // For 'metrics' in MetricEntity.
 struct MetricPrototypeHash {
     size_t operator()(const MetricPrototype* metric_prototype) const {
