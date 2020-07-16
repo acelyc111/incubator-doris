@@ -215,7 +215,7 @@ SystemMetrics::SystemMetrics(MetricRegistry* registry,
 
 SystemMetrics::~SystemMetrics() {
     DCHECK(_registry != nullptr);
-    _registry->deregister_hook(_s_hook_name);
+    _registry->get_entity("server")->deregister_hook(_s_hook_name);
 
     for (auto& it : _disk_metrics) {
         delete it.second;
