@@ -256,6 +256,7 @@ std::string MetricRegistry::to_json() const {
             rapidjson::Value unit_val(unit_name(metric.first->unit), allocator);
             metric_obj.AddMember("unit", unit_val, allocator);
             // value
+            // TODO(yingchun): the value is a string, should be int or some thing
             metric_obj.AddMember("value", rapidjson::Value(metric.second->to_string().c_str(), allocator), allocator);
             doc.PushBack(metric_obj, allocator);
         }

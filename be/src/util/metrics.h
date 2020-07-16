@@ -220,7 +220,7 @@ public:
     entity->register_metric(&METRIC_##metric, &metric)
 
 #define METRIC_DEREGISTER(entity, metric)                               \
-    entity->register_metric(&METRIC_##metric)
+    entity->deregister_metric(&METRIC_##metric)
 
 // For 'metrics' in MetricEntity.
 struct MetricPrototypeHash {
