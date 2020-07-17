@@ -73,7 +73,7 @@ public:
     Metric(MetricType type, MetricUnit unit) {}
     virtual ~Metric() {}
     virtual std::string to_string() const = 0;
-    virtual rapidjson::Value to_json_value(rapidjson::Document::AllocatorType& allocator) const = 0;
+    virtual rj::Value to_json_value() const = 0;
 
 private:
     friend class MetricRegistry;
@@ -109,8 +109,8 @@ public:
         this->_value = value;
     }
 
-    rapidjson::Value to_json_value(rapidjson::Document::AllocatorType& allocator) const override {
-        return rapidjson::Value(value(), allocator);
+    rj::Value to_json_value() const override {
+        return rj::Value(value());
     }
 
 protected:
@@ -152,8 +152,8 @@ public:
         __sync_fetch_and_add(_value.access(), delta);
     }
 
-    rapidjson::Value to_json_value(rapidjson::Document::AllocatorType& allocator) const override {
-        return rapidjson::Value(value(), allocator);
+    rj::Value to_json_value() const override {
+        return rj::Value(value());
     }
 
 protected:

@@ -226,43 +226,43 @@ std::string MetricRegistry::to_prometheus() const {
 }
 
 std::string MetricRegistry::to_json() const {
-    rapidjson::Document doc{rapidjson::kArrayType};
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    rj::Document doc{rj::kArrayType};
+    rj::Document::AllocatorType& allocator = doc.GetAllocator();
     std::lock_guard<SpinLock> l(_lock);
     for (const auto& entity : _entities) {
         std::lock_guard<SpinLock> l(entity.second->_lock);
         entity.second->trigger_hook_unlocked();
         for (const auto& metric : entity.second->_metrics) {
-            rapidjson::Value metric_obj(rapidjson::kObjectType);
+            rj::Value metric_obj(rj::kObjectType);
             // tags
-            rapidjson::Value tag_obj(rapidjson::kObjectType);
-            tag_obj.AddMember("metric", rapidjson::Value(metric.first->simple_name().c_str(), allocator), allocator);
+            rj::Value tag_obj(rj::kObjectType);
+            tag_obj.AddMember("metric", rj::Value(metric.first->simple_name().c_str(), allocator), allocator);
             // MetricPrototype's labels
             for (auto& label : metric.first->labels) {
                 tag_obj.AddMember(
-                        rapidjson::Value(label.first.c_str(), allocator),
-                        rapidjson::Value(label.second.c_str(), allocator),
+                        rj::Value(label.first.c_str(), allocator),
+                        rj::Value(label.second.c_str(), allocator),
                         allocator);
             }
             // MetricEntity's labels
             for (auto& label : entity.second->_labels) {
                 tag_obj.AddMember(
-                        rapidjson::Value(label.first.c_str(), allocator),
-                        rapidjson::Value(label.second.c_str(), allocator),
+                        rj::Value(label.first.c_str(), allocator),
+                        rj::Value(label.second.c_str(), allocator),
                         allocator);
             }
             metric_obj.AddMember("tags", tag_obj, allocator);
             // unit
-            rapidjson::Value unit_val(unit_name(metric.first->unit), allocator);
+            rj::Value unit_val(unit_name(metric.first->unit), allocator);
             metric_obj.AddMember("unit", unit_val, allocator);
             // value
-            metric_obj.AddMember("value", metric.second->to_json_value(allocator), allocator);
+            metric_obj.AddMember("value", metric.second->to_json_value(), allocator);
             doc.PushBack(metric_obj, allocator);
         }
     }
 
-    rapidjson::StringBuffer strBuf;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(strBuf);
+    rj::StringBuffer strBuf;
+    rj::Writer<rj::StringBuffer> writer(strBuf);
     doc.Accept(writer);
     return strBuf.GetString();
 }
