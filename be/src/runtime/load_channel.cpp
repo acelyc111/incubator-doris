@@ -111,7 +111,7 @@ Status LoadChannel::add_batch(
 void LoadChannel::handle_mem_exceed_limit(bool force) {
     // lock so that only one thread can check mem limit
     std::lock_guard<std::mutex> l(_lock);
-    if (!(force || _mem_tracker->limit_exceeded())) {
+    if (!force && !_mem_tracker->limit_exceeded())) {
         return;
     }
 
@@ -134,7 +134,7 @@ void LoadChannel::handle_mem_exceed_limit(bool force) {
 // lock should be held when calling this method
 bool LoadChannel::_find_largest_consumption_channel(std::shared_ptr<TabletsChannel>* channel) {
     int64_t max_consume = 0;
-    for (auto& it : _tablets_channels) {
+    for (const auto& it : _tablets_channels) {
         if (it.second->mem_consumption() > max_consume) {
             max_consume = it.second->mem_consumption();
             *channel = it.second;

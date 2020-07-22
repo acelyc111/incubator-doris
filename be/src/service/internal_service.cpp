@@ -97,7 +97,7 @@ void PInternalServiceImpl<T>::tablet_writer_add_batch(google::protobuf::RpcContr
         << ", index_id=" << request->index_id()
         << ", sender_id=" << request->sender_id();
     // add batch maybe cost a lot of time, and this callback thread will be held.
-    // this will influence query execution, because the pthreads under bthread may be
+    // this will influence query execution if use pthreads under bthread, because threads may be
     // exhausted, so we put this to a local thread pool to process
     _tablet_worker_pool.offer(
         [request, response, done, this] () {
@@ -123,9 +123,9 @@ void PInternalServiceImpl<T>::tablet_writer_add_batch(google::protobuf::RpcContr
 
 template<typename T>
 void PInternalServiceImpl<T>::tablet_writer_cancel(google::protobuf::RpcController* controller,
-                                                const PTabletWriterCancelRequest* request,
-                                                PTabletWriterCancelResult* response,
-                                                google::protobuf::Closure* done) {
+                                                   const PTabletWriterCancelRequest* request,
+                                                   PTabletWriterCancelResult* response,
+                                                   google::protobuf::Closure* done) {
     VLOG_RPC << "tablet writer cancel, id=" << request->id()
         << ", index_id=" << request->index_id()
         << ", sender_id=" << request->sender_id();

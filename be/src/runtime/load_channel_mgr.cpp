@@ -178,11 +178,7 @@ void LoadChannelMgr::_handle_mem_exceed_limit() {
             channel = kv.second;
         }
     }
-    if (max_consume == 0) {
-        // should not happen, add log to observe
-        LOG(WARNING) << "failed to find suitable load channel when total load mem limit execeed";
-        return;
-    }
+    DCHECK(max_consume != 0) << "failed to find suitable load channel when total load mem limit execeed";
     DCHECK(channel.get() != nullptr);
 
     // force reduce mem limit of the selected channel
@@ -197,9 +193,10 @@ Status LoadChannelMgr::cancel(const PTabletWriterCancelRequest& params) {
     std::shared_ptr<LoadChannel> cancelled_channel;
     {
         std::lock_guard<std::mutex> l(_lock);
-        if (_load_channels.find(load_id) != _load_channels.end()) {
-            cancelled_channel = _load_channels[load_id];
-            _load_channels.erase(load_id);
+        auto it = _load_channels.find(load_id);
+        if (it != _load_channels.end()) {
+            cancelled_channel = it.second;
+            _load_channels.erase(it);
         }
     }
 

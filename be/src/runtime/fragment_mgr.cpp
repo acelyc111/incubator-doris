@@ -419,13 +419,9 @@ void FragmentMgr::exec_actual(
     {
         std::lock_guard<std::mutex> lock(_lock);
         auto iter = _fragment_map.find(exec_state->fragment_instance_id());
-        if (iter != _fragment_map.end()) {
-            _fragment_map.erase(iter);
-        } else {
-            // Impossible
-            LOG(WARNING) << "missing entry in fragment exec state map: instance_id="
-                << exec_state->fragment_instance_id();
-        }
+        DCHECK(iter != _fragment_map.end()) << "missing entry in fragment exec state map: instance_id="
+                                            << exec_state->fragment_instance_id();
+        _fragment_map.erase(iter);
     }
     // Callback after remove from this id
     cb(exec_state->executor());

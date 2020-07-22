@@ -99,7 +99,7 @@ Status TabletsChannel::add_batch(const PTabletWriterAddBatchRequest& params) {
     for (int i = 0; i < params.tablet_ids_size(); ++i) {
         auto tablet_id = params.tablet_ids(i);
         auto it = _tablet_writers.find(tablet_id);
-        if (it == std::end(_tablet_writers)) {
+        if (it == _tablet_writers.end()) {
             return Status::InternalError(strings::Substitute(
                     "unknown tablet to append data, tablet=$0", tablet_id));
         }
@@ -183,7 +183,7 @@ Status TabletsChannel::reduce_mem_usage() {
     // find tablet writer with largest mem consumption
     int64_t max_consume = 0L;
     DeltaWriter* writer = nullptr;
-    for (auto& it : _tablet_writers) {
+    for (const auto& it : _tablet_writers) {
         if (it.second->mem_consumption() > max_consume) {
             max_consume = it.second->mem_consumption();
             writer = it.second;

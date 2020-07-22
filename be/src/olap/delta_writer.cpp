@@ -141,7 +141,7 @@ OLAPStatus DeltaWriter::init() {
     writer_context.rowset_state = PREPARED;
     writer_context.txn_id = _req.txn_id;
     writer_context.load_id = _req.load_id;
-    writer_context.segments_overlap = OVERLAPPING;
+    writer_context.segments_overlap = OVERLAPPING;  // TODO(yingchun): need optimize
     RETURN_NOT_OK(RowsetFactory::create_rowset_writer(writer_context, &_rowset_writer));
 
     _tablet_schema = &(_tablet->tablet_schema());
@@ -200,11 +200,12 @@ void DeltaWriter::_reset_mem_table() {
 
 OLAPStatus DeltaWriter::close() {
     if (!_is_init) {
-        // if this delta writer is not initialized, but close() is called.
+        // if this delta writer is not initialized, but close() is called,
         // which means this tablet has no data loaded, but at least one tablet
         // in same partition has data loaded.
         // so we have to also init this DeltaWriter, so that it can create a empty rowset
-        // for this tablet when being closd.
+        // for this tablet when being closed.
+        // TODO(yingchun): I still don't know why?
         RETURN_NOT_OK(init());
     }
 
