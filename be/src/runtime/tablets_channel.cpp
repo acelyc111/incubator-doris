@@ -245,10 +245,14 @@ Status TabletsChannel::_open_all_writers(const PTabletWriterOpenRequest& params)
             LOG(WARNING) << ss.str();
             return Status::InternalError(ss.str());
         }
+        CHECK(_tablet_writers.find(tablet.tablet_id()) == _tablet_writers.end())
+            << " load_id=" << params.id() << ", txn_id=" << _txn_id
+            << " partition_id=" << tablet.partition_id() << ", tablet=" << tablet.tablet_id();
         _tablet_writers.emplace(tablet.tablet_id(), writer);
     }
     _s_tablet_writer_count += _tablet_writers.size();
-    DCHECK(_tablet_writers.size() == params.tablets_size());
+    CHECK_EQ(_tablet_writers.size(), params.tablets_size())
+        << " load_id=" << params.id() << ", txn_id=" << _txn_id;
     return Status::OK();
 }
 
