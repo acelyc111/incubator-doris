@@ -191,7 +191,6 @@ OLAPStatus MemIndex::load_segment(const char* file, size_t *current_num_rows_per
     size_t null_byte = null_supported ? 1 : 0;
     for (size_t i = 0; i < num_short_key_columns; ++i) {
         const TabletColumn& column = (*_short_key_columns)[i];
-        size_t src_offset = storage_field_offset;
         storage_ptr = storage_data + storage_field_offset;
         storage_field_offset += column.index_length() + null_byte;
         mem_ptr = mem_buf + mem_field_offset;
@@ -214,8 +213,6 @@ OLAPStatus MemIndex::load_segment(const char* file, size_t *current_num_rows_per
                     *reinterpret_cast<StringLengthType*>(storage_ptr + null_byte);
                 Slice* slice = reinterpret_cast<Slice*>(mem_ptr + 1);
                 char* data = reinterpret_cast<char*>(_mem_pool->allocate(storage_field_bytes));
-                size_t consume_bytes = src_offset + storage_row_bytes * j + (null_byte + sizeof(StringLengthType) + storage_field_bytes);
-                CHECK(consume_bytes <= storage_length) << " file=" << file << ", i=" << i << ", j=" << j;
                 memory_copy(data, storage_ptr + sizeof(StringLengthType) + null_byte, storage_field_bytes);
                 slice->data = data;
                 slice->size = storage_field_bytes;
@@ -241,8 +238,6 @@ OLAPStatus MemIndex::load_segment(const char* file, size_t *current_num_rows_per
                 // 2. copy length and content
                 Slice* slice = reinterpret_cast<Slice*>(mem_ptr + 1);
                 char* data = reinterpret_cast<char*>(_mem_pool->allocate(storage_field_bytes));
-                size_t consume_bytes = src_offset + storage_row_bytes * j + (null_byte + storage_field_bytes);
-                CHECK(consume_bytes <= storage_length) << " file=" << file << ", i=" << i << ", j=" << j;
                 memory_copy(data, storage_ptr + null_byte, storage_field_bytes);
                 slice->data = data;
                 slice->size = storage_field_bytes;
@@ -254,8 +249,6 @@ OLAPStatus MemIndex::load_segment(const char* file, size_t *current_num_rows_per
             size_t storage_field_bytes = column.index_length();
             mem_field_offset += storage_field_bytes + 1;
             for (size_t j = 0; j < num_entries; ++j) {
-                size_t consume_bytes = src_offset + storage_row_bytes * j + (null_byte + storage_field_bytes);
-                CHECK(consume_bytes <= storage_length) << " file=" << file << ", i=" << i << ", j=" << j;
                 memory_copy(mem_ptr + 1 - null_byte, storage_ptr, storage_field_bytes + null_byte);
 
                 mem_ptr += mem_row_bytes;

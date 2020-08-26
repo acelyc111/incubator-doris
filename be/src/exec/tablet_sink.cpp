@@ -549,15 +549,9 @@ Status OlapTableSink::prepare(RuntimeState* state) {
     for (int i = 0; i < _schema->indexes().size(); ++i) {
         // collect all tablets belong to this rollup
         std::vector<TTabletWithPartition> tablets;
-        std::set<int64_t> unique_tablets;
         auto index = _schema->indexes()[i];
         for (auto part : partitions) {
             for (auto tablet : part->indexes[i].tablets) {
-                CHECK(unique_tablets.count(tablet) == 0)
-                    << " _load_id=" << _load_id << ", _txn_id=" << _txn_id
-                    << ", _db_id=" << _db_id << ", _table_id=" << _table_id
-                    << ", tablet=" << tablet << " " << _partition->debug_string();
-                unique_tablets.insert(tablet);
                 TTabletWithPartition tablet_with_partition;
                 tablet_with_partition.partition_id = part->id;
                 tablet_with_partition.tablet_id = tablet;
