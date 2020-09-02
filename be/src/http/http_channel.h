@@ -47,7 +47,7 @@ public:
 
     static void send_file(HttpRequest* request, int fd, size_t off, size_t size);
 
-    static bool compress_content(HttpRequest* request, const std::string& input, std::string* output);
+    static bool compress_content(const std::string& accept_encoding, const std::string& input, std::string* output);
 };
 
 }

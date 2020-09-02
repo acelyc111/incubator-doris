@@ -55,7 +55,7 @@ void HttpChannel::send_reply(
         HttpRequest* request, HttpStatus status, const std::string& content) {
     auto evb = evbuffer_new();
     std::string compressed_content;
-    if (compress_content(request, content, &compressed_content)) {
+    if (compress_content(request->header("Accept-Encoding"), content, &compressed_content)) {
         evbuffer_add(evb, compressed_content.c_str(), compressed_content.size());
     } else {
         evbuffer_add(evb, content.c_str(), content.size());
@@ -73,7 +73,7 @@ void HttpChannel::send_file(HttpRequest* request, int fd, size_t off, size_t siz
     evbuffer_free(evb);
 }
 
-bool HttpChannel::compress_content(HttpRequest* request, const std::string& input, std::string* output) {
+bool HttpChannel::compress_content(const std::string& accept_encoding, const std::string& input, std::string* output) {
     static BlockCompressionCodec* s_zlib_codec = nullptr;
     static std::once_flag once_flag;
     std::call_once(once_flag, [] {
@@ -88,9 +88,8 @@ bool HttpChannel::compress_content(HttpRequest* request, const std::string& inpu
 
     // Check if gzip compression is accepted by the caller. If so, compress the
     // content and replace the prerendered output.
-    const std::string& accept_encoding_str = request->header("Accept-Encoding");
     bool is_compressed = false;
-    std::vector<string> encodings = strings::Split(accept_encoding_str, ",");
+    std::vector<string> encodings = strings::Split(accept_encoding, ",");
     for (string& encoding : encodings) {
         StripWhiteSpace(&encoding);
         if (encoding == "gzip") {
