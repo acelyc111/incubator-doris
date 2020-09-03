@@ -57,7 +57,8 @@ void HttpChannel::send_reply(
         HttpRequest* request, HttpStatus status, const std::string& content) {
     auto evb = evbuffer_new();
     std::string compressed_content;
-    if (compress_content(request->header("Accept-Encoding"), content, &compressed_content)) {
+    if (compress_content(request->header(HttpHeaders::ACCEPT_ENCODING), content, &compressed_content)) {
+        request->add_output_header(HttpHeaders::CONTENT_ENCODING, "gzip");
         evbuffer_add(evb, compressed_content.c_str(), compressed_content.size());
     } else {
         evbuffer_add(evb, content.c_str(), content.size());
@@ -94,13 +95,10 @@ bool HttpChannel::compress_content(const std::string& accept_encoding, const std
     for (string& encoding : encodings) {
         StripWhiteSpace(&encoding);
         if (encoding == "gzip") {
-            size_t max_compressed_size = s_zlib_codec->max_compressed_len(input.length());
-            faststring buf;
-            buf.resize(max_compressed_size);
-            Slice compressed_slice(buf);
-            Status s = s_zlib_codec->compress(Slice(input), &compressed_slice);
+            std::ostringstream oss;
+            Status s = s_zlib_codec->compress2(Slice(input), 1, &oss);
             if (s.ok()) {
-                *output = compressed_slice.to_string();
+                *output = oss.str();
                 is_compressed = true;
             } else {
                 LOG(WARNING) << "Could not compress output: " << s.to_string();

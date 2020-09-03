@@ -39,6 +39,9 @@ public:
     // for compressed input, which can be get through max_compressed_len function.
     // Size of compressed data will be set in output's size.
     virtual Status compress(const Slice& input, Slice* output) const = 0;
+    virtual Status compress2(Slice input, int level, std::ostream* out) const {
+        return Status::NotSupported("compress2 not implement");
+    }
 
     // Default implementation will merge input list into a big buffer and call
     // compress(Slice) to finish compression. If compression type support digesting
