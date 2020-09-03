@@ -27,7 +27,7 @@ namespace doris {
 class HttpChannelTest : public testing::Test {
 public:
     HttpChannelTest() {
-        get_block_compression_codec(segment_v2::CompressionTypePB::ZLIB, &zlib_codec);
+        CHECK(get_block_compression_codec(segment_v2::CompressionTypePB::ZLIB, &zlib_codec).ok());
     }
 
     void check_data_eq(const std::string& output, const std::string& expected) {
