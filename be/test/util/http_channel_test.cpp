@@ -27,11 +27,13 @@ namespace doris {
 class HttpChannelTest : public testing::Test {
 public:
     HttpChannelTest() {
-        ASSERT_TRUE(get_block_compression_codec(segment_v2::CompressionTypePB::ZLIB, &zlib_codec).ok());
+        get_block_compression_codec(segment_v2::CompressionTypePB::ZLIB, &zlib_codec);
     }
 
     void check_data_eq(const std::string& output, const std::string& expected) {
-        Slice uncompressed_content;
+        std::string result;
+        result.resize(expected.size());
+        Slice uncompressed_content(result);
         ASSERT_TRUE(zlib_codec->decompress(Slice(output), &uncompressed_content).ok());
         ASSERT_EQ(expected, uncompressed_content.to_string());
     }
@@ -40,14 +42,13 @@ private:
     const BlockCompressionCodec *zlib_codec = nullptr;
 };
 
-TEST(HttpChannelTest, CompressContent) {
+TEST_F(HttpChannelTest, CompressContent) {
     ASSERT_FALSE(HttpChannel::compress_content("gzip", "", nullptr));
     ASSERT_FALSE(HttpChannel::compress_content("", "test", nullptr));
     ASSERT_FALSE(HttpChannel::compress_content("Gzip", "", nullptr));
 
     std::string intput("test_data");
     std::string output;
-
     ASSERT_TRUE(HttpChannel::compress_content("gzip", intput, &output));
     check_data_eq(output, intput);
 

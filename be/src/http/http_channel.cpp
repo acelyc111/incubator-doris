@@ -17,6 +17,7 @@
 
 #include "http/http_channel.h"
 
+#include <mutex>
 #include <sstream>
 #include <string>
 
@@ -30,6 +31,7 @@
 #include "http/http_status.h"
 #include "common/logging.h"
 #include "util/block_compression.h"
+#include "util/faststring.h"
 
 namespace doris {
 
@@ -74,15 +76,14 @@ void HttpChannel::send_file(HttpRequest* request, int fd, size_t off, size_t siz
 }
 
 bool HttpChannel::compress_content(const std::string& accept_encoding, const std::string& input, std::string* output) {
-    static BlockCompressionCodec* s_zlib_codec = nullptr;
+    static const BlockCompressionCodec* s_zlib_codec = nullptr;
     static std::once_flag once_flag;
     std::call_once(once_flag, [] {
-        CHECK(get_block_compression_codec(segment_v2::CompressionTypePB::ZLIB, &s_zlib_codec));
-        s_zlib_codec = new_lru_cache(config::file_descriptor_cache_capacity);
+        CHECK(get_block_compression_codec(segment_v2::CompressionTypePB::ZLIB, &s_zlib_codec).ok());
     });
 
     // Don't bother compressing empty content.
-    if (content.empty()) {
+    if (input.empty()) {
         return false;
     }
 
@@ -93,13 +94,16 @@ bool HttpChannel::compress_content(const std::string& accept_encoding, const std
     for (string& encoding : encodings) {
         StripWhiteSpace(&encoding);
         if (encoding == "gzip") {
-            Slice temp;
-            Status s = s_zlib_codec->compress(Slice(input), &temp);
+            size_t max_compressed_size = s_zlib_codec->max_compressed_len(input.length());
+            faststring buf;
+            buf.resize(max_compressed_size);
+            Slice compressed_slice(buf);
+            Status s = s_zlib_codec->compress(Slice(input), &compressed_slice);
             if (s.ok()) {
-                *output = temp.to_string();
+                *output = compressed_slice.to_string();
                 is_compressed = true;
             } else {
-                LOG(WARNING) << "Could not compress output: " << s.ToString();
+                LOG(WARNING) << "Could not compress output: " << s.to_string();
             }
             break;
         }
