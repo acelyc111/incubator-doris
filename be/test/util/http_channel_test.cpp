@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "util/block_compression.h"
+#include "util/faststring.h"
 #include "util/logging.h"
 
 namespace doris {
@@ -31,9 +32,9 @@ public:
     }
 
     void check_data_eq(const std::string& output, const std::string& expected) {
-        std::string result;
-        result.resize(expected.size());
-        Slice uncompressed_content(result);
+        faststring buf;
+        buf.resize(expected.size());
+        Slice uncompressed_content(buf);
         ASSERT_TRUE(zlib_codec->decompress(Slice(output), &uncompressed_content).ok());
         ASSERT_EQ(expected, uncompressed_content.to_string());
     }
@@ -47,13 +48,14 @@ TEST_F(HttpChannelTest, CompressContent) {
     ASSERT_FALSE(HttpChannel::compress_content("", "test", nullptr));
     ASSERT_FALSE(HttpChannel::compress_content("Gzip", "", nullptr));
 
-    std::string intput("test_data");
+    const std::string& intput("test_data_0123456789abcdefg");
     std::string output;
+
     ASSERT_TRUE(HttpChannel::compress_content("gzip", intput, &output));
-    check_data_eq(output, intput);
+    ASSERT_NO_FATAL_FAILURE(check_data_eq(output, intput));
 
     ASSERT_TRUE(HttpChannel::compress_content("123,gzip,321", intput, &output));
-    check_data_eq(output, intput);
+    ASSERT_NO_FATAL_FAILURE(check_data_eq(output, intput));
 }
 
 } // namespace doris
