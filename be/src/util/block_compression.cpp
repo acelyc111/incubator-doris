@@ -423,8 +423,8 @@ public:
     Status decompress2(Slice compressed, std::ostream* out) const override {
         z_stream zs;
         memset(&zs, 0, sizeof(zs));
-        zs.next_in = const_cast<uint8_t*>(compressed.data());
-        zs.avail_in = compressed.size();
+        zs.next_in = (unsigned char*)(compressed.mutable_data());
+        zs.avail_in = compressed.get_size();
         ZRETURN_NOT_OK(inflateInit2(&zs, 15 + 16 /* 15 window bits, enable zlib */));
         int flush;
         Status s;
@@ -434,7 +434,7 @@ public:
             zs.avail_out = arraysize(buf);
             flush = zs.avail_in > 0 ? Z_NO_FLUSH : Z_FINISH;
             s = ZlibResultToStatus(inflate(&zs, flush));
-            if (!s.ok() && !s.IsEndOfFile()) {
+            if (!s.ok() && !s.is_end_of_file()) {
                 return s;
             }
             out->write(reinterpret_cast<char *>(buf), zs.next_out - buf);
