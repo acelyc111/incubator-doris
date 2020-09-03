@@ -420,6 +420,30 @@ public:
         return Status::OK();
     }
 
+    Status decompress2(Slice compressed, std::ostream* out) const override {
+        z_stream zs;
+        memset(&zs, 0, sizeof(zs));
+        zs.next_in = const_cast<uint8_t*>(compressed.data());
+        zs.avail_in = compressed.size();
+        ZRETURN_NOT_OK(inflateInit2(&zs, 15 + 16 /* 15 window bits, enable zlib */));
+        int flush;
+        Status s;
+        do {
+            unsigned char buf[4096];
+            zs.next_out = buf;
+            zs.avail_out = arraysize(buf);
+            flush = zs.avail_in > 0 ? Z_NO_FLUSH : Z_FINISH;
+            s = ZlibResultToStatus(inflate(&zs, flush));
+            if (!s.ok() && !s.IsEndOfFile()) {
+                return s;
+            }
+            out->write(reinterpret_cast<char *>(buf), zs.next_out - buf);
+        } while (flush == Z_NO_FLUSH);
+        ZRETURN_NOT_OK(inflateEnd(&zs));
+
+        return Status::OK();
+    }
+
     size_t max_compressed_len(size_t len) const override {
         // one-time overhead of six bytes for the entire stream plus five bytes per 16 KB block
         return len + 6 + 5 * ((len >> 14) + 1);

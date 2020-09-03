@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 
 #include "util/block_compression.h"
-#include "util/faststring.h"
 #include "util/logging.h"
 
 namespace doris {
@@ -32,11 +31,9 @@ public:
     }
 
     void check_data_eq(const std::string& output, const std::string& expected) {
-        faststring buf;
-        buf.resize(expected.size());
-        Slice uncompressed_content(buf);
-        ASSERT_TRUE(zlib_codec->decompress(Slice(output), &uncompressed_content).ok());
-        ASSERT_EQ(expected, uncompressed_content.to_string());
+        std::ostringstream oss;
+        ASSERT_TRUE(zlib_codec->decompress2(Slice(output), &oss).ok());
+        ASSERT_EQ(expected, oss.str());
     }
 
 private:

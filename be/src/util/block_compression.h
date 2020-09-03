@@ -53,6 +53,10 @@ public:
     // Size of decompressed data will be set in output's size.
     virtual Status decompress(const Slice& input, Slice* output) const = 0;
 
+    virtual Status decompress2(Slice compressed, std::ostream* out) const {
+        return Status::NotSupported("decompress2 not implement");
+    }
+
     // Returns an upper bound on the max compressed length.
     virtual size_t max_compressed_len(size_t len) const = 0;
 };
