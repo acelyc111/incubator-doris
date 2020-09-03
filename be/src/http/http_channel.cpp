@@ -31,7 +31,6 @@
 #include "http/http_status.h"
 #include "common/logging.h"
 #include "util/block_compression.h"
-#include "util/faststring.h"
 
 namespace doris {
 
