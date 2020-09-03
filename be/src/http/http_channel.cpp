@@ -30,7 +30,7 @@
 #include "http/http_headers.h"
 #include "http/http_status.h"
 #include "common/logging.h"
-#include "util/block_compression.h"
+#include "util/zlib.h"
 
 namespace doris {
 
@@ -76,12 +76,6 @@ void HttpChannel::send_file(HttpRequest* request, int fd, size_t off, size_t siz
 }
 
 bool HttpChannel::compress_content(const std::string& accept_encoding, const std::string& input, std::string* output) {
-    static const BlockCompressionCodec* s_zlib_codec = nullptr;
-    static std::once_flag once_flag;
-    std::call_once(once_flag, [] {
-        CHECK(get_block_compression_codec(segment_v2::CompressionTypePB::ZLIB, &s_zlib_codec).ok());
-    });
-
     // Don't bother compressing empty content.
     if (input.empty()) {
         return false;
@@ -95,7 +89,7 @@ bool HttpChannel::compress_content(const std::string& accept_encoding, const std
         StripWhiteSpace(&encoding);
         if (encoding == "gzip") {
             std::ostringstream oss;
-            Status s = s_zlib_codec->compress2(Slice(input), 1, &oss);
+            Status s = zlib::CompressLevel(Slice(input), 1, &oss);
             if (s.ok()) {
                 *output = oss.str();
                 is_compressed = true;

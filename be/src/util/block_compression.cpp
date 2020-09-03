@@ -23,7 +23,6 @@
 #include <snappy/snappy.h>
 #include <zlib.h>
 
-#include "common/status.h"
 #include "util/faststring.h"
 #include "gutil/strings/substitute.h"
 
@@ -312,64 +311,6 @@ public:
         return Status::OK();
     }
 
-    Status ZlibResultToStatus(int rc) const {
-      switch (rc) {
-        case Z_OK:
-          return Status::OK();
-        case Z_STREAM_END:
-          return Status::EndOfFile("zlib EOF");
-        case Z_NEED_DICT:
-          return Status::Corruption("zlib error: NEED_DICT");
-        case Z_ERRNO:
-          return Status::IOError("zlib error: Z_ERRNO");
-        case Z_STREAM_ERROR:
-          return Status::Corruption("zlib error: STREAM_ERROR");
-        case Z_DATA_ERROR:
-          return Status::Corruption("zlib error: DATA_ERROR");
-        case Z_MEM_ERROR:
-          return Status::RuntimeError("zlib error: MEM_ERROR");
-        case Z_BUF_ERROR:
-          return Status::RuntimeError("zlib error: BUF_ERROR");
-        case Z_VERSION_ERROR:
-          return Status::RuntimeError("zlib error: VERSION_ERROR");
-        default:
-          return Status::RuntimeError(
-              strings::Substitute("zlib error: unknown error $0", rc));
-      }
-    }
-
-#define ZRETURN_NOT_OK(call) \
-    RETURN_IF_ERROR(ZlibResultToStatus(call))
-
-    Status compress2(Slice input, int level, std::ostream* out) const override {
-        z_stream zs;
-        memset(&zs, 0, sizeof(zs));
-        ZRETURN_NOT_OK(deflateInit2(&zs, level, Z_DEFLATED,
-                                    15 + 16 /* 15 window bits, enable gzip */,
-                                    8 /* memory level, max is 9 */,
-                                    Z_DEFAULT_STRATEGY));
-        zs.avail_in = input.get_size();
-        zs.next_in = (unsigned char*)(input.mutable_data());
-        const int kChunkSize = 256 * 1024;
-        std::unique_ptr<unsigned char[]> chunk(new unsigned char[kChunkSize]);
-        int flush;
-        do {
-            zs.avail_out = kChunkSize;
-            zs.next_out = chunk.get();
-            flush = (zs.avail_in == 0) ? Z_FINISH : Z_NO_FLUSH;
-            Status s = ZlibResultToStatus(deflate(&zs, flush));
-            if (!s.ok() && !s.is_end_of_file()) {
-                return s;
-            }
-            int out_size = zs.next_out - chunk.get();
-            if (out_size > 0) {
-                out->write(reinterpret_cast<char *>(chunk.get()), out_size);
-            }
-        } while (flush != Z_FINISH);
-        ZRETURN_NOT_OK(deflateEnd(&zs));
-        return Status::OK();
-    }
-
     Status compress(const std::vector<Slice>& inputs, Slice* output) const override {
         z_stream zstrm;
         zstrm.zalloc = Z_NULL;
@@ -417,30 +358,6 @@ public:
             return Status::InvalidArgument(
                 Substitute("Fail to do ZLib decompress, error=$0", zError(zres)));
         }
-        return Status::OK();
-    }
-
-    Status decompress2(Slice compressed, std::ostream* out) const override {
-        z_stream zs;
-        memset(&zs, 0, sizeof(zs));
-        zs.next_in = (unsigned char*)(compressed.mutable_data());
-        zs.avail_in = compressed.get_size();
-        ZRETURN_NOT_OK(inflateInit2(&zs, 15 + 16 /* 15 window bits, enable zlib */));
-        int flush;
-        Status s;
-        do {
-            unsigned char buf[4096];
-            zs.next_out = buf;
-            zs.avail_out = arraysize(buf);
-            flush = zs.avail_in > 0 ? Z_NO_FLUSH : Z_FINISH;
-            s = ZlibResultToStatus(inflate(&zs, flush));
-            if (!s.ok() && !s.is_end_of_file()) {
-                return s;
-            }
-            out->write(reinterpret_cast<char *>(buf), zs.next_out - buf);
-        } while (flush == Z_NO_FLUSH);
-        ZRETURN_NOT_OK(inflateEnd(&zs));
-
         return Status::OK();
     }
 

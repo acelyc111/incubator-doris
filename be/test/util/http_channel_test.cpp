@@ -19,25 +19,18 @@
 
 #include <gtest/gtest.h>
 
-#include "util/block_compression.h"
+#include "util/zlib.h"
 #include "util/logging.h"
 
 namespace doris {
 
 class HttpChannelTest : public testing::Test {
 public:
-    HttpChannelTest() {
-        CHECK(get_block_compression_codec(segment_v2::CompressionTypePB::ZLIB, &zlib_codec).ok());
-    }
-
     void check_data_eq(const std::string& output, const std::string& expected) {
         std::ostringstream oss;
-        ASSERT_TRUE(zlib_codec->decompress2(Slice(output), &oss).ok());
+        ASSERT_TRUE(zlib::Uncompress(Slice(output), &oss).ok());
         ASSERT_EQ(expected, oss.str());
     }
-
-private:
-    const BlockCompressionCodec *zlib_codec = nullptr;
 };
 
 TEST_F(HttpChannelTest, CompressContent) {
