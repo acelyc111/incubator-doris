@@ -146,9 +146,10 @@ public class DynamicPartitionScheduler extends MasterDaemon {
                 PartitionKey lowerBound = PartitionKey.createPartitionKey(Collections.singletonList(lowerValue), Collections.singletonList(partitionColumn));
                 PartitionKey upperBound = PartitionKey.createPartitionKey(Collections.singletonList(upperValue), Collections.singletonList(partitionColumn));
                 addPartitionKeyRange = Range.closedOpen(lowerBound, upperBound);
-            } catch (AnalysisException e) {
-                // keys.size is always equal to column.size, cannot reach this exception
-                LOG.warn("Keys size is not equal to column size. Error={}, db: {}, table: {}", e.getMessage(),
+            } catch (AnalysisException | IllegalArgumentException e) {
+                // AnalysisException: keys.size is always equal to column.size, cannot reach this exception
+                // IllegalArgumentException: lb is greater than lb
+                LOG.warn("Error in gen addPartitionKeyRange. Error={}, db: {}, table: {}", e.getMessage(),
                         db.getFullName(), olapTable.getName());
                 continue;
             }
@@ -217,9 +218,10 @@ public class DynamicPartitionScheduler extends MasterDaemon {
             PartitionKey lowerBound = PartitionKey.createPartitionKey(Collections.singletonList(lowerPartitionValue), Collections.singletonList(partitionColumn));
             PartitionKey upperBound = PartitionKey.createPartitionKey(Collections.singletonList(upperPartitionValue), Collections.singletonList(partitionColumn));
             reservePartitionKeyRange = Range.closedOpen(lowerBound, upperBound);
-        } catch (AnalysisException e) {
-            // keys.size is always equal to column.size, cannot reach this exception
-            LOG.warn("Keys size is not equal to column size. Error={}, db: {}, table: {}", e.getMessage(),
+        } catch (AnalysisException | IllegalArgumentException e) {
+            // AnalysisException: keys.size is always equal to column.size, cannot reach this exception
+            // IllegalArgumentException: lb is greater than lb
+            LOG.warn("Error in gen reservePartitionKeyRange. Error={}, db: {}, table: {}", e.getMessage(),
                     db.getFullName(), olapTable.getName());
             return dropPartitionClauses;
         }
