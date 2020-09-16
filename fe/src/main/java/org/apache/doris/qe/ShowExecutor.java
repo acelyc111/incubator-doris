@@ -1281,7 +1281,7 @@ public class ShowExecutor {
                 Collections.sort(tableInfos, comparator);
 
                 for (List<Comparable> tabletInfo : tableInfos) {
-                    List<String> oneTablet = new ArrayList<String>(tableInfos.size());
+                    List<String> oneTablet = new ArrayList<String>(tabletInfo.size());
                     for (Comparable column : tabletInfo) {
                         oneTablet.add(column.toString());
                     }
