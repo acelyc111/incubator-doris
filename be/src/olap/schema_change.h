@@ -179,12 +179,11 @@ public:
     SchemaChangeHandler() {}
     virtual ~SchemaChangeHandler() {}
 
-    OLAPStatus process_alter_tablet(AlterTabletType alter_tablet_type,
-                                    const TAlterTabletReq& request);
-
-    OLAPStatus schema_version_convert(TabletSharedPtr base_tablet, TabletSharedPtr new_tablet,
-                                      RowsetSharedPtr* base_rowset, RowsetSharedPtr* new_rowset);
-
+    OLAPStatus schema_version_convert(TabletSharedPtr base_tablet,
+                                      TabletSharedPtr new_tablet,
+                                      RowsetSharedPtr* base_rowset,
+                                      RowsetSharedPtr* new_rowset);
+    
     // schema change v2, it will not set alter task in base tablet
     OLAPStatus process_alter_tablet_v2(const TAlterTabletReqV2& request);
 

@@ -49,7 +49,6 @@ OLAPStatus AlphaRowsetReader::init(RowsetReaderContext* read_context) {
     }
 
     _is_segments_overlapping = _alpha_rowset_meta->is_segments_overlapping();
-    _ordinal = 0;
 
     RETURN_NOT_OK(_init_merge_ctxs(read_context));
 
@@ -359,8 +358,7 @@ OLAPStatus AlphaRowsetReader::_init_merge_ctxs(RowsetReaderContext* read_context
             if (new_column_data->rowset_pruning_filter()) {
                 _stats->rows_stats_filtered += new_column_data->num_rows();
                 VLOG(3) << "filter segment group in query in condition. version="
-                        << new_column_data->version().first
-                        << "-" << new_column_data->version().second;
+                        << new_column_data->version();
                 continue;
             }
         }
@@ -369,15 +367,15 @@ OLAPStatus AlphaRowsetReader::_init_merge_ctxs(RowsetReaderContext* read_context
         if (ret == DEL_SATISFIED) {
             _stats->rows_del_filtered += new_column_data->num_rows();
             VLOG(3) << "filter segment group in delete predicate:"
-                    << new_column_data->version().first << ", " << new_column_data->version().second;
+                    << new_column_data->version();
             continue;
         } else if (ret == DEL_PARTIAL_SATISFIED) {
             VLOG(3) << "filter segment group partially in delete predicate:"
-                    << new_column_data->version().first << ", " << new_column_data->version().second;
+                    << new_column_data->version();
             new_column_data->set_delete_status(DEL_PARTIAL_SATISFIED);
         } else {
             VLOG(3) << "not filter segment group in delete predicate:"
-                    << new_column_data->version().first << ", " << new_column_data->version().second;
+                    << new_column_data->version();
             new_column_data->set_delete_status(DEL_NOT_SATISFIED);
         }
         AlphaMergeContext merge_ctx;
