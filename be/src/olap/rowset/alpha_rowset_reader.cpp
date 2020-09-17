@@ -49,6 +49,7 @@ OLAPStatus AlphaRowsetReader::init(RowsetReaderContext* read_context) {
     }
 
     _is_segments_overlapping = _alpha_rowset_meta->is_segments_overlapping();
+    _ordinal = 0;
 
     RETURN_NOT_OK(_init_merge_ctxs(read_context));
 

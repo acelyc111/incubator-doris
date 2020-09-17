@@ -81,7 +81,7 @@ void RowBlock::_compute_layout() {
     size_t memory_size = 0;
     for (int col_id = 0; col_id < _schema->num_columns(); ++col_id) {
         const TabletColumn& column = _schema->column(col_id);
-        if (!column_set.empty() && column_set.count(col_id) == 0) {
+        if (!column_set.empty() && column_set.find(col_id) == column_set.end()) {
             // which may lead BE crash
             _field_offset_in_memory.push_back(std::numeric_limits<std::size_t>::max());
             continue;
