@@ -57,8 +57,8 @@ OLAPStatus AlphaRowsetWriter::init(const RowsetWriterContext& rowset_writer_cont
     _current_rowset_meta->set_tablet_id(_rowset_writer_context.tablet_id);
     _current_rowset_meta->set_tablet_schema_hash(_rowset_writer_context.tablet_schema_hash);
     _current_rowset_meta->set_rowset_type(_rowset_writer_context.rowset_type);
-    _current_rowset_meta->set_rowset_state(rowset_writer_context.rowset_state);
-    _current_rowset_meta->set_segments_overlap(rowset_writer_context.segments_overlap);
+    _current_rowset_meta->set_rowset_state(_rowset_writer_context.rowset_state);
+    _current_rowset_meta->set_segments_overlap(_rowset_writer_context.segments_overlap);
     RowsetStatePB rowset_state = _rowset_writer_context.rowset_state;
     if (rowset_state == PREPARED
             || rowset_state == COMMITTED) {
@@ -98,9 +98,10 @@ OLAPStatus AlphaRowsetWriter::add_rowset(RowsetSharedPtr rowset) {
     // this api is for clone
     AlphaRowsetSharedPtr alpha_rowset = std::dynamic_pointer_cast<AlphaRowset>(rowset);
     for (auto& segment_group : alpha_rowset->_segment_groups) {
+        // TODO(yingchun): now that rowset is hard linked to dest, why need init and flush?
         RETURN_NOT_OK(_init());
         RETURN_NOT_OK(segment_group->link_segments_to_path(_rowset_writer_context.rowset_path_prefix,
-                                                           _rowset_writer_context.rowset_id));
+                                                               _rowset_writer_context.rowset_id));
         _cur_segment_group->set_empty(segment_group->empty());
         _cur_segment_group->set_num_segments(segment_group->num_segments());
         _cur_segment_group->add_zone_maps(segment_group->get_zone_maps());
@@ -124,7 +125,7 @@ OLAPStatus AlphaRowsetWriter::add_rowset_for_linked_schema_change(
     for (auto& segment_group : alpha_rowset->_segment_groups) {
         RETURN_NOT_OK(_init());
         RETURN_NOT_OK(segment_group->link_segments_to_path(_rowset_writer_context.rowset_path_prefix,
-                                                           _rowset_writer_context.rowset_id));
+                                                               _rowset_writer_context.rowset_id));
         _cur_segment_group->set_empty(segment_group->empty());
         _cur_segment_group->set_num_segments(segment_group->num_segments());
         _cur_segment_group->add_zone_maps_for_linked_schema_change(segment_group->get_zone_maps(),
@@ -139,19 +140,19 @@ OLAPStatus AlphaRowsetWriter::flush() {
     if (_writer_state == WRITER_FLUSHED) {
         return OLAP_SUCCESS;
     }
-    DCHECK(_writer_state == WRITER_INITED);
+    DCHECK_EQ(_writer_state, WRITER_INITED);
     if (_need_column_data_writer) {
         // column_data_writer finalize will call segment_group->set_empty()
         RETURN_NOT_OK(_column_data_writer->finalize());
     }
-    SAFE_DELETE(_column_data_writer);
+    SAFE_DELETE(_column_data_writer);  // TODO(yingchun): why do it like this?
     _writer_state = WRITER_FLUSHED;
     return OLAP_SUCCESS;
 }
 
 RowsetSharedPtr AlphaRowsetWriter::build() {
     if (_current_rowset_meta->rowset_id().version == 0) {
-        LOG(WARNING) << "invalid rowset id, version == 0, rowset id=" 
+        LOG(WARNING) << "invalid rowset id, version == 0, rowset id="
                      << _current_rowset_meta->rowset_id().to_string();
         return nullptr;
     }
@@ -160,6 +161,8 @@ RowsetSharedPtr AlphaRowsetWriter::build() {
         return nullptr;
     }
     int total_num_segments = 0;
+    AlphaRowsetMetaSharedPtr alpha_rowset_meta
+            = std::dynamic_pointer_cast<AlphaRowsetMeta>(_current_rowset_meta);
     for (auto& segment_group : _segment_groups) {
         if (segment_group->load() != OLAP_SUCCESS) {
             return nullptr;
@@ -171,6 +174,7 @@ RowsetSharedPtr AlphaRowsetWriter::build() {
         _current_rowset_meta->set_index_disk_size(_current_rowset_meta->index_disk_size() + segment_group->index_size());
         _current_rowset_meta->set_total_disk_size(_current_rowset_meta->total_disk_size()
                 + segment_group->index_size() + segment_group->data_size());
+        // TODO(yingchun): need a function to convert SegmentGroup to SegmentGroupPB
         SegmentGroupPB segment_group_pb;
         segment_group_pb.set_segment_group_id(segment_group->segment_group_id());
         segment_group_pb.set_num_segments(segment_group->num_segments());
@@ -179,13 +183,11 @@ RowsetSharedPtr AlphaRowsetWriter::build() {
         segment_group_pb.set_data_size(segment_group->data_size());
         segment_group_pb.set_num_rows(segment_group->num_rows());
         const std::vector<KeyRange>& zone_maps = segment_group->get_zone_maps();
-        if (!zone_maps.empty()) {
-            for (size_t i = 0; i < zone_maps.size(); ++i) {
-                ZoneMap* new_zone_map = segment_group_pb.add_zone_maps();
-                new_zone_map->set_min(zone_maps.at(i).first->to_string());
-                new_zone_map->set_max(zone_maps.at(i).second->to_string());
-                new_zone_map->set_null_flag(zone_maps.at(i).first->is_null());
-            }
+        for (const auto& zone_map : zone_maps) {
+            ZoneMap* new_zone_map = segment_group_pb.add_zone_maps();
+            new_zone_map->set_min(zone_map.first->to_string());
+            new_zone_map->set_max(zone_map.second->to_string());
+            new_zone_map->set_null_flag(zone_map.first->is_null());
         }
         if (_is_pending_rowset) {
             PUniqueId* unique_id = segment_group_pb.mutable_load_id();
@@ -193,8 +195,6 @@ RowsetSharedPtr AlphaRowsetWriter::build() {
             unique_id->set_lo(_rowset_writer_context.load_id.lo());
         }
         segment_group_pb.set_empty(segment_group->empty());
-        AlphaRowsetMetaSharedPtr alpha_rowset_meta
-            = std::dynamic_pointer_cast<AlphaRowsetMeta>(_current_rowset_meta);
         alpha_rowset_meta->add_segment_group(segment_group_pb);
     }
     _current_rowset_meta->set_num_segments(total_num_segments);
@@ -266,7 +266,7 @@ OLAPStatus AlphaRowsetWriter::_init() {
                 _rowset_writer_context.version_hash,
                 false, _segment_group_id, 0);
     }
-    DCHECK(_cur_segment_group != nullptr) << "failed to malloc SegmentGroup";
+    DCHECK(_cur_segment_group) << "failed to malloc SegmentGroup";
     _cur_segment_group->acquire();
     //_cur_segment_group->set_load_id(_rowset_writer_context.load_id);
     _segment_groups.push_back(_cur_segment_group);
@@ -274,7 +274,7 @@ OLAPStatus AlphaRowsetWriter::_init() {
     _column_data_writer = ColumnDataWriter::create(_cur_segment_group, true,
                                                    _rowset_writer_context.tablet_schema->compress_kind(),
                                                    _rowset_writer_context.tablet_schema->bloom_filter_fpp());
-    DCHECK(_column_data_writer != nullptr) << "memory error occurs when creating writer";
+    DCHECK(_column_data_writer) << "memory error occurs when creating writer";
     OLAPStatus res = _column_data_writer->init();
     if (res != OLAP_SUCCESS) {
         LOG(WARNING) << "column data writer init failed";

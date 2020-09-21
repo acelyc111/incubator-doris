@@ -69,10 +69,11 @@ class HeartbeatFlags;
 // Contains all required global structures, and handles to
 // singleton services. Clients must call StartServices exactly
 // once to properly initialise service state.
+// TODO(yingchun): this class is too complex, it better to inlcude and use the embeded class when needed.
 class ExecEnv {
 public:
     // Initial exec enviorment. must call this to init all
-    static Status init(ExecEnv* env, const std::vector<StorePath>& store_paths);
+    static void init(ExecEnv* env, const std::vector<StorePath>& store_paths);
     static void destroy(ExecEnv* exec_env);
 
     /// Returns the first created exec env instance. In a normal doris, this is
@@ -142,7 +143,7 @@ public:
     PluginMgr* plugin_mgr() { return _plugin_mgr; }
 
 private:
-    Status _init(const std::vector<StorePath>& store_paths);
+    void _init(const std::vector<StorePath>& store_paths);
     void _destory();
 
     Status _init_mem_tracker();

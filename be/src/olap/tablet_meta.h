@@ -131,8 +131,8 @@ public:
     OLAPStatus deserialize(const std::string& meta_binary);
     void init_from_pb(const TabletMetaPB& tablet_meta_pb);
 
-    void to_meta_pb(TabletMetaPB* tablet_meta_pb);
-    void to_json(std::string* json_string, json2pb::Pb2JsonOptions& options);
+    void to_meta_pb(TabletMetaPB* tablet_meta_pb) const;
+    void to_json(std::string* json_string, json2pb::Pb2JsonOptions& options) const;
 
     inline TabletTypePB tablet_type() const { return _tablet_type; }
     inline TabletUid tablet_uid() const;
@@ -163,6 +163,7 @@ public:
 
     inline TabletSchema* mutable_tablet_schema();
 
+    // rowset meta
     inline const std::vector<RowsetMetaSharedPtr>& all_rs_metas() const;
     OLAPStatus add_rs_meta(const RowsetMetaSharedPtr& rs_meta);
     void delete_rs_meta_by_version(const Version& version,
@@ -171,6 +172,7 @@ public:
                          const std::vector<RowsetMetaSharedPtr>& to_delete);
     void revise_rs_metas(std::vector<RowsetMetaSharedPtr>&& rs_metas);
 
+    // inc rowset meta
     void revise_inc_rs_metas(std::vector<RowsetMetaSharedPtr>&& rs_metas);
 
     inline const std::vector<RowsetMetaSharedPtr>& all_inc_rs_metas() const;
@@ -181,11 +183,15 @@ public:
     void delete_stale_rs_meta_by_version(const Version& version);
     RowsetMetaSharedPtr acquire_stale_rs_meta_by_version(const Version& version) const;
 
+    // delete predicate
     void add_delete_predicate(const DeletePredicatePB& delete_predicate, int64_t version);
     void remove_delete_predicate_by_version(const Version& version);
     DelPredicateArray delete_predicates() const;
     bool version_for_delete_predicate(const Version& version);
+
+    // alter_task
     AlterTabletTaskSharedPtr alter_task();
+    // TODO(yingchun): rename to set_alter_task?
     void add_alter_task(const AlterTabletTask& alter_task);
     void delete_alter_task();
     OLAPStatus set_alter_state(AlterTabletState alter_state);

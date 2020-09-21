@@ -56,21 +56,20 @@ Status ResultQueueMgr::fetch_result(const TUniqueId& fragment_instance_id, std::
     }
     // check queue status before get result
     RETURN_IF_ERROR(queue->status());
-    bool sucess = queue->blocking_get(result);
-    if (sucess) {
-        // sentinel nullptr indicates scan end
-        if (*result == nullptr) {
-            *eos = true;
-            // put sentinel for consistency, avoid repeated invoking fetch result when hava no rowbatch
-            if (queue != nullptr) {
-                queue->blocking_put(nullptr);
-            }
-        } else {
-            *eos = false;
-        }
-    } else {
+    if (!queue->blocking_get(result)) {
         *eos = true;
+        return Status::OK();
     }
+
+    // sentinel nullptr indicates scan end
+    if (*result == nullptr) {
+        *eos = true;
+        // put sentinel for consistency, avoid repeated invoking fetch result when hava no rowbatch
+        queue->blocking_put(nullptr);
+        return Status::OK();
+    }
+
+    *eos = false;
     return Status::OK();
 }
 
@@ -87,17 +86,19 @@ void ResultQueueMgr::create_queue(const TUniqueId& fragment_instance_id, BlockQu
     }
 }
 
-Status ResultQueueMgr::cancel(const TUniqueId& fragment_instance_id) {
-    std::lock_guard<std::mutex> l(_lock);
-    auto iter = _fragment_queue_map.find(fragment_instance_id);
-    if (iter != _fragment_queue_map.end()) {
-        // first remove RecordBatch from queue
-        // avoid MemoryScratchSink block on send or close operation
-        iter->second->shutdown();
-        // remove this queue from map
-        _fragment_queue_map.erase(fragment_instance_id);
+void ResultQueueMgr::cancel(const TUniqueId& fragment_instance_id) {
+    BlockQueueSharedPtr queue;
+    {
+        std::lock_guard<std::mutex> l(_lock);
+        auto iter = _fragment_queue_map.find(fragment_instance_id);
+        if (iter != _fragment_queue_map.end()) {
+            queue = iter->second;
+            _fragment_queue_map.erase(fragment_instance_id);
+        }
     }
-    return Status::OK();
+    if (queue != nullptr) {
+        queue->shutdown();
+    }
 }
 
 void ResultQueueMgr::update_queue_status(const TUniqueId& fragment_instance_id, const Status& status) {

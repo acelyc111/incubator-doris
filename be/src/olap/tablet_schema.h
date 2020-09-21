@@ -32,7 +32,7 @@ public:
     TabletColumn(FieldAggregationMethod agg, FieldType type);
     TabletColumn(FieldAggregationMethod agg, FieldType filed_type, bool is_nullable);
     void init_from_pb(const ColumnPB& column);
-    void to_schema_pb(ColumnPB* column);
+    void to_schema_pb(ColumnPB* column) const;
 
     inline int32_t unique_id() const { return _unique_id; }
     inline std::string name() const { return _col_name; }
@@ -97,7 +97,8 @@ class TabletSchema {
 public:
     TabletSchema() = default;
     void init_from_pb(const TabletSchemaPB& schema);
-    void to_schema_pb(TabletSchemaPB* tablet_meta_pb);
+    void to_schema_pb(TabletSchemaPB* tablet_meta_pb) const;
+    // TODO(yingchun): precalculate these result
     size_t row_size() const;
     size_t field_index(const std::string& field_name) const;
     const TabletColumn& column(size_t ordinal) const;
@@ -124,6 +125,7 @@ private:
 
 private:
     KeysType _keys_type = DUP_KEYS;
+    // TODO(yingchun): we should index it by column name
     std::vector<TabletColumn> _cols;
     size_t _num_columns = 0;
     size_t _num_key_columns = 0;

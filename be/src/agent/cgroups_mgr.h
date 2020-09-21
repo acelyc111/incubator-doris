@@ -177,7 +177,7 @@ private:
     std::mutex _update_cgroups_mtx;    
 
     // A static mapping from fe's resource type to cgroups file
-    static std::map<TResourceType::type, std::string> _s_resource_cgroups; 
+    static std::map<TResourceType::type, std::string> _s_resource_cgroups;
 };
 }
 #endif

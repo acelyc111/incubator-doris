@@ -61,17 +61,17 @@ public:
     // Load the index into memory.
     OLAPStatus load(bool use_cache = true);
     bool index_loaded();
-    OLAPStatus load_pb(const char* file, uint32_t seg_id);
+    OLAPStatus load_pb(const string& file, uint32_t seg_id);
 
     bool has_zone_maps() {
-        return _zone_maps.size() != 0;
+        return !_zone_maps.empty();
     }
 
-    OLAPStatus add_zone_maps_for_linked_schema_change(
+    void add_zone_maps_for_linked_schema_change(
         const std::vector<std::pair<WrapperField*, WrapperField*>>& zone_map_fields,
         const SchemaMapping& schema_mapping);
 
-    OLAPStatus add_zone_maps(
+    void add_zone_maps(
         const std::vector<std::pair<WrapperField*, WrapperField*>>& zone_map_fields);
 
     OLAPStatus add_zone_maps(
@@ -91,9 +91,9 @@ public:
     // Finds position of first row block contain the smallest key equal
     // to or greater than 'key'. Returns true on success.
     OLAPStatus find_short_key(const RowCursor& key,
-                          RowCursor* helper_cursor,
-                          bool find_last,
-                          RowBlockPosition* position) const;
+                             RowCursor* helper_cursor,
+                             bool find_last,
+                             RowBlockPosition* position) const;
 
     // Returns position of the first row block in the index.
     OLAPStatus find_first_row_block(RowBlockPosition* position) const;
@@ -110,9 +110,9 @@ public:
     // the midpoint between those two positions.  Returns the distance
     // between low and high as computed by ComputeDistance.
     OLAPStatus find_mid_point(const RowBlockPosition& low,
-                          const RowBlockPosition& high,
-                          RowBlockPosition* output,
-                          uint32_t* dis) const;
+                             const RowBlockPosition& high,
+                             RowBlockPosition* output,
+                             uint32_t* dis) const;
 
     OLAPStatus find_prev_point(const RowBlockPosition& current, RowBlockPosition* prev) const;
 
@@ -222,10 +222,10 @@ public:
     }
 
     std::string construct_index_file_path(const std::string& snapshot_path,
-                                          int32_t segment_id) const;
+                                         int32_t segment_id) const;
     std::string construct_index_file_path(int32_t segment_id) const;
     std::string construct_data_file_path(const std::string& snapshot_path,
-                                         int32_t segment_id) const;
+                                        int32_t segment_id) const;
     std::string construct_data_file_path(int32_t segment_id) const;
 
     // these two functions are for compatible, and will be deleted later
@@ -256,14 +256,14 @@ public:
     }
 
     OLAPStatus convert_from_old_files(const std::string& snapshot_path,
-                             std::vector<std::string>* success_links);
+                                     std::vector<std::string>* success_links);
     
     OLAPStatus convert_to_old_files(const std::string& snapshot_path,
-                             std::vector<std::string>* success_links);
+                                   std::vector<std::string>* success_links);
 
     OLAPStatus remove_old_files(std::vector<std::string>* linkes_to_remove);
 
-    OLAPStatus copy_files_to(const std::string& dir);
+    OLAPStatus copy_files_to(const std::string& dir) const;
 
     OLAPStatus link_segments_to_path(const std::string& dest_path, const RowsetId& rowset_id);
 
@@ -301,7 +301,7 @@ private:
     TTransactionId _txn_id;
 
     // short key对应的column information
-    std::vector<TabletColumn> _short_key_columns;
+    std::vector<TabletColumn> _short_key_columns;  // TODO(yingchun): duplicate, can use _schema instead
     // short key对应的总长度
     size_t _short_key_length;
     size_t _new_short_key_length;

@@ -51,9 +51,9 @@ public:
 
     OLAPStatus remove() override;
 
-    OLAPStatus link_files_to(const std::string& dir, RowsetId new_rowset_id) override;
+    OLAPStatus link_files_to(const std::string& dir, const RowsetId& new_rowset_id) override;
 
-    OLAPStatus copy_files_to(const std::string& dir) override;
+    OLAPStatus copy_files_to(const std::string& dir) const override;
 
     // only applicable to alpha rowset, no op here
     OLAPStatus remove_old_files(std::vector<std::string>* files_to_remove) override {

@@ -40,7 +40,6 @@ bool BackendOptions::init() {
     }
     std::vector<InetAddress> hosts;
     Status status = get_hosts_v4(&hosts);
-
     if (!status.ok()) {
         LOG(FATAL) << status.get_error_msg();
         return false;
@@ -52,21 +51,22 @@ bool BackendOptions::init() {
     }
 
     std::string loopback;
-    std::vector<InetAddress>::iterator addr_it = hosts.begin();
-    for (; addr_it != hosts.end(); ++addr_it) {
-        if ((*addr_it).is_address_v4()) {
-            VLOG(2) << "check ip=" << addr_it->get_host_address_v4();
-            if ((*addr_it).is_loopback_v4()) {
-                loopback = addr_it->get_host_address_v4();
-            } else if (!_s_priority_cidrs.empty()) {
-                if (is_in_prior_network(addr_it->get_host_address_v4())) {
-                    _s_localhost = addr_it->get_host_address_v4();
-                    break;
-                }
-            } else {
-                _s_localhost = addr_it->get_host_address_v4();
+    for (auto& addr_it : hosts) {
+        if (!addr_it.is_address_v4()) {
+            continue;
+        }
+
+        VLOG(2) << "check ip=" << addr_it.get_host_address_v4();
+        if (addr_it.is_loopback_v4()) {
+            loopback = addr_it.get_host_address_v4();
+        } else if (!_s_priority_cidrs.empty()) {
+            if (is_in_prior_network(addr_it.get_host_address_v4())) {
+                _s_localhost = addr_it.get_host_address_v4();
                 break;
             }
+        } else {
+            _s_localhost = addr_it.get_host_address_v4();
+            break;
         }
     }
 

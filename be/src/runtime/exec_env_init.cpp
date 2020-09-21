@@ -66,15 +66,16 @@
 
 namespace doris {
 
-Status ExecEnv::init(ExecEnv* env, const std::vector<StorePath>& store_paths) {    
-    return env->_init(store_paths);
+void ExecEnv::init(ExecEnv* env, const std::vector<StorePath>& store_paths) {
+    env->_init(store_paths);
 }
 
-Status ExecEnv::_init(const std::vector<StorePath>& store_paths) {
+void ExecEnv::_init(const std::vector<StorePath>& store_paths) {
     //Only init once before be destroyed
     if (_is_init) {
-        return Status::OK();
+        return;
     }
+
     _store_paths = store_paths;
     _external_scan_context_mgr = new ExternalScanContextMgr(this);
     _stream_mgr = new DataStreamMgr();
@@ -118,15 +119,12 @@ Status ExecEnv::_init(const std::vector<StorePath>& store_paths) {
     _cgroups_mgr->init_cgroups();
     _etl_job_mgr->init();
     Status status = _load_path_mgr->init();
-    if (!status.ok()) {
-        LOG(ERROR) << "load path mgr init failed." << status.get_error_msg();
-        exit(-1);
-    }
+    CHECK(status.ok()) << "load path mgr init failed. " << status.to_string();
     _broker_mgr->init();
     _small_file_mgr->init();
-    _init_mem_tracker();
-
-    RETURN_IF_ERROR(_load_channel_mgr->init(_mem_tracker->limit()));
+    status = _init_mem_tracker();
+    CHECK(status.ok()) << "init mem tracker failed. " << status.to_string();
+    _load_channel_mgr->init(_mem_tracker->limit());
     _heartbeat_flags = new HeartbeatFlags();
     _is_init = true;
     return Status::OK();

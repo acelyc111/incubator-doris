@@ -88,8 +88,8 @@ public:
     void close();
 
     // Returns the current batch from this queue being processed by a consumer.
-    RowBatch* current_batch() const { {
-        return _current_batch.get(); }
+    RowBatch* current_batch() const {
+        return _current_batch.get();
     }
 
 private:
@@ -110,7 +110,7 @@ private:
     condition_variable _data_arrival_cv;
 
     // signal removal of data by stream consumer
-    condition_variable _data_removal_cv;
+    // condition_variable _data_removal_cv;
 
     // queue of (batch length, batch) pairs.  The SenderQueue block owns memory to
     // these batches. They are handed off to the caller via get_batch.
@@ -128,6 +128,7 @@ private:
     std::unordered_set<int> _sender_eos_set; // sender_id
     std::unordered_map<int, int64_t> _packet_seq_map; // be_number => packet_seq
 
+    // TODO(yingchun): what does it means? delay request?
     std::deque<std::pair<google::protobuf::Closure*, MonotonicStopWatch>> _pending_closures;
 };
 
@@ -284,10 +285,11 @@ void DataStreamRecvr::SenderQueue::cancel() {
             return;
         }
         _is_cancelled = true;
-        VLOG_QUERY << "cancelled stream: _fragment_instance_id="
-            << _recvr->fragment_instance_id()
-            << " node_id=" << _recvr->dest_node_id();
     }
+    VLOG_QUERY << "cancelled stream: _fragment_instance_id="
+               << _recvr->fragment_instance_id()
+               << " node_id=" << _recvr->dest_node_id();
+
     // Wake up all threads waiting to produce/consume batches.  They will all
     // notice that the stream is cancelled and handle it.
     _data_arrival_cv.notify_all();
@@ -309,7 +311,7 @@ void DataStreamRecvr::SenderQueue::close() {
         // If _is_cancelled is not set to true, there may be concurrent send
         // which add batch to _batch_queue. The batch added after _batch_queue
         // is clear will be memory leak
-        boost::lock_guard<boost::mutex> l(_lock);
+        lock_guard<mutex> l(_lock);
         _is_cancelled = true;
 
         for (auto closure_pair : _pending_closures) {
@@ -319,10 +321,10 @@ void DataStreamRecvr::SenderQueue::close() {
     }
 
     // Delete any batches queued in _batch_queue
-    for (RowBatchQueue::iterator it = _batch_queue.begin();
-            it != _batch_queue.end(); ++it) {
-        delete it->second;
+    for (auto it : _batch_queue) {
+        delete it.second;
     }
+    _batch_queue.clear();
 
     _current_batch.reset();
 }

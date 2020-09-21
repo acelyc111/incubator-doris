@@ -44,8 +44,7 @@ Status DataSink::create_data_sink(
         const TPlanFragmentExecParams& params,
         const RowDescriptor& row_desc,
         boost::scoped_ptr<DataSink>* sink) {
-    DataSink* tmp_sink = NULL;
-
+    DataSink* tmp_sink = nullptr;
     switch (thrift_sink.type) {
     case TDataSinkType::DATA_STREAM_SINK: {
         if (!thrift_sink.__isset.stream_sink) {
@@ -56,7 +55,7 @@ Status DataSink::create_data_sink(
         // TODO: figure out good buffer size based on size of output row
         tmp_sink = new DataStreamSender(
                 pool, params.sender_id, row_desc,
-                thrift_sink.stream_sink, params.destinations, 16 * 1024, 
+                thrift_sink.stream_sink, params.destinations, 16 * 1024,
                 send_query_statistics_with_every_batch);
         // RETURN_IF_ERROR(sender->prepare(state->obj_pool(), thrift_sink.stream_sink));
         sink->reset(tmp_sink);

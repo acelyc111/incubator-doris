@@ -71,7 +71,7 @@ shared_ptr<DataStreamRecvr> DataStreamMgr::create_recvr(RuntimeState* state,
         const RowDescriptor& row_desc, const TUniqueId& fragment_instance_id,
         PlanNodeId dest_node_id, int num_senders, int buffer_size, RuntimeProfile* profile,
         bool is_merging, std::shared_ptr<QueryStatisticsRecvr> sub_plan_query_statistics_recvr) {
-    DCHECK(profile != NULL);
+    DCHECK(profile != nullptr);
     VLOG_FILE << "creating receiver for fragment="
               << fragment_instance_id << ", node=" << dest_node_id;
     shared_ptr<DataStreamRecvr> recvr(
@@ -93,6 +93,9 @@ shared_ptr<DataStreamRecvr> DataStreamMgr::find_recvr(
     if (acquire_lock) {
         _lock.lock();
     }
+
+    // There may be duplicate hash value of different ids.
+    // TODO(yingchun): use ralated container or hash of ids, which one is more effective? we should do benchmard
     std::pair<StreamMap::iterator, StreamMap::iterator> range =
             _receiver_map.equal_range(hash_value);
     while (range.first != range.second) {
@@ -112,7 +115,7 @@ shared_ptr<DataStreamRecvr> DataStreamMgr::find_recvr(
     return shared_ptr<DataStreamRecvr>();
 }
 
-Status DataStreamMgr::transmit_data(const PTransmitDataParams* request, ::google::protobuf::Closure** done) {
+void DataStreamMgr::transmit_data(const PTransmitDataParams* request, ::google::protobuf::Closure** done) {
     const PUniqueId& finst_id = request->finst_id();
     TUniqueId t_finst_id;
     t_finst_id.hi = finst_id.hi();
@@ -126,7 +129,7 @@ Status DataStreamMgr::transmit_data(const PTransmitDataParams* request, ::google
         // in acquiring _lock.
         // TODO: Rethink the lifecycle of DataStreamRecvr to distinguish
         // errors from receiver-initiated teardowns.
-        return Status::OK();
+        return;
     }
 
     // request can only be used before calling recvr's add_batch or when request
@@ -145,12 +148,11 @@ Status DataStreamMgr::transmit_data(const PTransmitDataParams* request, ::google
     if (eos) {
         recvr->remove_sender(request->sender_id(), request->be_number());
     }
-    return Status::OK();
 }
 
-Status DataStreamMgr::deregister_recvr(
-        const TUniqueId& fragment_instance_id, PlanNodeId node_id) {
+Status DataStreamMgr::deregister_recvr(const TUniqueId& fragment_instance_id, PlanNodeId node_id) {
     boost::shared_ptr<DataStreamRecvr> targert_recvr;
+    // TODO(yingchun): add a to_string() for DataStreamRecvr, then we can reuse it in these log.
     VLOG_QUERY << "deregister_recvr(): fragment_instance_id=" << fragment_instance_id
                << ", node=" << node_id;
     size_t hash_value = get_hash_value(fragment_instance_id, node_id);
@@ -163,6 +165,7 @@ Status DataStreamMgr::deregister_recvr(
             if (recvr->fragment_instance_id() == fragment_instance_id
                 && recvr->dest_node_id() == node_id) {
                 targert_recvr = recvr;
+                // TODO(yingchun): has been remove in cancel()
                 _fragment_stream_set.erase(std::make_pair(
                     recvr->fragment_instance_id(), recvr->dest_node_id()));
                 _receiver_map.erase(range.first);
@@ -174,6 +177,7 @@ Status DataStreamMgr::deregister_recvr(
 
     // Notify concurrent add_data() requests that the stream has been terminated.
     // cancel_stream maybe take a long time, so we handle it out of lock.
+    // TODO(yingchun): dep with it->cancel_stream() in cancel()
     if (targert_recvr) {
         targert_recvr->cancel_stream();
         return Status::OK();
@@ -186,6 +190,7 @@ Status DataStreamMgr::deregister_recvr(
     }
 }
 
+// TODO(yingchun): didn't remove it from _receiver_map?
 void DataStreamMgr::cancel(const TUniqueId& fragment_instance_id) {
     VLOG_QUERY << "cancelling all streams for fragment=" << fragment_instance_id;
     std::vector<boost::shared_ptr<DataStreamRecvr>> recvrs;

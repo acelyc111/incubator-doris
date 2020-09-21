@@ -33,6 +33,7 @@ EngineAlterTabletTask::EngineAlterTabletTask(const TAlterTabletReqV2& request,
         _process_name(process_name) { }
 
 OLAPStatus EngineAlterTabletTask::execute() {
+    // TODO(yingchun): why this metric?
     DorisMetrics::instance()->create_rollup_requests_total->increment(1);
 
     SchemaChangeHandler handler;

@@ -38,8 +38,6 @@ class RowsetFactory;
 
 class AlphaRowset : public Rowset {
 public:
-    virtual ~AlphaRowset() {}
-
     OLAPStatus create_reader(std::shared_ptr<RowsetReader>* result) override;
 
     OLAPStatus create_reader(const std::shared_ptr<MemTracker>& parent_tracker,
@@ -51,9 +49,9 @@ public:
 
     OLAPStatus remove() override;
 
-    OLAPStatus link_files_to(const std::string& dir, RowsetId new_rowset_id) override;
+    OLAPStatus link_files_to(const std::string& dir, const RowsetId& new_rowset_id) override;
 
-    OLAPStatus copy_files_to(const std::string& dir) override;
+    OLAPStatus copy_files_to(const std::string& dir) const override;
 
     OLAPStatus convert_from_old_files(const std::string& snapshot_path,
                                       std::vector<std::string>* success_files);

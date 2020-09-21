@@ -49,8 +49,7 @@ ResultSink::ResultSink(const RowDescriptor& row_desc, const std::vector<TExpr>& 
     }
 }
 
-ResultSink::~ResultSink() {
-}
+ResultSink::~ResultSink() {}
 
 Status ResultSink::prepare_exprs(RuntimeState* state) {
     // From the thrift expressions create the real exprs.
@@ -71,8 +70,9 @@ Status ResultSink::prepare(RuntimeState* state) {
     RETURN_IF_ERROR(prepare_exprs(state));
 
     // create sender
-    RETURN_IF_ERROR(state->exec_env()->result_mgr()->create_sender(
-                state->fragment_instance_id(), _buf_size, &_sender));
+    state->exec_env()->result_mgr()->create_sender(
+                state->fragment_instance_id(), _buf_size, &_sender);
+
     
     // create writer based on sink type
     switch (_sink_type) {

@@ -172,11 +172,11 @@ public:
     ~MemIndex();
 
     // 初始化MemIndex, 传入short_key的总长度和对应的Field数组
-    OLAPStatus init(size_t short_key_len, size_t new_short_key_len,
-                    size_t short_key_num, std::vector<TabletColumn>* short_key_columns);
+    void init(size_t short_key_len, size_t new_short_key_len,
+              size_t short_key_num, std::vector<TabletColumn>* short_key_columns);
 
     // 加载一个segment到内存
-    OLAPStatus load_segment(const char* file, size_t *current_num_rows_per_row_block, bool use_cache = true);
+    OLAPStatus load_segment(const std::string& file, size_t *current_num_rows_per_row_block, bool use_cache = true);
 
     // Return the IndexOffset of the first element, physically, it's (0, 0)
     const OLAPIndexOffset begin() const {

@@ -918,6 +918,7 @@ int operator-(const BinarySearchIterator& left, const BinarySearchIterator& righ
     return *left - *right;
 }
 
+// TODO(yingchun): move to FileUtil
 OLAPStatus copy_file(const string& src, const string& dest) {
     int src_fd = -1;
     int dest_fd = -1;

@@ -92,6 +92,7 @@ private:
     // merge by priority queue(_merge_heap)
     // this method has same function with _pull_next_row_for_merge_rowset, but using heap merge.
     // and this should replace the _pull_next_row_for_merge_rowset later.
+    // TODO(yingchun): remove _pull_next_row_for_merge_rowset now
     OLAPStatus _pull_next_row_for_merge_rowset_v2(RowCursor** row);
     // init the merge heap, this should be call before calling _pull_next_row_for_merge_rowset_v2();
     OLAPStatus _init_merge_heap();
@@ -113,15 +114,15 @@ private:
     std::unique_ptr<RowBlock> _read_block;
     OLAPStatus (AlphaRowsetReader::*_next_block)(RowBlock** block) = nullptr;
     RowCursor* _dst_cursor = nullptr;
-    int _key_range_size;
+    int _key_range_size = 0;
 
     // In streaming ingestion, row among different segment
     // groups may overlap, and is necessary to be taken
     // into consideration deliberately.
     bool _is_segments_overlapping;
 
-    // ordinal of ColumnData upon reading
-    size_t _ordinal;
+    // ordinal of ColumnData upon reading, only used for _union_block (non-ordered read?).
+    size_t _ordinal = 0;
 
     RowsetReaderContext* _current_read_context;
     OlapReaderStatistics _owned_stats;

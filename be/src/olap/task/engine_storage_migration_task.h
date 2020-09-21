@@ -32,7 +32,7 @@ public:
     virtual OLAPStatus execute();
 
 public:
-    EngineStorageMigrationTask(TStorageMediumMigrateReq& storage_medium_migrate_req);
+    EngineStorageMigrationTask(const TStorageMediumMigrateReq& storage_medium_migrate_req);
     ~EngineStorageMigrationTask() {}
 
 private:

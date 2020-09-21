@@ -61,10 +61,6 @@ public:
     // Return the next batch of sorted rows from this merger.
     Status get_next(RowBatch* output_batch, bool* eos);
 
-    // Called to finalize a merge when deep_copy is false. Transfers resources from
-    // all input batches to the specified output batch.
-    void transfer_all_resources(RowBatch* transfer_resource_batch);
-
 private:
     class BatchedRowSupplier;
 

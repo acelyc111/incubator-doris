@@ -240,6 +240,7 @@ void StorageEngine::_update_storage_medium_type_count() {
 }
 
 Status StorageEngine::_judge_and_update_effective_cluster_id(int32_t cluster_id) {
+    // TODO(yingchun): do some refactor?
     if (cluster_id == -1 && _effective_cluster_id == -1) {
         // maybe this is a new cluster, cluster id will get from heartbeat message
         return Status::OK();
@@ -266,6 +267,7 @@ void StorageEngine::set_store_used_flag(const string& path, bool is_used) {
     auto it = _store_map.find(path);
     if (it == _store_map.end()) {
         LOG(WARNING) << "store not exist, path=" << path;
+        return;
     }
 
     it->second->set_is_used(is_used);
@@ -380,7 +382,7 @@ Status StorageEngine::_check_all_root_path_cluster_id() {
         if (tmp_cluster_id == -1) {
             _is_all_cluster_id_exist = false;
         } else if (tmp_cluster_id == cluster_id) {
-            // both hava right cluster id, do nothing
+            // both have right cluster id, do nothing
         } else if (cluster_id == -1) {
             cluster_id = tmp_cluster_id;
         } else {
@@ -448,7 +450,7 @@ std::vector<DataDir*> StorageEngine::get_stores_for_create_tablet(
 DataDir* StorageEngine::get_store(const std::string& path) {
     // _store_map is unchanged, no need to lock
     auto it = _store_map.find(path);
-    if (it == std::end(_store_map)) {
+    if (it == _store_map.end()) {
         return nullptr;
     }
     return it->second;
@@ -465,7 +467,7 @@ bool StorageEngine::_delete_tablets_on_unused_root_path() {
     uint32_t total_root_path_num = 0;
 
     std::lock_guard<std::mutex> l(_store_lock);
-    if (_store_map.size() == 0) {
+    if (_store_map.empty()) {
         return false;
     }
 
@@ -653,7 +655,7 @@ void StorageEngine::get_cache_status(rapidjson::Document* document) const {
     return _index_stream_lru_cache->get_cache_status(document);
 }
 
-OLAPStatus StorageEngine::_start_trash_sweep(double* usage) {
+OLAPStatus StorageEngine::_start_trash_sweep(double* max_usage) {
     OLAPStatus res = OLAP_SUCCESS;
     LOG(INFO) << "start trash and snapshot sweep.";
 
@@ -664,6 +666,7 @@ OLAPStatus StorageEngine::_start_trash_sweep(double* usage) {
     RETURN_NOT_OK_LOG(get_all_data_dir_info(&data_dir_infos, false),
                       "failed to get root path stat info when sweep trash.")
 
+    // TODO(yingchun): make these functions as common utils
     time_t now = time(nullptr); //获取UTC时间
     tm local_tm_now;
     if (localtime_r(&now, &local_tm_now) == nullptr) {
@@ -678,7 +681,7 @@ OLAPStatus StorageEngine::_start_trash_sweep(double* usage) {
         }
 
         double curr_usage = (double) (info.disk_capacity - info.available) / info.disk_capacity;
-        *usage = *usage > curr_usage ? *usage : curr_usage;
+        *max_usage = std::max(*max_usage, curr_usage);
 
         OLAPStatus curr_res = OLAP_SUCCESS;
         string snapshot_path = info.path + SNAPSHOT_PREFIX;
@@ -836,8 +839,7 @@ void StorageEngine::start_delete_unused_rowset() {
             ++it;
         } else if (it->second->need_delete_file()) {
             VLOG(3) << "start to remove rowset:" << it->second->rowset_id()
-                    << ", version:" << it->second->version().first << "-"
-                    << it->second->version().second;
+                    << ", version: " << it->second->version();
             OLAPStatus status = it->second->remove();
             VLOG(3) << "remove rowset:" << it->second->rowset_id()
                     << " finished. status:" << status;
@@ -852,9 +854,8 @@ void StorageEngine::add_unused_rowset(RowsetSharedPtr rowset) {
     }
 
     VLOG(3) << "add unused rowset, rowset id:" << rowset->rowset_id()
-            << ", version:" << rowset->version().first << "-" << rowset->version().second
+            << ", version:" << rowset->version()
             << ", unique id:" << rowset->unique_id();
-
     auto rowset_id = rowset->rowset_id().to_string();
 
     MutexLock lock(&_gc_mutex);
@@ -881,12 +882,9 @@ OLAPStatus StorageEngine::create_tablet(const TCreateTabletReq& request) {
 
 OLAPStatus StorageEngine::obtain_shard_path(
         TStorageMedium::type storage_medium, std::string* shard_path, DataDir** store) {
+    DCHECK(shard_path);
+    DCHECK(store);
     LOG(INFO) << "begin to process obtain root path. storage_medium=" << storage_medium;
-
-    if (shard_path == NULL) {
-        LOG(WARNING) << "invalid output parameter which is null pointer.";
-        return OLAP_ERR_CE_CMD_PARAMS_ERROR;
-    }
 
     auto stores = get_stores_for_create_tablet(storage_medium);
     if (stores.empty()) {

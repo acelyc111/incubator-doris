@@ -147,6 +147,7 @@ void Tablet::save_meta() {
     _schema = _tablet_meta->tablet_schema();
 }
 
+// TODO(yingchun): _tablet_meta is modified here, why not lock? if has been locked outside, add '_unlocked'
 OLAPStatus Tablet::revise_tablet_meta(
         const vector<RowsetMetaSharedPtr>& rowsets_to_clone,
         const vector<Version>& versions_to_delete) {
@@ -162,6 +163,7 @@ OLAPStatus Tablet::revise_tablet_meta(
         // delete versions from new local tablet_meta
         for (const Version& version : versions_to_delete) {
             new_tablet_meta->delete_rs_meta_by_version(version, nullptr);
+            // TODO(yingchun): remove it directly
             if (new_tablet_meta->version_for_delete_predicate(version)) {
                 new_tablet_meta->remove_delete_predicate_by_version(version);
             }
@@ -170,8 +172,12 @@ OLAPStatus Tablet::revise_tablet_meta(
         }
 
         for (auto& rs_meta : rowsets_to_clone) {
-            new_tablet_meta->add_rs_meta(rs_meta);
+            res = new_tablet_meta->add_rs_meta(rs_meta);
         }
+        if (res != OLAP_SUCCESS) {
+            break;
+        }
+
         VLOG(3) << "load rowsets successfully when clone. tablet=" << full_name()
                 << ", added rowset size=" << rowsets_to_clone.size();
         // save and reload tablet_meta
@@ -214,6 +220,7 @@ OLAPStatus Tablet::revise_tablet_meta(
     return res;
 }
 
+// TODO(yingchun): why not add it to _inc_rs_version_map ?
 OLAPStatus Tablet::add_rowset(RowsetSharedPtr rowset, bool need_persist) {
     DCHECK(rowset != nullptr);
     WriteLock wrlock(&_meta_lock);
@@ -225,6 +232,7 @@ OLAPStatus Tablet::add_rowset(RowsetSharedPtr rowset, bool need_persist) {
     // Otherwise, the version shoud be not contained in any existing rowset.
     RETURN_NOT_OK(_contains_version(rowset->version()));
 
+    // TODO(yingchun): why not add this rs by modify_rowsets in L241 together?
     RETURN_NOT_OK(_tablet_meta->add_rs_meta(rowset->rowset_meta()));
     _rs_version_map[rowset->version()] = rowset;
     _timestamped_version_tracker.add_version(rowset->version());
@@ -361,8 +369,7 @@ OLAPStatus Tablet::add_inc_rowset(const RowsetSharedPtr& rowset) {
     _inc_rs_version_map[rowset->version()] = rowset;
 
     _timestamped_version_tracker.add_version(rowset->version());
-
-    RETURN_NOT_OK(_tablet_meta->add_inc_rs_meta(rowset->rowset_meta()));
+    _tablet_meta->add_inc_rs_meta(rowset->rowset_meta());
     ++_newly_created_rowset_num;
     return OLAP_SUCCESS;
 }
@@ -371,11 +378,6 @@ void Tablet::_delete_inc_rowset_by_version(const Version& version,
                                            const VersionHash& version_hash) {
     // delete incremental rowset from map
     _inc_rs_version_map.erase(version);
-
-    RowsetMetaSharedPtr rowset_meta = _tablet_meta->acquire_inc_rs_meta_by_version(version);
-    if (rowset_meta == nullptr) {
-        return;
-    }
     _tablet_meta->delete_inc_rs_meta_by_version(version);
     VLOG(3) << "delete incremental rowset. tablet=" << full_name() << ", version=" << version;
 }
@@ -394,6 +396,7 @@ void Tablet::delete_expired_inc_rowsets() {
     int64_t now = UnixSeconds();
     vector<pair<Version, VersionHash>> expired_versions;
     WriteLock wrlock(&_meta_lock);
+    // TODO(yingchun): make sure _tablet_meta->all_inc_rs_metas() are the same with myself
     for (auto& rs_meta : _tablet_meta->all_inc_rs_metas()) {
         double diff = ::difftime(now, rs_meta->creation_time());
         if (diff >= config::inc_rowset_expired_sec) {
@@ -563,6 +566,7 @@ void Tablet::delete_expired_stale_rowset() {
 #endif
 }
 
+// TODO(yingchun): add _unlocked postfix too?
 OLAPStatus Tablet::capture_consistent_versions(const Version& spec_version,
                                                vector<Version>* version_path) const {    
     // OLAPStatus status = _rs_graph.capture_consistent_versions(spec_version, version_path);
@@ -795,6 +799,7 @@ void Tablet::calc_missed_versions(int64_t spec_version, vector<Version>* missed_
 // for example:
 //     [0-4][5-5][8-8][9-9]
 // if spec_version = 6, we still return {6, 7} other than {7}
+// TODO(yingchun): +1
 void Tablet::calc_missed_versions_unlocked(int64_t spec_version,
                                            vector<Version>* missed_versions) const {
     DCHECK(spec_version > 0) << "invalid spec_version: " << spec_version;
@@ -809,7 +814,7 @@ void Tablet::calc_missed_versions_unlocked(int64_t spec_version,
         return a.first < b.first;
     });
 
-    // From the first version(=0),  find the missing version until spec_version
+    // From the first version(=0), find the missing version until spec_version
     int64_t last_version = -1;
     for (const Version& version : existing_versions) {
         if (version.first > last_version + 1) {
@@ -883,6 +888,7 @@ OLAPStatus Tablet::split_range(const OlapTuple& start_key_strings,
     RowCursor start_key;
     // 如果有startkey，用startkey初始化；反之则用minkey初始化
     if (start_key_strings.size() > 0) {
+        // TODO(yingchun): can we combine the two function?
         if (start_key.init_scan_key(_schema, start_key_strings.values()) != OLAP_SUCCESS) {
             LOG(WARNING) << "fail to initial key strings with RowCursor type.";
             return OLAP_ERR_INIT_FAILED;
@@ -955,6 +961,7 @@ void Tablet::delete_all_files() {
     _stale_rs_version_map.clear();
 }
 
+// TODO(yingchun): can we remove it?
 bool Tablet::check_path(const std::string& path_to_check) const {
     ReadLock rdlock(&_meta_lock);
     if (path_to_check == _tablet_path) {
@@ -1035,6 +1042,7 @@ OLAPStatus Tablet::_contains_version(const Version& version) {
             // because the value type is std::shared_ptr, when will it be nullptr?
             // In addition, in this class, there are many places that do not make this judgment
             // when access _rs_version_map's value.
+            // TODO(yingchun): +1
             CHECK(it.second != nullptr) << "there exist a version=" << it.first
                              << " contains the input rs with version=" <<  version
                              << ", but the related rs is null";
@@ -1228,6 +1236,7 @@ bool Tablet::rowset_meta_is_useful(RowsetMetaSharedPtr rowset_meta) {
     return find_rowset_id || !find_version;
 }
 
+// TODO(yingchun): if it will frenquently invoked, it's better to add a related mapping.
 bool Tablet::_contains_rowset(const RowsetId rowset_id) {
     for (auto& version_rowset : _rs_version_map) {
         if (version_rowset.second->rowset_id() == rowset_id) {

@@ -87,9 +87,9 @@ public:
     // just no use now
     void callback(const Status& status, RuntimeProfile* profile, bool done);
 
-    std::string to_http_path(const std::string& file_name);
+    std::string to_http_path(const std::string& file_name) const;
 
-    Status execute();
+    void execute();
 
     Status cancel_before_execute();
 
@@ -126,10 +126,7 @@ public:
         if (_timeout_second <= 0) {
             return false;
         }
-        if (now.second_diff(_start_time) > _timeout_second) {
-            return true;
-        }
-        return false;
+        return now.second_diff(_start_time) > _timeout_second;
     }
 
     int get_timeout_second() const { return _timeout_second; } 
@@ -206,7 +203,7 @@ static void register_cgroups(const std::string& user, const std::string& group) 
     CgroupsMgr::apply_cgroup(new_info->user, new_info->group);
 }
 
-Status FragmentExecState::execute() {
+void FragmentExecState::execute() {
     int64_t duration_ns = 0;
     {
         SCOPED_RAW_TIMER(&duration_ns);
@@ -220,9 +217,9 @@ Status FragmentExecState::execute() {
                                                             print_id(_fragment_instance_id)));
         _executor.close();
     }
+
     DorisMetrics::instance()->fragment_requests_total->increment(1);
     DorisMetrics::instance()->fragment_request_duration_us->increment(duration_ns / 1000);
-    return Status::OK();
 }
 
 Status FragmentExecState::cancel_before_execute() {
@@ -245,13 +242,11 @@ Status FragmentExecState::cancel(const PPlanFragmentCancelReason& reason) {
 void FragmentExecState::callback(const Status& status, RuntimeProfile* profile, bool done) {
 }
 
-std::string FragmentExecState::to_http_path(const std::string& file_name) {
-    std::stringstream url;
-    url << "http://" << BackendOptions::get_localhost() << ":" << config::webserver_port
-        << "/api/_download_load?"
-        << "token=" << _exec_env->token()
-        << "&file=" << file_name;
-    return url.str();
+std::string FragmentExecState::to_http_path(const std::string& file_name) const {
+    static std::string base_path(std::string("http://") + BackendOptions::get_localhost()
+        + ":" + std::to_string(config::webserver_port)
+        + "/api/_download_load?token=" + _exec_env->token() + "&file=");
+    return base_path + file_name;
 }
 
 // There can only be one of these callbacks in-flight at any moment, because
@@ -284,7 +279,7 @@ void FragmentExecState::coordinator_callback(
     params.__set_done(done);
 
     RuntimeState* runtime_state = _executor.runtime_state();
-    DCHECK(runtime_state != NULL);
+    DCHECK(runtime_state != nullptr);
     if (runtime_state->query_options().query_type == TQueryType::LOAD && !done && status.ok()) {
         // this is a load plan, and load is not finished, just make a brief report
         params.__set_loaded_rows(runtime_state->num_rows_load_total());
@@ -352,7 +347,6 @@ void FragmentExecState::coordinator_callback(
         } catch (TTransportException& e) {
             LOG(WARNING) << "Retrying ReportExecStatus: " << e.what();
             rpc_status = coord.reopen();
-
             if (!rpc_status.ok()) {
                 // we need to cancel the execution of this fragment
                 update_status(rpc_status);
@@ -450,7 +444,6 @@ Status FragmentMgr::exec_plan_fragment(
         const TExecPlanFragmentParams& params,
         FinishCallback cb) {
     const TUniqueId& fragment_instance_id = params.params.fragment_instance_id;
-    std::shared_ptr<FragmentExecState> exec_state;
     {
         std::lock_guard<std::mutex> lock(_lock);
         auto iter = _fragment_map.find(fragment_instance_id);
@@ -459,7 +452,8 @@ Status FragmentMgr::exec_plan_fragment(
             return Status::OK();
         }
     }
-    exec_state.reset(new FragmentExecState(
+    std::shared_ptr<FragmentExecState> exec_state(
+        new FragmentExecState(
             params.params.query_id,
             fragment_instance_id,
             params.backend_num,
@@ -531,13 +525,13 @@ void FragmentMgr::cancel_worker() {
     LOG(INFO) << "FragmentMgr cancel worker is going to exit.";
 }
 
-Status FragmentMgr::trigger_profile_report(const PTriggerProfileReportRequest* request) {
-    if (request->instance_ids_size() > 0) {
-        for (int i = 0; i < request->instance_ids_size(); i++) {
-            const PUniqueId& p_fragment_id = request->instance_ids(i);
+void FragmentMgr::trigger_profile_report(const PTriggerProfileReportRequest* request) {
+    const auto& instance_ids = request->instance_ids();
+    if (!instance_ids.empty()) {
+        for (const auto& instance_id : instance_ids) {
             TUniqueId id;
-            id.__set_hi(p_fragment_id.hi());
-            id.__set_lo(p_fragment_id.lo());
+            id.__set_hi(instance_id.hi());
+            id.__set_lo(instance_id.lo());
             {
                 std::lock_guard<std::mutex> lock(_lock);
                 auto iter = _fragment_map.find(id);
@@ -548,14 +542,11 @@ Status FragmentMgr::trigger_profile_report(const PTriggerProfileReportRequest* r
         }
     } else {
         std::lock_guard<std::mutex> lock(_lock);
-        auto iter = _fragment_map.begin();
-        for (; iter != _fragment_map.end(); iter++) {
-            iter->second->executor()->report_profile_once();
+        for (const auto& iter : _fragment_map) {
+            iter.second->executor()->report_profile_once();
         }
     }
-    return Status::OK();
 }
-
 
 void FragmentMgr::debug(std::stringstream& ss) {
     // Keep things simple
@@ -576,7 +567,10 @@ void FragmentMgr::debug(std::stringstream& ss) {
  * 1. resolve opaqued_query_plan to thrift structure
  * 2. build TExecPlanFragmentParams
  */
-Status FragmentMgr::exec_external_plan_fragment(const TScanOpenParams& params, const TUniqueId& fragment_instance_id, std::vector<TScanColumnDesc>* selected_columns) {
+Status FragmentMgr::exec_external_plan_fragment(
+        const TScanOpenParams& params,
+        const TUniqueId& fragment_instance_id,
+        std::vector<TScanColumnDesc>* selected_columns) {
     const std::string& opaqued_query_plan = params.opaqued_query_plan;
     std::string query_plan_info;
     // base64 decode query plan
@@ -620,13 +614,13 @@ Status FragmentMgr::exec_external_plan_fragment(const TScanOpenParams& params, c
         TScanColumnDesc col;
         col.__set_name(slot->col_name());
         col.__set_type(to_thrift(slot->type().type));
-        selected_columns->emplace_back(std::move(col));
+        selected_columns->emplace_back(col);
     }
 
     LOG(INFO) << "BackendService execute open()  TQueryPlanInfo: " << apache::thrift::ThriftDebugString(t_query_plan_info);
     // assign the param used to execute PlanFragment
     TExecPlanFragmentParams exec_fragment_params;
-    exec_fragment_params.protocol_version = (PaloInternalServiceVersion::type)0;
+    exec_fragment_params.protocol_version = PaloInternalServiceVersion::type::V1;
     exec_fragment_params.__set_fragment(t_query_plan_info.plan_fragment);
     exec_fragment_params.__set_desc_tbl(t_query_plan_info.desc_tbl);
 
@@ -640,7 +634,7 @@ Status FragmentMgr::exec_external_plan_fragment(const TScanOpenParams& params, c
     TNetworkAddress address;
     address.hostname = BackendOptions::get_localhost();
     address.port = doris::config::be_port;
-    std::map<int64_t, TTabletVersionInfo> tablet_info = t_query_plan_info.tablet_info;
+    const std::map<int64_t, TTabletVersionInfo>& tablet_info = t_query_plan_info.tablet_info;
     for (auto tablet_id : params.tablet_ids) {
         TPaloScanRange scan_range;
         scan_range.db_name = params.database;
@@ -663,7 +657,7 @@ Status FragmentMgr::exec_external_plan_fragment(const TScanOpenParams& params, c
         doris_scan_range.__set_palo_scan_range(scan_range);
         TScanRangeParams scan_range_params;
         scan_range_params.scan_range = doris_scan_range;
-        scan_ranges.push_back(scan_range_params);
+        scan_ranges.emplace_back(scan_range_params);
     }
     per_node_scan_ranges.insert(std::make_pair((::doris::TPlanNodeId)0, scan_ranges));
     fragment_exec_params.per_node_scan_ranges = per_node_scan_ranges;

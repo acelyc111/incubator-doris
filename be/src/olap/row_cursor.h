@@ -35,8 +35,6 @@ class Field;
 class RowCursor {
 public:
     RowCursor();
-    
-    // 遍历销毁field指针
     ~RowCursor();
     
     // 根据传入schema的创建RowCursor
@@ -58,8 +56,8 @@ public:
     OLAPStatus init_scan_key(const TabletSchema& schema,
                              const std::vector<std::string>& keys);
 
-    //allocate memory for string type, which include char, varchar, hyperloglog
-    OLAPStatus allocate_memory_for_string_type(const TabletSchema& schema);
+    // allocate memory for string type, which include char, varchar, hyperloglog
+    void allocate_memory_for_string_type(const TabletSchema& schema);
 
     RowCursorCell cell(uint32_t cid) const {
         return RowCursorCell(nullable_cell_ptr(cid));
@@ -85,6 +83,7 @@ public:
         char* dst_cell = cell_ptr(index);
         column_schema(index)->shallow_copy_content(dst_cell, buf);
     }
+
     // convert and deep copy field content
     OLAPStatus convert_from(size_t index, const char* src, const TypeInfo* src_type, MemPool* mem_pool) {
         char* dest = cell_ptr(index);
@@ -92,7 +91,7 @@ public:
     }
 
     // 从传入的字符串数组反序列化内部各field的值
-    // 每个字符串必须是一个\0结尾的字符串
+    // 每个字符串必须是一个'\0'结尾的字符串
     // 要求输入字符串和row cursor有相同的列数，
     OLAPStatus from_tuple(const OlapTuple& tuple);
 
@@ -118,10 +117,8 @@ public:
     }
 
     // set max/min for key field in _field_array
-    OLAPStatus build_max_key();
-    OLAPStatus build_min_key();
-
-    inline char* get_buf() const { return _fixed_buf; }
+    void build_max_key();
+    void build_min_key();
 
     // this two functions is used in unit test
     inline size_t get_fixed_len() const { return _fixed_len; }
@@ -168,11 +165,11 @@ private:
     std::unique_ptr<Schema> _schema;
 
     char* _fixed_buf = nullptr;          // point to fixed buf
-    size_t _fixed_len;
+    size_t _fixed_len = 0;
     char* _owned_fixed_buf = nullptr;    // point to buf allocated in init function
 
     char* _variable_buf = nullptr;
-    size_t _variable_len;
+    size_t _variable_len = 0;
 
     DISALLOW_COPY_AND_ASSIGN(RowCursor);
 };

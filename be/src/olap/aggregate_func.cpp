@@ -46,6 +46,7 @@ public:
         }
     }
 
+private:
     template<FieldAggregationMethod agg_method, FieldType field_type>
     void add_aggregate_mapping() {
         _infos_mapping.emplace(std::make_pair(agg_method, field_type),

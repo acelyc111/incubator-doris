@@ -25,7 +25,7 @@ namespace doris {
 
 using std::map;
 
-EnginePublishVersionTask::EnginePublishVersionTask(TPublishVersionRequest& publish_version_req,
+EnginePublishVersionTask::EnginePublishVersionTask(const TPublishVersionRequest& publish_version_req,
                                                    vector<TTabletId>* error_tablet_ids) :
         _publish_version_req(publish_version_req),
         _error_tablet_ids(error_tablet_ids) {}
@@ -42,6 +42,7 @@ OLAPStatus EnginePublishVersionTask::finish() {
         std::set<TabletInfo> partition_related_tablet_infos;
         StorageEngine::instance()->tablet_manager()->get_partition_related_tablets(
                 partition_id, &partition_related_tablet_infos);
+        // TODO(yingchun): what dose 'strict_mode' mean? Should be '!_publish_version_req.strict_mode' here?
         if (_publish_version_req.strict_mode && partition_related_tablet_infos.empty()) {
             LOG(INFO) << "could not find related tablet for partition " << partition_id
                       << ", skip publish version";
@@ -56,10 +57,10 @@ OLAPStatus EnginePublishVersionTask::finish() {
         VersionHash version_hash = par_ver_info.version_hash;
 
         // each tablet
-        for (auto& tablet_rs : tablet_related_rs) {
+        for (const auto& tablet_rs : tablet_related_rs) {
             OLAPStatus publish_status = OLAP_SUCCESS;
-            TabletInfo tablet_info = tablet_rs.first;
-            RowsetSharedPtr rowset = tablet_rs.second;
+            const TabletInfo& tablet_info = tablet_rs.first;
+            const RowsetSharedPtr& rowset = tablet_rs.second;
             LOG(INFO) << "begin to publish version on tablet. "
                 << "tablet_id=" << tablet_info.tablet_id
                 << ", schema_hash=" << tablet_info.schema_hash
@@ -116,34 +117,38 @@ OLAPStatus EnginePublishVersionTask::finish() {
                 << ", res=" << publish_status;
         }
 
+        // has to use strict mode to check if check all tablets
+        if (!_publish_version_req.strict_mode) {
+            continue;
+        }
         // check if the related tablet remained all have the version
         for (auto& tablet_info : partition_related_tablet_infos) {
-            // has to use strict mode to check if check all tablets
-            if (!_publish_version_req.strict_mode) {
-                break;
-            }
             TabletSharedPtr tablet = StorageEngine::instance()->tablet_manager()->get_tablet(
                     tablet_info.tablet_id, tablet_info.schema_hash);
             if (tablet == nullptr) {
                 _error_tablet_ids->push_back(tablet_info.tablet_id);
+                continue;
+            }
+            // check if the version exist, if not exist, then set publish failed
+            if (tablet->check_version_exist(version)) {
+                continue;
+            }
+            _error_tablet_ids->push_back(tablet_info.tablet_id);
+            // generate a pull rowset meta task to pull rowset from remote meta store and storage
+            // pull rowset meta using tablet_id + txn_id
+            // it depends on the tablet type to download file or only meta
+            // TODO(yingchun): Should use '!tablet->in_eco_mode()' ?
+            if (!tablet->in_eco_mode()) {
+                continue;
+            }
+
+            if (tablet->is_primary_replica()) {
+                // primary replica should fetch the meta using txn id
+                // it will fetch the rowset to meta store, and will be published in next publish version task
+                StorageEngine::instance()->tablet_sync_service()->fetch_rowset(tablet, transaction_id, FETCH_DATA);
             } else {
-                // check if the version exist, if not exist, then set publish failed
-                if (!tablet->check_version_exist(version)) {
-                    _error_tablet_ids->push_back(tablet_info.tablet_id);
-                    // generate a pull rowset meta task to pull rowset from remote meta store and storage
-                    // pull rowset meta using tablet_id + txn_id
-                    // it depends on the tablet type to download file or only meta
-                    if (tablet->in_eco_mode()) {
-                        if (tablet->is_primary_replica()) {
-                            // primary replica should fetch the meta using txn id
-                            // it will fetch the rowset to meta store, and will be published in next publish version task
-                            StorageEngine::instance()->tablet_sync_service()->fetch_rowset(tablet, transaction_id, FETCH_DATA);
-                        } else {
-                            // shadow replica should fetch the meta using version
-                            StorageEngine::instance()->tablet_sync_service()->fetch_rowset(tablet, version, NOT_FETCH_DATA);
-                        }
-                    }
-                }
+                // shadow replica should fetch the meta using version
+                StorageEngine::instance()->tablet_sync_service()->fetch_rowset(tablet, version, NOT_FETCH_DATA);
             }
         }
     }

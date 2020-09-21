@@ -68,7 +68,6 @@ const std::string& BrokerMgr::get_client_id(const TNetworkAddress& address) {
 
 void BrokerMgr::ping(const TNetworkAddress& addr) {
     TBrokerPingBrokerRequest request;
-
     request.__set_version(TBrokerVersion::VERSION_ONE);
     request.__set_clientId(_client_id);
 
@@ -102,12 +101,10 @@ void BrokerMgr::ping(const TNetworkAddress& addr) {
 
 void BrokerMgr::ping_worker() {
     do {
-        std::vector<TNetworkAddress> addresses;
+        std::unordered_set<TNetworkAddress> addresses;
         {
             std::lock_guard<std::mutex> l(_mutex);
-            for (auto& addr : _broker_set) {
-                addresses.emplace_back(addr);
-            }
+            addresses = _broker_set;
         }
         for (auto& addr : addresses) {
             ping(addr);

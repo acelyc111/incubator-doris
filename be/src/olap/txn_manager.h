@@ -52,16 +52,16 @@ namespace doris {
 struct TabletTxnInfo {
     PUniqueId load_id;
     RowsetSharedPtr rowset;
-    int64_t creation_time;
+    int64_t creation_time = 0;
 
     TabletTxnInfo(
         PUniqueId load_id,
         RowsetSharedPtr rowset) :
-        load_id(load_id),
+        load_id(std::move(load_id)),
         rowset(rowset),
         creation_time(UnixSeconds()) {}
 
-    TabletTxnInfo() {}
+    TabletTxnInfo() = default;
 };
 
 
@@ -123,7 +123,7 @@ public:
     void get_tablet_related_txns(TTabletId tablet_id, SchemaHash schema_hash, TabletUid tablet_uid, int64_t* partition_id,
                                 std::set<int64_t>* transaction_ids);
 
-    void get_txn_related_tablets(const TTransactionId transaction_id,
+    void get_txn_related_tablets(TTransactionId transaction_id,
                                  TPartitionId partition_ids,
                                  std::map<TabletInfo, RowsetSharedPtr>* tablet_infos);
     
@@ -133,16 +133,15 @@ public:
     bool has_txn(TPartitionId partition_id, TTransactionId transaction_id,
                  TTabletId tablet_id, SchemaHash schema_hash, TabletUid tablet_uid);
 
-    // get all expired txns and save tham in expire_txn_map.
+    // get all expired txns and save them in expire_txn_map.
     // This is currently called before reporting all tablet info, to avoid iterating txn map for every tablets.
     void build_expire_txn_map(std::map<TabletInfo, std::vector<int64_t>>* expire_txn_map);
 
     void force_rollback_tablet_related_txns(OlapMeta* meta, TTabletId tablet_id, SchemaHash schema_hash, TabletUid tablet_uid);
 
-    void get_partition_ids(const TTransactionId transaction_id, std::vector<TPartitionId>* partition_ids);
+    void get_partition_ids(TTransactionId transaction_id, std::vector<TPartitionId>* partition_ids);
     
 private:
-
     using TxnKey = std::pair<int64_t, int64_t>; // partition_id, transaction_id;
 
     // implement TxnKey hash function to support TxnKey as a key for unordered_map

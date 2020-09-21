@@ -482,6 +482,7 @@ OLAPStatus Reader::_capture_rs_readers(const ReaderParams& read_params) {
         } else if (_keys_param.end_range == "le") {
             is_upper_key_included = true;
         } else {
+            // TODO(yingchun): use DCHECK instead
             LOG(WARNING) << "reader params end_range is error. "
                          << "range=" << _keys_param.to_string();
             return OLAP_ERR_READER_GET_ITERATOR_ERROR;
@@ -509,6 +510,7 @@ OLAPStatus Reader::_capture_rs_readers(const ReaderParams& read_params) {
             is_lower_key_included = true;
             is_upper_key_included = true;
         } else {
+            // TODO(yingchun): use DCHECK instead
             LOG(WARNING) << "reader params range is error. "
                          << "range=" << _keys_param.to_string();
             return OLAP_ERR_READER_GET_ITERATOR_ERROR;
@@ -519,6 +521,10 @@ OLAPStatus Reader::_capture_rs_readers(const ReaderParams& read_params) {
     }
 
     if (eof) { return OLAP_SUCCESS; }
+
+    // TODO(yingchun): judge whether init ok, like
+    //  is_lower_keys_included == is_upper_keys_included ==
+    //  _keys_param.start_keys.size() == _keys_param.end_keys.size()
 
     bool need_ordered_result = true;
     if (read_params.reader_type == READER_QUERY) {
@@ -635,6 +641,7 @@ OLAPStatus Reader::_init_return_columns(const ReaderParams& read_params) {
             }
         }
     } else if (read_params.return_columns.empty()) {
+        // TODO(yingchun): how about count(*)?
         for (size_t i = 0; i < _tablet->tablet_schema().num_columns(); ++i) {
             _return_columns.push_back(i);
             if (_tablet->tablet_schema().column(i).is_key()) {
@@ -682,6 +689,7 @@ void Reader::_init_seek_columns() {
         }
     }
     for (uint32_t i = 0; i < _tablet->tablet_schema().num_columns(); i++) {
+        // TODO(yingchun): is column id continous? if not, there is a bug
         if (i < max_key_column_count || column_set.find(i) != column_set.end()) {
             _seek_columns.push_back(i);
         }
@@ -693,6 +701,7 @@ OLAPStatus Reader::_init_keys_param(const ReaderParams& read_params) {
         return OLAP_SUCCESS;
     }
 
+    // TODO(yingchun): validate end_range
     _keys_param.range = read_params.range;
     _keys_param.end_range = read_params.end_range;
 
@@ -854,15 +863,18 @@ COMPARISON_PREDICATE_CONDITION_VALUE(ge, GreaterEqualPredicate)
 
 ColumnPredicate* Reader::_parse_to_predicate(const TCondition& condition) {
     // TODO: not equal and not in predicate is not pushed down
+    // TODO(yingchun): we should use column id instead of column name
     int index = _tablet->field_index(condition.column_name);
     const TabletColumn& column = _tablet->tablet_schema().column(index);
     if (column.aggregation() != FieldAggregationMethod::OLAP_FIELD_AGGREGATION_NONE) {
         return nullptr;
     }
     ColumnPredicate* predicate = nullptr;
+    // TODO(yingchun): we should use enum instead of string
     if (condition.condition_op == "*=" && condition.condition_values.size() == 1) {
         predicate = _new_eq_pred(column, index, condition.condition_values[0]);
     } else if (condition.condition_op == "<<") {
+        // TODO(yingchun): should add size judement 'size() == 1' for these ifs
         predicate = _new_lt_pred(column, index, condition.condition_values[0]);
     } else if (condition.condition_op == "<=") {
         predicate = _new_le_pred(column, index, condition.condition_values[0]);
@@ -871,6 +883,7 @@ ColumnPredicate* Reader::_parse_to_predicate(const TCondition& condition) {
     } else if (condition.condition_op == ">=") {
         predicate = _new_ge_pred(column, index, condition.condition_values[0]);
     } else if (condition.condition_op == "*=" && condition.condition_values.size() > 1) {
+        // TODO(yingchun): wrap in a function
         switch (column.type()) {
             case OLAP_FIELD_TYPE_TINYINT: {
                 std::set<int8_t> values;
@@ -878,6 +891,7 @@ ColumnPredicate* Reader::_parse_to_predicate(const TCondition& condition) {
                     int32_t value = 0;
                     std::stringstream ss(cond_val);
                     ss >> value;
+                    // TODO(yingchun): ignore overflow?
                     values.insert(value);
                 }
                 predicate = new InListPredicate<int8_t>(index, std::move(values));
@@ -1012,6 +1026,7 @@ void Reader::_init_load_bf_columns(const ReaderParams& read_params) {
     }
 
     // remove columns which have same value between start_key and end_key
+    // TODO(yingchun): what does these two judgement mean?
     int min_scan_key_len = _tablet->tablet_schema().num_columns();
     for (int i = 0; i < read_params.start_key.size(); ++i) {
         if (read_params.start_key[i].size() < min_scan_key_len) {
@@ -1025,6 +1040,7 @@ void Reader::_init_load_bf_columns(const ReaderParams& read_params) {
         }
     }
 
+    // TODO(yingchun): I don't understand what deos these code mean?
     int max_equal_index = -1;
     for (int i = 0; i < read_params.start_key.size(); ++i) {
         int j = 0;
@@ -1034,6 +1050,7 @@ void Reader::_init_load_bf_columns(const ReaderParams& read_params) {
             }
         }
 
+        // TODO(yingchun): max_equal_index will be overwrite?
         if (max_equal_index < j - 1) {
             max_equal_index = j - 1;
         }

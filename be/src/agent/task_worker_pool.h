@@ -102,7 +102,7 @@ public:
     }
 
     TaskWorkerPool(
-            const TaskWorkerType task_worker_type,
+            TaskWorkerType task_worker_type,
             ExecEnv* env,
             const TMasterInfo& master_info);
     virtual ~TaskWorkerPool();
@@ -151,18 +151,18 @@ private:
     void _alter_tablet(
             const TAgentTaskRequest& alter_tablet_request,
             int64_t signature,
-            const TTaskType::type task_type,
+            TTaskType::type task_type,
             TFinishTaskRequest* finish_task_request);
 
     AgentStatus _get_tablet_info(
-            const TTabletId tablet_id,
-            const TSchemaHash schema_hash,
+            TTabletId tablet_id,
+            TSchemaHash schema_hash,
             int64_t signature,
             TTabletInfo* tablet_info);
 
     AgentStatus _move_dir(
-            const TTabletId tablet_id,
-            const TSchemaHash schema_hash,
+            TTabletId tablet_id,
+            TSchemaHash schema_hash,
             const std::string& src,
             int64_t job_id,
             bool overwrite,
@@ -192,6 +192,7 @@ private:
     static FrontendServiceClientCache _master_service_client_cache;
     static std::atomic_ulong _s_report_version;
 
+    // TODO(yingchun): don't use static here, each object should has its own member.
     static Mutex _s_task_signatures_lock;
     static std::map<TTaskType::type, std::set<int64_t>> _s_task_signatures;
 

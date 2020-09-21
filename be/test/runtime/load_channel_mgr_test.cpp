@@ -45,9 +45,9 @@ OLAPStatus close_status;
 int64_t wait_lock_time_ns;
 
 // mock
-DeltaWriter::DeltaWriter(WriteRequest* req, const std::shared_ptr<MemTracker>& mem_tracker,
+DeltaWriter::DeltaWriter(const WriteRequest& req, const std::shared_ptr<MemTracker>& mem_tracker,
                          StorageEngine* storage_engine) :
-        _req(*req) {
+        _req(req) {
 }
 
 DeltaWriter::~DeltaWriter() {
@@ -57,12 +57,12 @@ OLAPStatus DeltaWriter::init() {
     return OLAP_SUCCESS;
 }
 
-OLAPStatus DeltaWriter::open(WriteRequest* req, const std::shared_ptr<MemTracker>& mem_tracker, DeltaWriter** writer) {
+void DeltaWriter::open(const WriteRequest& req, const std::shared_ptr<MemTracker>& mem_tracker, DeltaWriter** writer) {
     if (open_status != OLAP_SUCCESS) {
-        return open_status;
+        return;
     }
+
     *writer = new DeltaWriter(req, mem_tracker, nullptr);
-    return open_status;
 }
 
 OLAPStatus DeltaWriter::write(Tuple* tuple) {
@@ -288,9 +288,8 @@ TEST_F(LoadChannelMgrTest, cancel) {
         PTabletWriterCancelRequest request;
         request.set_allocated_id(&load_id);
         request.set_index_id(4);
-        auto st = mgr.cancel(request);
+        mgr.cancel(request);
         request.release_id();
-        ASSERT_TRUE(st.ok());
     }
 }
 

@@ -43,7 +43,7 @@ using std::vector;
 
 namespace doris {
     
-EngineBatchLoadTask::EngineBatchLoadTask(TPushReq& push_req, 
+EngineBatchLoadTask::EngineBatchLoadTask(const TPushReq& push_req, 
     std::vector<TTabletInfo>* tablet_infos,
     int64_t signature, 
     AgentStatus* res_status) :
@@ -66,7 +66,6 @@ OLAPStatus EngineBatchLoadTask::execute() {
             uint32_t retry_time = 0;
             while (retry_time < PUSH_MAX_RETRY) {
                 status = _process();
-
                 if (status == DORIS_PUSH_HAD_LOADED) {
                     OLAP_LOG_WARNING("transaction exists when realtime push, "
                                         "but unfinished, do not report to fe, signature: %ld",
@@ -232,7 +231,8 @@ AgentStatus EngineBatchLoadTask::_process() {
                 }
             }
             // NOTE: change http_file_path is not good design
-            _push_req.http_file_path = _local_file_path;
+            // TODO(yingchun): seems not used later, so disable this line
+            // _push_req.http_file_path = _local_file_path;
             return Status::OK();
         };
         
@@ -356,6 +356,7 @@ OLAPStatus EngineBatchLoadTask::_delete_data(
 
     OLAPStatus res = OLAP_SUCCESS;
 
+    // TODO(yingchun): use CHECK?
     if (tablet_info_vec == nullptr) {
         LOG(WARNING) << "invalid tablet info parameter which is nullptr pointer.";
         return OLAP_ERR_CE_CMD_PARAMS_ERROR;

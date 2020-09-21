@@ -28,9 +28,7 @@ using std::string;
 using std::vector;
 
 namespace doris {
-RowCursor::RowCursor() :
-        _fixed_len(0),
-        _variable_len(0) {}
+RowCursor::RowCursor() {}
 
 RowCursor::~RowCursor() {
     delete [] _owned_fixed_buf;
@@ -70,19 +68,7 @@ OLAPStatus RowCursor::init(const std::vector<TabletColumn>& schema) {
 }
 
 OLAPStatus RowCursor::init(const TabletSchema& schema, size_t column_count) {
-    if (column_count > schema.num_columns()) {
-        LOG(WARNING) << "Input param are invalid. Column count is bigger than num_columns of schema. "
-                     << "column_count=" << column_count
-                     << ", schema.num_columns=" << schema.num_columns();
-        return OLAP_ERR_INPUT_PARAMETER_ERROR;
-    }
-
-    std::vector<uint32_t> columns;
-    for (size_t i = 0; i < column_count; ++i) {
-        columns.push_back(i);
-    }
-    RETURN_NOT_OK(_init(schema.columns(), columns));
-    return OLAP_SUCCESS;
+    return init(schema.columns(), column_count);
 }
 
 OLAPStatus RowCursor::init(const std::vector<TabletColumn>& schema, size_t column_count) {
@@ -97,14 +83,12 @@ OLAPStatus RowCursor::init(const std::vector<TabletColumn>& schema, size_t colum
     for (size_t i = 0; i < column_count; ++i) {
         columns.push_back(i);
     }
-    RETURN_NOT_OK(_init(schema, columns));
-    return OLAP_SUCCESS;
+    return _init(schema, columns);
 }
 
 OLAPStatus RowCursor::init(const TabletSchema& schema,
                            const vector<uint32_t>& columns) {
-    RETURN_NOT_OK(_init(schema.columns(), columns));
-    return OLAP_SUCCESS;
+    return _init(schema.columns(), columns);
 }
 
 OLAPStatus RowCursor::init_scan_key(const TabletSchema& schema,
@@ -118,6 +102,7 @@ OLAPStatus RowCursor::init_scan_key(const TabletSchema& schema,
     }
 
     std::vector<uint32_t> columns;
+    columns.reserve(scan_key_size);
     for (size_t i = 0; i < scan_key_size; ++i) {
         columns.push_back(i);
     }
@@ -167,10 +152,10 @@ OLAPStatus RowCursor::init_scan_key(const TabletSchema& schema,
     return OLAP_SUCCESS;
 }
 
-OLAPStatus RowCursor::allocate_memory_for_string_type(const TabletSchema& schema) {
+void RowCursor::allocate_memory_for_string_type(const TabletSchema& schema) {
     // allocate memory for string type(char, varchar, hll)
     // The memory allocated in this function is used in aggregate and copy function
-    if (_variable_len == 0) { return OLAP_SUCCESS; }
+    if (_variable_len == 0) { return; }
     DCHECK(_variable_buf == nullptr) << "allocate memory twice";
     _variable_buf = new (nothrow) char[_variable_len];
     memset(_variable_buf, 0, _variable_len);
@@ -182,28 +167,24 @@ OLAPStatus RowCursor::allocate_memory_for_string_type(const TabletSchema& schema
         fixed_ptr = _fixed_buf + _schema->column_offset(cid);
         variable_ptr = column_schema(cid)->allocate_memory(fixed_ptr + 1, variable_ptr);
     }
-    return OLAP_SUCCESS;
 }
 
-OLAPStatus RowCursor::build_max_key() {
+void RowCursor::build_max_key() {
     for (auto cid : _schema->column_ids()) {
         const Field* field = column_schema(cid);
         char* dest = cell_ptr(cid);
         field->set_to_max(dest);
         set_not_null(cid);
     }
-    return OLAP_SUCCESS;
 }
 
-OLAPStatus RowCursor::build_min_key() {
+void RowCursor::build_min_key() {
     for (auto cid : _schema->column_ids()) {
         const Field* field = column_schema(cid);
         char* dest = cell_ptr(cid);
         field->set_to_min(dest);
         set_null(cid);
     }
-
-    return OLAP_SUCCESS;
 }
 
 OLAPStatus RowCursor::from_tuple(const OlapTuple& tuple) {
@@ -235,10 +216,9 @@ OLAPStatus RowCursor::from_tuple(const OlapTuple& tuple) {
 
 OlapTuple RowCursor::to_tuple() const {
     OlapTuple tuple;
-
     for (auto cid : _schema->column_ids()) {
-        if (_schema->column(cid) != nullptr) {
-            const Field* field = column_schema(cid);
+        const Field* field = column_schema(cid);
+        if (field != nullptr) {
             char* src = cell_ptr(cid);
             if (is_null(cid)) {
                 tuple.add_null();

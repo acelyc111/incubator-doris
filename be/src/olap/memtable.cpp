@@ -48,7 +48,6 @@ MemTable::MemTable(int64_t tablet_id, Schema* schema, const TabletSchema* tablet
           _rowset_writer(rowset_writer) {}
 
 MemTable::~MemTable() {
-    delete _skip_list;
 }
 
 MemTable::RowCursorComparator::RowCursorComparator(const Schema* schema) : _schema(schema) {}
@@ -61,13 +60,13 @@ int MemTable::RowCursorComparator::operator()(const char* left, const char* righ
 
 void MemTable::insert(const Tuple* tuple) {
     bool overwritten = false;
-    uint8_t* _tuple_buf = nullptr;
+    uint8_t* tuple_buf = nullptr;
     if (_keys_type == KeysType::DUP_KEYS) {
         // Will insert directly, so use memory from _table_mem_pool
-        _tuple_buf = _table_mem_pool->allocate(_schema_size);
-        ContiguousRow row(_schema, _tuple_buf);
+        tuple_buf = _table_mem_pool->allocate(_schema_size);
+        ContiguousRow row(_schema, tuple_buf);
         _tuple_to_row(tuple, &row, _table_mem_pool.get());
-        _skip_list->Insert((TableKey)_tuple_buf, &overwritten);
+        _skip_list->Insert((TableKey)tuple_buf, &overwritten);
         DCHECK(!overwritten) << "Duplicate key model meet overwrite in SkipList";
         return;
     }
@@ -76,18 +75,18 @@ void MemTable::insert(const Tuple* tuple) {
     // we first allocate from _buffer_mem_pool, and then check whether it already exists in
     // _skiplist.  If it exists, we aggregate the new row into the row in skiplist.
     // otherwise, we need to copy it into _table_mem_pool before we can insert it.
-    _tuple_buf = _buffer_mem_pool->allocate(_schema_size);
-    ContiguousRow src_row(_schema, _tuple_buf);
+    tuple_buf = _buffer_mem_pool->allocate(_schema_size);
+    ContiguousRow src_row(_schema, tuple_buf);
     _tuple_to_row(tuple, &src_row, _buffer_mem_pool.get());
 
-    bool is_exist = _skip_list->Find((TableKey)_tuple_buf, &_hint);
+    bool is_exist = _skip_list->Find((TableKey)tuple_buf, &_hint);
     if (is_exist) {
         _aggregate_two_row(src_row, _hint.curr->key);
     } else {
-        _tuple_buf = _table_mem_pool->allocate(_schema_size);
-        ContiguousRow dst_row(_schema, _tuple_buf);
+        tuple_buf = _table_mem_pool->allocate(_schema_size);
+        ContiguousRow dst_row(_schema, tuple_buf);
         copy_row_in_memtable(&dst_row, src_row, _table_mem_pool.get());
-        _skip_list->InsertWithHint((TableKey)_tuple_buf, is_exist, &_hint);
+        _skip_list->InsertWithHint((TableKey)tuple_buf, is_exist, &_hint);
     }
 
     // Make MemPool to be reusable, but does not free its memory
@@ -119,7 +118,7 @@ OLAPStatus MemTable::flush() {
     int64_t duration_ns = 0;
     {
         SCOPED_RAW_TIMER(&duration_ns);
-        Table::Iterator it(_skip_list);
+        Table::Iterator it(_skip_list.get());
         for (it.SeekToFirst(); it.Valid(); it.Next()) {
             char* row = (char*)it.key();
             ContiguousRow dst_row(_schema, row);

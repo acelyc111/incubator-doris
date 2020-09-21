@@ -1789,6 +1789,7 @@ OLAPStatus SchemaChangeHandler::_add_alter_task(AlterTabletType alter_tablet_typ
                                vector<Version>(), // empty versions
                                alter_tablet_type);
     new_tablet->save_meta();
+
     LOG(INFO) << "successfully add alter task to both base and new";
     return OLAP_SUCCESS;
 }
@@ -1810,6 +1811,7 @@ OLAPStatus SchemaChangeHandler::_save_alter_state(AlterTabletState state,
         return res;
     }
     base_tablet->save_meta();
+
     AlterTabletTaskSharedPtr new_alter_task = new_tablet->alter_task();
     if (new_alter_task == nullptr) {
         LOG(INFO) << "could not find alter task info from new tablet " << new_tablet->full_name();
@@ -1936,6 +1938,7 @@ OLAPStatus SchemaChangeHandler::_convert_historical_rowsets(const SchemaChangePa
             sc_params.new_tablet->release_push_lock();
             goto PROCESS_ALTER_EXIT;
         }
+        // TODO(yingchun): Can we add rs by batch ?
         res = sc_params.new_tablet->add_rowset(new_rowset, false);
         if (res == OLAP_ERR_PUSH_VERSION_ALREADY_EXIST) {
             LOG(WARNING) << "version already exist, version revert occured. "
