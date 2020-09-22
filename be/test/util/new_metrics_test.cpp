@@ -393,7 +393,7 @@ test_registry_cpu{mode="idle"} 48
 test_registry_cpu{mode="guest"} 58
 )", registry.to_prometheus());
         ASSERT_EQ(R"([{"tags":{"metric":"cpu","mode":"guest"},"unit":"percent","value":58},{"tags":{"metric":"cpu","mode":"idle"},"unit":"percent","value":48}])", registry.to_json());
-        ASSERT_EQ(R"([{"metric":"cpu","unit":"percent","values":[{"mode":"guest","value":58},{"mode":"idle","value":48}]}])", registry.to_dense_json());
+        ASSERT_EQ(R"([{"metric":"cpu","unit":"percent","values":[{"mode":"idle","value":48}]},{"metric":"cpu","unit":"percent","values":[{"mode":"guest","value":58}]}])", registry.to_dense_json());
         ASSERT_EQ("", registry.to_core_string());
         registry.deregister_entity(entity);
     }
