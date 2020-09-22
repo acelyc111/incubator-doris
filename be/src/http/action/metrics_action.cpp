@@ -40,6 +40,8 @@ void MetricsAction::handle(HttpRequest* req) {
         str = _metric_registry->to_core_string();
     } else if (type == "json") {
         str = _metric_registry->to_json(with_tablet == "true");
+    } else if (type == "densejson") {
+        str = _metric_registry->to_dense_json(with_tablet == "true");
     } else {
         str = _metric_registry->to_prometheus(with_tablet == "true");
     }

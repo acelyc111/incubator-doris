@@ -71,7 +71,7 @@ const char* unit_name(MetricUnit unit) {
     case MetricUnit::ROWSETS:
         return "rowsets";
     case MetricUnit::CONNECTIONS:
-        return "rowsets";
+        return "connections";
     default:
         return "nounit";
     }
@@ -197,10 +197,11 @@ void MetricRegistry::trigger_all_hooks(bool force) const {
     }
 }
 
-std::string MetricRegistry::to_prometheus(bool with_tablet_metrics) const {
-    std::stringstream ss;
+void MetricRegistry::_collect_metrics(bool with_tablet_metrics, EntityMetricsByType* entity_metrics_by_types) const {
+    DCHECK(entity_metrics_by_types != nullptr);
+    DCHECK(entity_metrics_by_types->empty());
+
     // Reorder by MetricPrototype
-    EntityMetricsByType entity_metrics_by_types;
     std::lock_guard<SpinLock> l(_lock);
     for (const auto& entity : _entities) {
         if (entity.first->_type == MetricEntityType::kTablet && !with_tablet_metrics) {
@@ -210,15 +211,22 @@ std::string MetricRegistry::to_prometheus(bool with_tablet_metrics) const {
         entity.first->trigger_hook_unlocked(false);
         for (const auto& metric : entity.first->_metrics) {
             std::pair<MetricEntity*, Metric*> new_elem = std::make_pair(entity.first.get(), metric.second);
-            auto found = entity_metrics_by_types.find(metric.first);
-            if (found == entity_metrics_by_types.end()) {
-                entity_metrics_by_types.emplace(metric.first, std::vector<std::pair<MetricEntity*, Metric*>>({new_elem}));
+            auto found = entity_metrics_by_types->find(metric.first);
+            if (found == entity_metrics_by_types->end()) {
+                entity_metrics_by_types->emplace(metric.first, std::vector<std::pair<MetricEntity*, Metric*>>({new_elem}));
             } else {
                 found->second.emplace_back(new_elem);
             }
         }
     }
+}
+
+std::string MetricRegistry::to_prometheus(bool with_tablet_metrics) const {
+    EntityMetricsByType entity_metrics_by_types;
+    _collect_metrics(with_tablet_metrics, &entity_metrics_by_types);
+
     // Output
+    std::stringstream ss;
     std::string last_group_name;
     for (const auto& entity_metrics_by_type : entity_metrics_by_types) {
         if (last_group_name.empty() || last_group_name != entity_metrics_by_type.first->group_name) {
@@ -268,18 +276,62 @@ std::string MetricRegistry::to_json(bool with_tablet_metrics) const {
             }
             metric_obj.AddMember("tags", tag_obj, allocator);
             // unit
-            rj::Value unit_val(unit_name(metric.first->unit), allocator);
-            metric_obj.AddMember("unit", unit_val, allocator);
+            metric_obj.AddMember("unit", rj::Value(unit_name(entity_metrics_by_type.first->unit), allocator), allocator);
             // value
             metric_obj.AddMember("value", metric.second->to_json_value(), allocator);
             doc.PushBack(metric_obj, allocator);
         }
     }
 
-    rj::StringBuffer strBuf;
-    rj::Writer<rj::StringBuffer> writer(strBuf);
+    rj::StringBuffer str_buf;
+    rj::Writer<rj::StringBuffer> writer(str_buf);
     doc.Accept(writer);
-    return strBuf.GetString();
+    return str_buf.GetString();
+}
+
+std::string MetricRegistry::to_dense_json(bool with_tablet_metrics) const {
+    EntityMetricsByType entity_metrics_by_types;
+    _collect_metrics(with_tablet_metrics, &entity_metrics_by_types);
+
+    // Output
+    rj::Document doc{rj::kArrayType};
+    rj::Document::AllocatorType& allocator = doc.GetAllocator();
+    for (const auto& entity_metrics_by_type : entity_metrics_by_types) {
+        rj::Value metric_obj(rj::kObjectType);
+        // metric name
+        metric_obj.AddMember("metric", rj::Value(entity_metrics_by_type.first->simple_name().c_str(), allocator), allocator);
+        // metric unit
+        metric_obj.AddMember("unit", rj::Value(unit_name(entity_metrics_by_type.first->unit), allocator), allocator);
+        // values
+        rj::Value metric_values(rj::kArrayType);
+        for (const auto& entity_metric : entity_metrics_by_type.second) {
+            rj::Value metric_value(rj::kObjectType);
+            // MetricPrototype's labels
+            for (auto& label : metric.first->labels) {
+                metric_value.AddMember(
+                        rj::Value(label.first.c_str(), allocator),
+                        rj::Value(label.second.c_str(), allocator),
+                        allocator);
+            }
+            // MetricEntity's labels
+            for (auto& label : entity.first->_labels) {
+                metric_value.AddMember(
+                        rj::Value(label.first.c_str(), allocator),
+                        rj::Value(label.second.c_str(), allocator),
+                        allocator);
+            }
+            // metric value
+            metric_value.AddMember("value", entity_metric.second.to_json_value(), allocator);
+        }
+        metric_obj.AddMember("values", metric_values, allocator);
+
+        doc.PushBack(metric_obj, allocator);
+    }
+
+    rj::StringBuffer str_buf;
+    rj::Writer<rj::StringBuffer> writer(str_buf);
+    doc.Accept(writer);
+    return str_buf.GetString();
 }
 
 std::string MetricRegistry::to_core_string() const {

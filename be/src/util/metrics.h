@@ -380,9 +380,12 @@ public:
 
     std::string to_prometheus(bool with_tablet_metrics = false) const;
     std::string to_json(bool with_tablet_metrics = false) const;
+    std::string to_dense_json(bool with_tablet_metrics = false) const;
     std::string to_core_string() const;
 
 private:
+    void _collect_metrics(bool with_tablet_metrics, EntityMetricsByType* entity_metrics_by_types) const;
+
     const std::string _name;
 
     mutable SpinLock _lock;
