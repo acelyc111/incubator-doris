@@ -371,7 +371,7 @@ test_registry_cpu_idle{name="lable_test"} 28
 test_registry_cpu{name="lable_test",mode="idle"} 38
 )", registry.to_prometheus());
         ASSERT_EQ(R"([{"tags":{"metric":"cpu","mode":"idle","name":"lable_test"},"unit":"percent","value":38}])", registry.to_json());
-        ASSERT_EQ(R"([{"metric":"cpu","unit":"percent","values":[{"name":"lable_test","mode":"idle","value":38}]}])", registry.to_dense_json());
+        ASSERT_EQ(R"([{"metric":"cpu","unit":"percent","values":[{"mode":"idle","name":"lable_test","value":38}]}])", registry.to_dense_json());
         ASSERT_EQ("", registry.to_core_string());
         registry.deregister_entity(entity);
     }

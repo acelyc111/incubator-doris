@@ -276,7 +276,7 @@ std::string MetricRegistry::to_json(bool with_tablet_metrics) const {
             }
             metric_obj.AddMember("tags", tag_obj, allocator);
             // unit
-            metric_obj.AddMember("unit", rj::Value(unit_name(entity_metrics_by_type.first->unit), allocator), allocator);
+            metric_obj.AddMember("unit", rj::Value(unit_name(metric.first->unit), allocator), allocator);
             // value
             metric_obj.AddMember("value", metric.second->to_json_value(), allocator);
             doc.PushBack(metric_obj, allocator);
@@ -302,26 +302,28 @@ std::string MetricRegistry::to_dense_json(bool with_tablet_metrics) const {
         metric_obj.AddMember("metric", rj::Value(entity_metrics_by_type.first->simple_name().c_str(), allocator), allocator);
         // metric unit
         metric_obj.AddMember("unit", rj::Value(unit_name(entity_metrics_by_type.first->unit), allocator), allocator);
+        rj::Value metric_tags(rj::kObjectType);
+        // tags: MetricPrototype's labels
+        for (auto& label : entity_metrics_by_type.first->labels) {
+            metric_tags.AddMember(
+                    rj::Value(label.first.c_str(), allocator),
+                    rj::Value(label.second.c_str(), allocator),
+                    allocator);
+        }
         // values
         rj::Value metric_values(rj::kArrayType);
         for (const auto& entity_metric : entity_metrics_by_type.second) {
-            rj::Value metric_value(rj::kObjectType);
-            // MetricPrototype's labels
-            for (auto& label : metric.first->labels) {
-                metric_value.AddMember(
-                        rj::Value(label.first.c_str(), allocator),
-                        rj::Value(label.second.c_str(), allocator),
-                        allocator);
-            }
-            // MetricEntity's labels
-            for (auto& label : entity.first->_labels) {
+            rj::Value metric_value(metric_tags, allocator);
+            // tags: MetricEntity's labels
+            for (auto& label : entity_metric.first->_labels) {
                 metric_value.AddMember(
                         rj::Value(label.first.c_str(), allocator),
                         rj::Value(label.second.c_str(), allocator),
                         allocator);
             }
             // metric value
-            metric_value.AddMember("value", entity_metric.second.to_json_value(), allocator);
+            metric_value.AddMember("value", entity_metric.second->to_json_value(), allocator);
+            metric_values.PushBack(metric_value, allocator);
         }
         metric_obj.AddMember("values", metric_values, allocator);
 
