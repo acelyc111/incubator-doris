@@ -58,6 +58,7 @@ void set_up() {
     std::vector<StorePath> paths;
     paths.emplace_back(config::storage_root_path, -1);
 
+    config::min_file_descriptor_number = 1000;
     doris::EngineOptions options;
     options.store_paths = paths;
     Status s = doris::StorageEngine::open(options, &k_engine);

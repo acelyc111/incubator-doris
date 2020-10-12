@@ -6,7 +6,7 @@ variables:
   KUBERNETES_MEMORY_REQUEST: 16Gi
 
 before_script:
-  - ulimit -n 60000
+  - ulimit -a
   - echo "Working Directory is $(pwd)"
   - ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime  
   - date -R  
