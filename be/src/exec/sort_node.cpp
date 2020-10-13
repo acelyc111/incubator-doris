@@ -139,7 +139,7 @@ void SortNode::debug_string(int indentation_level, stringstream* out) const {
 }
 
 Status SortNode::sort_input(RuntimeState* state) {
-    RowBatch batch(child(0)->row_desc(), state->batch_size(), mem_tracker());
+    RowBatch batch(child(0)->row_desc(), state->batch_size(), mem_tracker().get());
     bool eos = false;
     do {
         batch.reset();

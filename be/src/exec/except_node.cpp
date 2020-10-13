@@ -50,7 +50,7 @@ Status ExceptNode::open(RuntimeState* state) {
     // initial build hash table, use _child_expr_lists[0] as probe is used for remove duplicted
     _hash_tbl.reset(new HashTable(_child_expr_lists[0], _child_expr_lists[0], _build_tuple_size,
                                   true, _find_nulls, id(), mem_tracker(), 1024));
-    RowBatch build_batch(child(0)->row_desc(), state->batch_size(), mem_tracker());
+    RowBatch build_batch(child(0)->row_desc(), state->batch_size(), mem_tracker().get());
     RETURN_IF_ERROR(child(0)->open(state));
 
     bool eos = false;
@@ -102,7 +102,7 @@ Status ExceptNode::open(RuntimeState* state) {
             temp_tbl->close();
         }
         // probe
-        _probe_batch.reset(new RowBatch(child(i)->row_desc(), state->batch_size(), mem_tracker()));
+        _probe_batch.reset(new RowBatch(child(i)->row_desc(), state->batch_size(), mem_tracker().get()));
         ScopedTimer<MonotonicStopWatch> probe_timer(_probe_timer);
         RETURN_IF_ERROR(child(i)->open(state));
         eos = false;

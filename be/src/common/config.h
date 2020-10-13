@@ -520,6 +520,9 @@ namespace config {
 
     // Whether to continue to start be when load tablet from header failed.
     CONF_Bool(ignore_load_tablet_failure, "false");
+
+    // Soft memory limit as a fraction of hard memory limit.
+    CONF_Double(soft_mem_limit_frac, "0.9");
 } // namespace config
 
 } // namespace doris
