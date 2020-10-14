@@ -1,5 +1,5 @@
 image:
-  name: cr.d.xiaomi.net/doris/doris:1.2
+  name: cr.d.xiaomi.net/doris/doris:1.2-mdh-1.0
 
 variables:
   KUBERNETES_CPU_REQUEST: 6
