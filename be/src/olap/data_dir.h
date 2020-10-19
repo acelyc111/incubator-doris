@@ -121,6 +121,17 @@ public:
 
     Status update_capacity();
 
+    void update_user_data_size(int64_t size);
+
+    std::set<TabletInfo> tablet_set() { return _tablet_set; }
+
+    void disks_compaction_score_increment(int64_t delta);
+    void disks_compaction_score_decrement(int64_t delta);
+    void disks_compaction_num_increment(int32_t delta);
+    void disks_compaction_num_decrement(int32_t delta);
+    AtomicInt64 disks_compaction_score() { return _disks_compaction_score; }
+    AtomicInt32 disks_compaction_num() { return _disks_compaction_num; }
+
 private:
     std::string _cluster_id_path() const { return _path + CLUSTER_ID_PREFIX; }
     Status _init_cluster_id();
@@ -191,6 +202,9 @@ private:
 
     // used in convert process
     bool _convert_old_data_success;
+
+    AtomicInt32 _disks_compaction_num = 0;
+    AtomicInt64 _disks_compaction_score = 0;
 };
 
 } // namespace doris

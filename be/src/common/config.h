@@ -236,20 +236,21 @@ namespace config {
     CONF_Bool(disable_storage_page_cache, "false");
 
     // be policy
+    // whether disable automatic compaction task
+    CONF_mBool(disable_auto_compaction, "false");
+    // check the configuration of auto compaction in seconds when auto compaction disabled
+    CONF_mInt32(check_auto_compaction_interval_seconds, "5");
+
     // CONF_Int64(base_compaction_start_hour, "20");
     // CONF_Int64(base_compaction_end_hour, "7");
-    CONF_mInt32(base_compaction_check_interval_seconds, "60");
     CONF_mInt64(base_compaction_num_cumulative_deltas, "5");
-    CONF_Int32(base_compaction_num_threads_per_disk, "1");
     CONF_mDouble(base_cumulative_delta_ratio, "0.3");
     CONF_mInt64(base_compaction_interval_seconds_since_last_operation, "86400");
     CONF_mInt32(base_compaction_write_mbytes_per_sec, "5");
 
     // cumulative compaction policy: max delta file's size unit:B
-    CONF_mInt32(cumulative_compaction_check_interval_seconds, "10");
     CONF_mInt64(min_cumulative_compaction_num_singleton_deltas, "5");
     CONF_mInt64(max_cumulative_compaction_num_singleton_deltas, "1000");
-    CONF_Int32(cumulative_compaction_num_threads_per_disk, "1");
     CONF_mInt64(cumulative_compaction_budgeted_bytes, "104857600");
     // CONF_Int32(cumulative_compaction_write_mbytes_per_sec, "100");
     // cumulative compaction skips recently published deltas in order to prevent
@@ -259,14 +260,20 @@ namespace config {
 
     // if compaction of a tablet failed, this tablet should not be chosen to
     // compaction until this interval passes.
-    CONF_mInt64(min_compaction_failure_interval_sec, "600") // 10 min
-    // Too many compaction tasks may run out of memory.
-    // This config is to limit the max concurrency of running compaction tasks.
-    // -1 means no limit, and the max concurrency will be:
-    //      C = (cumulative_compaction_num_threads_per_disk + base_compaction_num_threads_per_disk) * dir_num
-    // set it to larger than C will be set to equal to C.
-    // This config can be set to 0, which means to forbid any compaction, for some special cases.
-    CONF_Int32(max_compaction_concurrency, "-1");
+    CONF_mInt64(min_compaction_failure_interval_sec, "600"); // 10 min
+
+    // This config can be set to limit thread number in compaction thread pool.
+    CONF_mInt32(min_compaction_threads, "10");
+    CONF_mInt32(max_compaction_threads, "10");
+
+    // The upper limit of "permits" held by all compaction tasks. This config can be set to limit memory consumption for compaction.
+    CONF_mInt64(total_permits_for_compaction_score, "10000");
+
+    // Compaction task number per disk.
+    CONF_mInt32(compaction_task_num_per_disk, "2");
+
+    // How many rounds of cumulative compaction for each round of base compaction when compaction tasks generation.
+    CONF_mInt32(cumulative_compaction_rounds_for_each_base_compaction_round, "9");
 
     // Threshold to logging compaction trace, in seconds.
     CONF_mInt32(base_compaction_trace_threshold, "10");

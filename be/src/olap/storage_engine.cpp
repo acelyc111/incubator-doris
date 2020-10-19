@@ -132,6 +132,7 @@ StorageEngine::StorageEngine(const EngineOptions& options)
 
 StorageEngine::~StorageEngine() {
     _clear();
+    _compaction_thread_pool->shutdown();
 }
 
 void StorageEngine::load_data_dirs(const std::vector<DataDir*>& data_dirs) {
@@ -326,6 +327,9 @@ OLAPStatus StorageEngine::get_all_data_dir_info(vector<DataDirInfo>* data_dir_in
 void StorageEngine::_start_disk_stat_monitor() {
     for (auto& it : _store_map) {
         it.second->health_check();
+        LOG(INFO) << "path=" << (it.second->get_dir_info()).path
+                << ", disk_compaction_num=" << it.second->disks_compaction_num()
+                << ", disk_compaction_score=" << it.second->disks_compaction_score();
     }
 
     _update_storage_medium_type_count();
@@ -514,7 +518,7 @@ void StorageEngine::_start_clean_fd_cache() {
     VLOG(10) << "end clean file descritpor cache";
 }
 
-void StorageEngine::_perform_cumulative_compaction(DataDir* data_dir) {
+void StorageEngine::_perform_cumulative_compaction(TabletSharedPtr best_tablet) {
     scoped_refptr<Trace> trace(new Trace);
     MonotonicStopWatch watch;
     watch.start();
@@ -525,12 +529,6 @@ void StorageEngine::_perform_cumulative_compaction(DataDir* data_dir) {
     });
     ADOPT_TRACE(trace.get());
     TRACE("start to perform cumulative compaction");
-    TabletSharedPtr best_tablet = _tablet_manager->find_best_tablet_to_compaction(
-            CompactionType::CUMULATIVE_COMPACTION, data_dir);
-    if (best_tablet == nullptr) {
-        return;
-    }
-    TRACE("found best tablet $0", best_tablet->get_tablet_info().tablet_id);
 
     DorisMetrics::instance()->cumulative_compaction_request_total.increment(1);
 
@@ -539,8 +537,8 @@ void StorageEngine::_perform_cumulative_compaction(DataDir* data_dir) {
 
     OLAPStatus res = cumulative_compaction.compact();
     if (res != OLAP_SUCCESS) {
-        best_tablet->set_last_cumu_compaction_failure_time(UnixMillis());
         if (res != OLAP_ERR_CUMULATIVE_NO_SUITABLE_VERSIONS) {
+            best_tablet->set_last_cumu_compaction_failure_time(UnixMillis());
             DorisMetrics::instance()->cumulative_compaction_request_failed.increment(1);
             LOG(WARNING) << "failed to do cumulative compaction. res=" << res
                         << ", table=" << best_tablet->full_name();
@@ -550,7 +548,7 @@ void StorageEngine::_perform_cumulative_compaction(DataDir* data_dir) {
     best_tablet->set_last_cumu_compaction_failure_time(0);
 }
 
-void StorageEngine::_perform_base_compaction(DataDir* data_dir) {
+void StorageEngine::_perform_base_compaction(TabletSharedPtr best_tablet) {
     scoped_refptr<Trace> trace(new Trace);
     MonotonicStopWatch watch;
     watch.start();
@@ -561,12 +559,6 @@ void StorageEngine::_perform_base_compaction(DataDir* data_dir) {
     });
     ADOPT_TRACE(trace.get());
     TRACE("start to perform base compaction");
-    TabletSharedPtr best_tablet = _tablet_manager->find_best_tablet_to_compaction(
-            CompactionType::BASE_COMPACTION, data_dir);
-    if (best_tablet == nullptr) {
-        return;
-    }
-    TRACE("found best tablet $0", best_tablet->get_tablet_info().tablet_id);
 
     DorisMetrics::instance()->base_compaction_request_total.increment(1);
 

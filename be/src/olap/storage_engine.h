@@ -18,36 +18,41 @@
 #ifndef DORIS_BE_SRC_OLAP_STORAGE_ENGINE_H
 #define DORIS_BE_SRC_OLAP_STORAGE_ENGINE_H
 
+#include <condition_variable>
 #include <ctime>
 #include <list>
 #include <map>
 #include <mutex>
-#include <condition_variable>
 #include <set>
 #include <string>
-#include <vector>
 #include <thread>
+#include <vector>
 
-#include <rapidjson/document.h>
 #include <pthread.h>
+#include <rapidjson/document.h>
 
 #include "agent/status.h"
 #include "common/status.h"
 #include "gen_cpp/AgentService_types.h"
 #include "gen_cpp/BackendService_types.h"
 #include "gen_cpp/MasterService_types.h"
+#include "gutil/ref_counted.h"
+#include "olap/compaction_permit_limiter.h"
+#include "olap/fs/fs_util.h"
 #include "olap/olap_common.h"
 #include "olap/olap_define.h"
-#include "olap/tablet.h"
 #include "olap/olap_meta.h"
 #include "olap/options.h"
+#include "olap/rowset/rowset_id_generator.h"
+#include "olap/tablet.h"
 #include "olap/tablet_manager.h"
 #include "olap/tablet_sync_service.h"
-#include "olap/txn_manager.h"
 #include "olap/task/engine_task.h"
-#include "olap/rowset/rowset_id_generator.h"
-#include "olap/fs/fs_util.h"
+#include "olap/txn_manager.h"
 #include "runtime/heartbeat_flags.h"
+#include "util/countdown_latch.h"
+#include "util/thread.h"
+#include "util/threadpool.h"
 
 namespace doris {
 
@@ -223,11 +228,6 @@ private:
     // unused rowset monitor thread
     void* _unused_rowset_monitor_thread_callback(void* arg);
 
-    // base compaction thread process function
-    void* _base_compaction_thread_callback(void* arg, DataDir* data_dir);
-    // cumulative process function
-    void* _cumulative_compaction_thread_callback(void* arg, DataDir* data_dir);
-
     // garbage sweep thread process function. clear snapshot and trash folder
     void* _garbage_sweeper_thread_callback(void* arg);
 
@@ -248,8 +248,8 @@ private:
     void _parse_default_rowset_type();
 
     void _start_clean_fd_cache();
-    void _perform_cumulative_compaction(DataDir* data_dir);
-    void _perform_base_compaction(DataDir* data_dir);
+    void _perform_cumulative_compaction(TabletSharedPtr best_tablet);
+    void _perform_base_compaction(TabletSharedPtr best_tablet);
     // 清理trash和snapshot文件，返回清理后的磁盘使用量
     OLAPStatus _start_trash_sweep(double *usage);
     // 磁盘状态监测。监测unused_flag路劲新的对应root_path unused标识位，
@@ -257,6 +257,9 @@ private:
     // 当磁盘状态为不可用，但未检测到unused标识时，需要从root_path上
     // 重新加载数据。
     void _start_disk_stat_monitor();
+
+    void _compaction_tasks_producer_callback();
+    vector<TabletSharedPtr> _compaction_tasks_generator(CompactionType compaction_type, std::vector<DataDir*> data_dirs);
 
 private:
     struct CompactionCandidate {
@@ -310,12 +313,9 @@ private:
     std::thread _garbage_sweeper_thread;
     // thread to monitor disk stat
     std::thread _disk_stat_monitor_thread;
-    // threads to run base compaction
-    std::vector<std::thread> _base_compaction_threads;
-    // threads to check cumulative
-    std::vector<std::thread> _cumulative_compaction_threads;
     std::thread _fd_cache_clean_thread;
     std::vector<std::thread> _path_gc_threads;
+    scoped_refptr<Thread> _compaction_tasks_producer_thread;
     // threads to scan disk paths
     std::vector<std::thread> _path_scan_threads;
     // threads to run tablet checkpoint
@@ -343,6 +343,18 @@ private:
     RowsetTypePB _default_rowset_type;
 
     HeartbeatFlags* _heartbeat_flags;
+
+    std::unique_ptr<ThreadPool> _compaction_thread_pool;
+
+    CompactionPermitLimiter _permit_limiter;
+
+    std::mutex _tablet_submitted_compaction_mutex;
+    std::map<DataDir*, vector<TTabletId>> _tablet_submitted_compaction;
+
+    AtomicInt32 _wakeup_producer_flag;
+
+    std::mutex _compaction_producer_sleep_mutex;
+    std::condition_variable _compaction_producer_sleep_cv;
 
     DISALLOW_COPY_AND_ASSIGN(StorageEngine);
 };

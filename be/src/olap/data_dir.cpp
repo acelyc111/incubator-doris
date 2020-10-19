@@ -961,4 +961,20 @@ bool DataDir::reach_capacity_limit(int64_t incoming_data_size) {
     }
     return false;
 }
+
+void DataDir::disks_compaction_score_increment(int64_t delta) {
+    _disks_compaction_score += delta;
+}
+
+void DataDir::disks_compaction_score_decrement(int64_t delta) {
+    _disks_compaction_score -= delta;
+}
+
+void DataDir::disks_compaction_num_increment(int32_t delta) {
+    _disks_compaction_num += delta;
+}
+
+void DataDir::disks_compaction_num_decrement(int32_t delta) {
+    _disks_compaction_num -= delta;
+}
 } // namespace doris
