@@ -129,7 +129,7 @@ public:
 
     void do_tablet_meta_checkpoint(DataDir* data_dir);
 
-    void  obtain_all_tablets(vector<TabletInfo> &tablets_info);
+    void  obtain_specific_quantity_tablets(vector<TabletInfo> &tablets_info, int64_t num);
 
 private:
     // Add a tablet pointer to StorageEngine
