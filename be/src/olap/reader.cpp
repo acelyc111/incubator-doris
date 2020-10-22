@@ -854,7 +854,10 @@ COMPARISON_PREDICATE_CONDITION_VALUE(ge, GreaterEqualPredicate)
 
 ColumnPredicate* Reader::_parse_to_predicate(const TCondition& condition) {
     // TODO: not equal and not in predicate is not pushed down
-    int index = _tablet->field_index(condition.column_name);
+    int32_t index = _tablet->field_index(condition.column_name);
+    if (index < 0) {
+        return nullptr;
+    }
     const TabletColumn& column = _tablet->tablet_schema().column(index);
     if (column.aggregation() != FieldAggregationMethod::OLAP_FIELD_AGGREGATION_NONE) {
         return nullptr;

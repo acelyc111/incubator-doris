@@ -99,7 +99,7 @@ public:
     void init_from_pb(const TabletSchemaPB& schema);
     void to_schema_pb(TabletSchemaPB* tablet_meta_pb);
     size_t row_size() const;
-    size_t field_index(const std::string& field_name) const;
+    int32_t field_index(const std::string& field_name) const;
     const TabletColumn& column(size_t ordinal) const;
     const std::vector<TabletColumn>& columns() const;
     inline size_t num_columns() const { return _num_columns; }
@@ -125,6 +125,7 @@ private:
 private:
     KeysType _keys_type = DUP_KEYS;
     std::vector<TabletColumn> _cols;
+    std::unordered_map<std::string, int32_t> _field_name_to_index;
     size_t _num_columns = 0;
     size_t _num_key_columns = 0;
     size_t _num_null_columns = 0;

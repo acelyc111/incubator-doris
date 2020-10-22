@@ -348,17 +348,19 @@ void TabletSchema::init_from_pb(const TabletSchemaPB& schema) {
     _num_key_columns = 0;
     _num_null_columns = 0;
     _cols.clear();
+    _field_name_to_index.clear();
     for (auto& column_pb : schema.column()) {
         TabletColumn column;
         column.init_from_pb(column_pb);
-        _cols.push_back(column);
-        _num_columns++;
         if (column.is_key()) {
             _num_key_columns++;
         }
         if (column.is_nullable()) {
             _num_null_columns++;
         }
+        _field_name_to_index[column.name()] = _num_columns;
+        _cols.emplace_back(std::move(column));
+        _num_columns++;
     }
     _num_short_key_columns = schema.num_short_key_columns();
     _num_rows_per_row_block = schema.num_rows_per_row_block();
@@ -404,17 +406,9 @@ size_t TabletSchema::row_size() const {
     return size;
 }
 
-size_t TabletSchema::field_index(const std::string& field_name) const {
-    bool field_exist = false;
-    int ordinal = -1;
-    for (auto& column : _cols) {
-        ordinal++;
-        if (column.name() == field_name) {
-            field_exist = true;
-            break;
-        }
-    }
-    return field_exist ? ordinal : -1;
+int32_t TabletSchema::field_index(const std::string& field_name) const {
+    const auto& found = _field_name_to_index.find(field_name);
+    return (found == _field_name_to_index.end()) ? -1 : ordinal;
 }
 
 const std::vector<TabletColumn>& TabletSchema::columns() const {
