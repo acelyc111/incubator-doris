@@ -408,7 +408,7 @@ size_t TabletSchema::row_size() const {
 
 int32_t TabletSchema::field_index(const std::string& field_name) const {
     const auto& found = _field_name_to_index.find(field_name);
-    return (found == _field_name_to_index.end()) ? -1 : ordinal;
+    return (found == _field_name_to_index.end()) ? -1 : found->second;
 }
 
 const std::vector<TabletColumn>& TabletSchema::columns() const {

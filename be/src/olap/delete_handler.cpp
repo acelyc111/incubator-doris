@@ -154,7 +154,7 @@ OLAPStatus DeleteConditionHandler::check_condition_valid(
         const TabletSchema& schema,
         const TCondition& cond) {
     // 检查指定列名的列是否存在
-    int32_t field_index = schema->field_index(cond.column_name);
+    int32_t field_index = schema.field_index(cond.column_name);
     if (field_index < 0) {
         OLAP_LOG_WARNING("field is not existent. [field_index=%d]", field_index);
         return OLAP_ERR_DELETE_INVALID_CONDITION;
