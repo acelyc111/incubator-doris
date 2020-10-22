@@ -45,7 +45,7 @@ public class ConnectScheduler {
     private int maxConnections;
     private int numberConnection;
     private AtomicInteger nextConnectionId;
-    private Map<Long, ConnectContext> connectionMap = Maps.newHashMap();
+    private Map<Long, ConnectContext> connectionMap = Maps.newConcurrentMap();
     private Map<String, AtomicInteger> connByUser = Maps.newHashMap();
     private ExecutorService executor = ThreadPoolManager.newDaemonCacheThreadPool(Config.max_connection_scheduler_threads_num, "connect-scheduler-pool");
 
@@ -60,7 +60,7 @@ public class ConnectScheduler {
         numberConnection = 0;
         nextConnectionId = new AtomicInteger(0);
         checkTimer = new Timer("ConnectScheduler Check Timer", true);
-        checkTimer.scheduleAtFixedRate(new TimeoutChecker(), 0, 1000);
+        checkTimer.scheduleAtFixedRate(new TimeoutChecker(), 0, 1000L);
     }
 
     private class TimeoutChecker extends TimerTask {
@@ -177,7 +177,7 @@ public class ConnectScheduler {
                 ConnectProcessor processor = new ConnectProcessor(context);
                 processor.loop();
             } catch (Exception e) {
-                // for unauthrorized access such lvs probe request, may cause exception, just log it in debug level
+                // for unauthorized access such lvs probe request, may cause exception, just log it in debug level
                 if (context.getCurrentUserIdentity() != null) {
                     LOG.warn("connect processor exception because ", e);
                 } else {
