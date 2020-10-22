@@ -421,6 +421,13 @@ const TabletColumn& TabletSchema::column(size_t ordinal) const {
     return _cols[ordinal];
 }
 
+void TabletSchema::init_field_index_for_test() {
+    _field_name_to_index.clear();
+    for (int i = 0; i < _cols.size(); ++i) {
+        _field_name_to_index[_cols[i].name()] = i;
+    }
+}
+
 bool operator==(const TabletColumn& a, const TabletColumn& b) {
     if (a._unique_id != b._unique_id) return false;
     if (a._col_name != b._col_name) return false;

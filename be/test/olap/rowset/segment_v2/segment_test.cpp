@@ -96,6 +96,7 @@ protected:
         res._num_columns = columns.size();
         res._num_key_columns = num_key_columns;
         res._num_short_key_columns = num_short_key_columns != -1 ? num_short_key_columns : num_key_columns;
+        res.init_field_index_for_test();
         return res;
     }
 
@@ -442,7 +443,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             condition.__set_condition_values(vals);
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(&tablet_schema);
-            conditions->append_condition(condition);
+            ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;
@@ -465,7 +466,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             condition.__set_condition_values(vals);
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(&tablet_schema);
-            conditions->append_condition(condition);
+            ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;
@@ -513,7 +514,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             condition.__set_condition_values(vals);
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(&tablet_schema);
-            conditions->append_condition(condition);
+            ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
 
             // the second page read will be pruned by the following delete predicate
             TCondition delete_condition;
@@ -523,7 +524,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             delete_condition.__set_condition_values(vals2);
             std::shared_ptr<Conditions> delete_conditions(new Conditions());
             delete_conditions->set_tablet_schema(&tablet_schema);
-            delete_conditions->append_condition(delete_condition);
+            ASSERT_EQ(OLAP_SUCCESS, delete_conditions->append_condition(delete_condition));
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;
@@ -574,7 +575,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             condition.__set_condition_values(vals);
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(&tablet_schema);
-            conditions->append_condition(condition);
+            ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
             read_opts.conditions = conditions.get();
             std::unique_ptr<RowwiseIterator> iter;
             segment->new_iterator(schema, read_opts, &iter);
@@ -912,7 +913,7 @@ TEST_F(SegmentReaderWriterTest, TestStringDict) {
             condition.__set_condition_values(vals);
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(tablet_schema.get());
-            conditions->append_condition(condition);
+            ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;
@@ -964,7 +965,7 @@ TEST_F(SegmentReaderWriterTest, TestStringDict) {
             condition.__set_condition_values(vals);
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(tablet_schema.get());
-            conditions->append_condition(condition);
+            ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;

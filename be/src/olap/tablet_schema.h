@@ -119,6 +119,11 @@ public:
     inline int32_t sequence_col_idx() const { return _sequence_col_idx; }
 
 private:
+    friend class SegmentReaderWriterTest;
+
+    // Only for unit test
+    void init_field_index_for_test();
+
     friend bool operator==(const TabletSchema& a, const TabletSchema& b);
     friend bool operator!=(const TabletSchema& a, const TabletSchema& b);
 
