@@ -279,7 +279,10 @@ Status RuntimeState::init_buffer_poolstate() {
 }
 
 Status RuntimeState::create_block_mgr() {
+    DCHECK(_block_mgr.get() == NULL);
     DCHECK(_block_mgr2.get() == NULL);
+
+    RETURN_IF_ERROR(BufferedBlockMgr::create(this, config::sorter_block_size, &_block_mgr));
 
     int64_t block_mgr_limit = _query_mem_tracker->limit();
     if (block_mgr_limit < 0) {
