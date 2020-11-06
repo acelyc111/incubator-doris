@@ -81,7 +81,7 @@ struct ReaderParams {
 
 class Reader {
 public:
-    Reader();
+    Reader() = default;
     ~Reader();
 
     // Initialize Reader with tablet, data version and fetch range.
@@ -115,8 +115,8 @@ private:
 
         std::string range;
         std::string end_range;
-        std::vector<RowCursor*> start_keys;
-        std::vector<RowCursor*> end_keys;
+        std::vector<RowCursor*> start_keys;   // TODO(yingchun): should be a cell?
+        std::vector<RowCursor*> end_keys;     // TODO(yingchun): should be a cell?
     };
 
     friend class CollectIterator;
@@ -160,11 +160,10 @@ private:
     std::shared_ptr<MemTracker> _tracker;
     std::unique_ptr<MemPool> _predicate_mem_pool;
     std::set<uint32_t> _load_bf_columns;
-    std::vector<uint32_t> _return_columns;
+    std::vector<uint32_t> _return_columns;   // TODO(yingchun): use set?
     std::vector<uint32_t> _seek_columns;
 
     TabletSharedPtr _tablet;
-    std::vector<RowsetReaderSharedPtr> _rs_readers;
     RowsetReaderContext _reader_context;
     KeysParam _keys_param;
     std::vector<bool> _is_lower_keys_included;
@@ -182,7 +181,7 @@ private:
     bool _need_agg_finalize = true;
     ReaderType _reader_type = READER_QUERY;
     bool _next_delete_flag = false;
-    bool _filter_delete = false;
+    bool _filter_delete = false;  // Whether to delete the filtered rows
     bool _has_sequence_col = false;
     int32_t _sequence_col_idx = -1;
     const RowCursor* _next_key = nullptr;

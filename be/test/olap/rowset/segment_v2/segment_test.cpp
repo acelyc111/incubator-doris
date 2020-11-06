@@ -444,6 +444,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(&tablet_schema);
             ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
+            conditions->normalize();
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;
@@ -467,6 +468,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(&tablet_schema);
             ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
+            conditions->normalize();
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;
@@ -516,6 +518,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(&tablet_schema);
             ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
+            conditions->normalize();
 
             // the second page read will be pruned by the following delete predicate
             TCondition delete_condition;
@@ -526,6 +529,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             std::shared_ptr<Conditions> delete_conditions(new Conditions());
             delete_conditions->set_tablet_schema(&tablet_schema);
             ASSERT_EQ(OLAP_SUCCESS, delete_conditions->append_condition(delete_condition));
+            delete_conditions->normalize();
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;
@@ -579,6 +583,7 @@ TEST_F(SegmentReaderWriterTest, TestIndex) {
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(&tablet_schema);
             ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
+            conditions->normalize();
             read_opts.conditions = conditions.get();
             std::unique_ptr<RowwiseIterator> iter;
             segment->new_iterator(schema, read_opts, &iter);
@@ -931,6 +936,7 @@ TEST_F(SegmentReaderWriterTest, TestStringDict) {
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(tablet_schema.get());
             ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
+            conditions->normalize();
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;
@@ -988,6 +994,7 @@ TEST_F(SegmentReaderWriterTest, TestStringDict) {
             std::shared_ptr<Conditions> conditions(new Conditions());
             conditions->set_tablet_schema(tablet_schema.get());
             ASSERT_EQ(OLAP_SUCCESS, conditions->append_condition(condition));
+            conditions->normalize();
 
             StorageReadOptions read_opts;
             read_opts.stats = &stats;

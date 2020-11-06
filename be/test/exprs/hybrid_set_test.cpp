@@ -326,7 +326,7 @@ TEST_F(HybridSetTest, string) {
     b.len = 5;
     ASSERT_FALSE(set->find(&b));
 }
-TEST_F(HybridSetTest, timestamp) {
+TEST_F(HybridSetTest, DISABLED_timestamp) {
     CpuInfo::init();
 
     HybridSetBase* set = HybridSetBase::create_set(TYPE_DATETIME);

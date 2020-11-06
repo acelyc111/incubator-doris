@@ -495,7 +495,7 @@ set(BUILD_SHARED_LIBS OFF)
 
 if (${MAKE_TEST} STREQUAL "ON")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -DGTEST_USE_OWN_TR1_TUPLE=0")
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage -lgcov")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
     add_definitions(-DBE_TEST)
 endif ()
 

@@ -401,6 +401,7 @@ OLAPStatus Reader::_capture_rs_readers(const ReaderParams& read_params) {
 
 OLAPStatus Reader::_init_params(const ReaderParams& read_params) {
     read_params.check_validation();
+    LOG(WARNING) << read_params.to_string();
 
     _aggregation = read_params.aggregation;
     _need_agg_finalize = read_params.need_agg_finalize;
@@ -500,8 +501,8 @@ OLAPStatus Reader::_init_return_columns(const ReaderParams& read_params) {
 
 void Reader::_init_seek_columns() {
     std::unordered_set<uint32_t> column_set(_return_columns.begin(), _return_columns.end());
-    for (auto& it : _conditions.columns()) {
-        column_set.insert(it.first);
+    for (auto& it : _conditions.sorted_conds()) {
+        column_set.insert(it->col_index());
     }
     size_t max_key_column_count = 0;
     for (const auto& key : _keys_param.start_keys) {
@@ -590,6 +591,7 @@ void Reader::_init_conditions_param(const ReaderParams& read_params) {
             }
         }
     }
+    _conditions.normalize();
 }
 
 #define COMPARISON_PREDICATE_CONDITION_VALUE(NAME, PREDICATE)                              \

@@ -224,8 +224,8 @@ Status SegmentIterator::_get_row_ranges_by_column_conditions() {
 Status SegmentIterator::_get_row_ranges_from_conditions(RowRanges* condition_row_ranges) {
     std::set<int32_t> cids;
     if (_opts.conditions != nullptr) {
-        for (auto& column_condition : _opts.conditions->columns()) {
-            cids.insert(column_condition.first);
+        for (auto& column_condition : _opts.conditions->sorted_conds()) {
+            cids.insert(column_condition->col_index());
         }
     }
     // first filter data by bloom filter index
@@ -262,8 +262,8 @@ Status SegmentIterator::_get_row_ranges_from_conditions(RowRanges* condition_row
     // final filter data with delete conditions
     for (auto& delete_condition : _opts.delete_conditions) {
         RowRanges delete_condition_row_ranges = RowRanges::create_single(0);
-        for (auto& delete_column_condition : delete_condition->columns()) {
-            const int32_t cid = delete_column_condition.first;
+        for (auto& delete_column_condition : delete_condition->sorted_conds()) {
+            const int32_t cid = delete_column_condition->col_index();
             CondColumn* column_cond = nullptr;
             if (_opts.conditions != nullptr) {
                 column_cond = _opts.conditions->get_column(cid);
