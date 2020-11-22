@@ -153,9 +153,8 @@ ColumnWriter::~ColumnWriter() {
     SAFE_DELETE(_is_present);
     SAFE_DELETE(_bf);
 
-    for (std::vector<ColumnWriter*>::iterator it = _sub_writers.begin();
-            it != _sub_writers.end(); ++it) {
-        SAFE_DELETE(*it);
+    for (const auto& sub_writer : _sub_writers) {
+        SAFE_DELETE(sub_writer);
     }
 }
 
@@ -233,7 +232,6 @@ OLAPStatus ColumnWriter::write(RowCursor* row_cursor) {
     OLAPStatus res = OLAP_SUCCESS;
 
     bool is_null = row_cursor->is_null(_column_id);
-    char* buf = row_cursor->cell_ptr(_column_id);
     if (_is_present) {
         res = _is_present->write(is_null);
 
@@ -241,6 +239,8 @@ OLAPStatus ColumnWriter::write(RowCursor* row_cursor) {
             _is_found_nulls = true;
         }
     }
+
+    char* buf = row_cursor->cell_ptr(_column_id);
 
     if (is_bf_column()) {
         if (!is_null) {
@@ -262,7 +262,7 @@ OLAPStatus ColumnWriter::write(RowCursor* row_cursor) {
 }
 
 OLAPStatus ColumnWriter::flush() {
-    return _is_present->flush();
+    return _is_present->flush();    // TODO(yingchun)： 为什么只flush _is_present？
 }
 
 OLAPStatus ColumnWriter::create_row_index_entry() {
@@ -290,9 +290,9 @@ OLAPStatus ColumnWriter::create_row_index_entry() {
         }
     }
 
-    for (std::vector<ColumnWriter*>::iterator it = _sub_writers.begin();
-            it != _sub_writers.end(); ++it) {
-        if (OLAP_SUCCESS != (res = (*it)->create_row_index_entry())) {
+    // TODO(yingchun): 子列是什么?
+    for (const auto& sub_writer : _sub_writers) {
+        if (OLAP_SUCCESS != (res = sub_writer->create_row_index_entry())) {
             OLAP_LOG_WARNING("fail to create sub column's index.");
             return res;
         }
@@ -309,9 +309,8 @@ uint64_t ColumnWriter::estimate_buffered_memory() {
         result += _bf_index.estimate_buffered_memory();
     }
 
-    for (std::vector<ColumnWriter*>::iterator it = _sub_writers.begin();
-            it != _sub_writers.end(); ++it) {
-        result += (*it)->estimate_buffered_memory();
+    for (const auto& sub_writer : _sub_writers) {
+        result += sub_writer->estimate_buffered_memory();
     }
 
     return result;
