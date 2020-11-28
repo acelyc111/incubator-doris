@@ -29,6 +29,7 @@ namespace doris {
 class ReadOnlyFileStream;
 class PositionProvider;
 
+// TODO(yingchun): 能否使用模板，不用int64_t
 class RunLengthIntegerReader {
 public:
     explicit RunLengthIntegerReader(ReadOnlyFileStream* input, bool is_singed);

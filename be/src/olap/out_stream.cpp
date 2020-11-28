@@ -48,9 +48,8 @@ OutStreamFactory::OutStreamFactory(CompressKind compress_kind, uint32_t stream_b
 }
 
 OutStreamFactory::~OutStreamFactory() {
-    for (std::map<StreamName, OutStream*>::iterator it = _streams.begin(); it != _streams.end();
-         ++it) {
-        SAFE_DELETE(it->second);
+    for (const auto& stream : _streams) {
+        SAFE_DELETE(stream.second);
     }
 }
 
@@ -88,9 +87,8 @@ OutStream::~OutStream() {
     SAFE_DELETE(_compressed);
     SAFE_DELETE(_overflow);
 
-    for (std::vector<StorageByteBuffer*>::iterator it = _output_buffers.begin();
-         it != _output_buffers.end(); ++it) {
-        SAFE_DELETE(*it);
+    for (const auto& output_buffer : _output_buffers) {
+        SAFE_DELETE(output_buffer);
     }
 }
 
@@ -180,8 +178,6 @@ OLAPStatus OutStream::_make_sure_output_buffer() {
 }
 
 OLAPStatus OutStream::_spill() {
-    OLAPStatus res = OLAP_SUCCESS;
-
     if (_current == NULL || _current->position() == sizeof(StreamHead)) {
         return OLAP_SUCCESS;
     }
@@ -197,6 +193,7 @@ OLAPStatus OutStream::_spill() {
         _current->set_position(sizeof(StreamHead));
 
         // 分配compress和overflow，这两个buffer大小其实是一样的
+        OLAPStatus res = OLAP_SUCCESS;
         if (OLAP_SUCCESS != (res = _make_sure_output_buffer())) {
             return res;
         }
@@ -303,6 +300,7 @@ void OutStream::get_position(PositionEntryWriter* index_entry) const {
 uint64_t OutStream::get_stream_length() const {
     uint64_t result = 0;
 
+    // TODO(yingchun): refactor
     for (std::vector<StorageByteBuffer*>::const_iterator it = _output_buffers.begin();
          it != _output_buffers.end(); ++it) {
         result += (*it)->limit();
@@ -314,6 +312,7 @@ uint64_t OutStream::get_stream_length() const {
 uint64_t OutStream::get_total_buffer_size() const {
     uint64_t result = 0;
 
+    // TODO(yingchun): refactor
     for (std::vector<StorageByteBuffer*>::const_iterator it = _output_buffers.begin();
          it != _output_buffers.end(); ++it) {
         result += (*it)->capacity();
@@ -340,8 +339,7 @@ OLAPStatus OutStream::write_to_file(FileHandler* file_handle, uint32_t write_mby
     uint64_t total_stream_len = 0;
     OlapStopWatch speed_limit_watch;
 
-    speed_limit_watch.reset();
-
+    // TODO(yingchun): refactor
     for (std::vector<StorageByteBuffer*>::const_iterator it = _output_buffers.begin();
          it != _output_buffers.end(); ++it) {
         VLOG(10) << "write stream begin:" << file_handle->tell();
@@ -392,6 +390,7 @@ OLAPStatus OutStream::flush() {
 uint32_t OutStream::crc32(uint32_t checksum) const {
     uint32_t result = CRC32_INIT;
 
+    // TODO(yingchun): refactor
     for (std::vector<StorageByteBuffer*>::const_iterator it = _output_buffers.begin();
          it != _output_buffers.end(); ++it) {
         result = olap_crc32(result, (*it)->array(), (*it)->limit());

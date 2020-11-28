@@ -160,6 +160,7 @@ StorageByteBuffer* StorageByteBuffer::mmap(FileHandler* handler, uint64_t offset
     return buf;
 }
 
+// TODO(yingchun): 以下都加上LIKELY分支预测
 OLAPStatus StorageByteBuffer::put(char src) {
     if (_position < _limit) {
         _array[_position++] = src;

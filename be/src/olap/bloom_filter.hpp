@@ -74,11 +74,13 @@ public:
     // Set the bit specified by param, note that uint64_t type contains 2^6 bits
     void set(uint32_t index) {
         _data[index >> 6] |= 1L << (index % 64);
+        // TODO(yingchun): _data[index >> 6] |= 1L << (index & 0x3F);
     }
 
     // Return true if the bit specified by param is set
     bool get(uint32_t index) const {
         return (_data[index >> 6] & (1L << (index % 64))) != 0;
+        // TODO(yingchun): return (_data[index >> 6] >> (1L << (index & 0x3F)));
     }
 
     // Merge with another BitSet by byte, return false when the length is not equal
@@ -96,7 +98,7 @@ public:
 
     // Convert BitSet to string to convenient debug and test
     std::string to_string() const {
-        uint32_t bit_num = _data_len * sizeof(uint64_t) * 8;
+        uint32_t bit_num = bit_num();
         std::string str(bit_num, '0');
         for (uint32_t i = 0; i < bit_num; ++i) {
             if ((_data[i >> 6] & (1L << i)) != 0) {
@@ -177,6 +179,7 @@ public:
 
         for (uint32_t i = 0; i < _hash_function_num; ++i) {
             uint64_t combine_hash = hash1 + hash2 * i;
+            // TODO(yingchun): _bit_num is 2^n, we can use 'xx & (_bit_num - 1)'
             uint32_t index = combine_hash % _bit_num;
             _bit_set.set(index);
         }
@@ -196,6 +199,7 @@ public:
 
         for (uint32_t i = 0; i < _hash_function_num; ++i) {
             uint64_t combine_hash = hash1 + hash2 * i;
+            // TODO(yingchun): _bit_num is 2^n, we can use 'xx & (_bit_num - 1)'
             uint32_t index = combine_hash % _bit_num;
             if (!_bit_set.get(index)) {
                 return false;
@@ -270,6 +274,7 @@ public:
             }
 
             uint32_t combine_hash = hash1 + hash2 * i;
+            // TODO(yingchun): _bit_num is 2^n, we can use 'xx & (_bit_num - 1)'
             uint32_t index = combine_hash % _bit_num;
             stream << index;
         }

@@ -22,6 +22,7 @@
 namespace doris {
 
 PositionEntryWriter::PositionEntryWriter() : _positions_count(0), _statistics_size(0) {
+    memset(_positions, 0, sizeof(_positions));
     memset(_statistics_buffer, 0, sizeof(_statistics_buffer));
 }
 
@@ -122,7 +123,7 @@ OLAPStatus StreamIndexWriter::reset() {
     try {
         _index_to_write.clear();
     } catch (...) {
-        OLAP_LOG_WARNING("add entry to index vector fail");
+        OLAP_LOG_WARNING("clear index vector fail");
         return OLAP_ERR_STL_ERROR;
     }
 
@@ -130,9 +131,10 @@ OLAPStatus StreamIndexWriter::reset() {
 }
 
 size_t StreamIndexWriter::output_size() {
-    if (_index_to_write.size() == 0) {
+    if (_index_to_write.empty()) {
         return sizeof(_header);
     } else {
+        // TODO(yingchun): should sum up, not use multiple
         return _index_to_write.size() * _index_to_write[0].output_size() + sizeof(_header);
     }
 }
@@ -152,7 +154,7 @@ OLAPStatus StreamIndexWriter::write_to_buffer(char* buffer, size_t buffer_size) 
     // write header
     int32_t entry_size = 0;
 
-    if (_index_to_write.size() != 0) {
+    if (!_index_to_write.empty()) {
         // entry size 包含了position和统计信息的长度
         // string列的统计信息可能是0,因此实际上写不进去
         entry_size = _index_to_write[0].output_size();

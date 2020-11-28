@@ -36,6 +36,7 @@ OLAPStatus RunLengthIntegerReader::_read_values() {
     // read the first 2 bits and determine the encoding type
     uint8_t first_byte;
 
+    // TODO(yingchun): LIKELY
     res = _input->read((char*)&first_byte);
     if (OLAP_SUCCESS != res) {
         OLAP_LOG_WARNING("fail to read first byte.[res=%d]", res);

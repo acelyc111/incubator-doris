@@ -22,6 +22,7 @@
 namespace doris {
 
 BloomFilterIndexWriter::~BloomFilterIndexWriter() {
+    // TODO(yingchun): loop
     for (std::vector<BloomFilter*>::iterator it = _bloom_filters.begin();
             it != _bloom_filters.end(); ++it) {
         SAFE_DELETE(*it);
@@ -64,6 +65,7 @@ OLAPStatus BloomFilterIndexWriter::write_to_buffer(OutStream* out_stream) {
     }
 
     // write bloom filters
+    // TODO(yingchun): loop
     for (size_t i = 0; i < _bloom_filters.size(); ++i) {
         uint64_t* data = _bloom_filters[i]->bit_set_data();
         uint32_t data_len = _bloom_filters[i]->bit_set_data_len();
@@ -96,6 +98,7 @@ OLAPStatus BloomFilterIndexWriter::write_to_buffer(char* buffer, size_t buffer_s
     buffer += sizeof(_header);
 
     // write bloom filters
+    // TODO(yingchun): loop
     for (size_t i = 0; i < _bloom_filters.size(); ++i) {
         uint64_t* data = _bloom_filters[i]->bit_set_data();
         uint32_t data_len = _bloom_filters[i]->bit_set_data_len();

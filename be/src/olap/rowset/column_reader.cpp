@@ -706,6 +706,7 @@ OLAPStatus ColumnReader::init(
                                          StreamInfoMessage::PRESENT,
                                          streams);
 
+    // TODO(yingchun): how about when present_stream is nullptr? need to create it too?
     _is_null = reinterpret_cast<bool*>(mem_pool->allocate(size));
     memset(_is_null, 0, size);
 
@@ -752,6 +753,7 @@ OLAPStatus ColumnReader::next_vector(
     column_vector->set_is_null(_is_null);
     if (NULL != _present_reader) {
         column_vector->set_no_nulls(false);
+        // TODO(yingchun): 能否一次性读取一整块
         for (uint32_t i = 0; i < size; ++i) {
             bool value = false;
             res = _present_reader->next((char*)&value);
@@ -776,7 +778,7 @@ uint64_t ColumnReader::_count_none_nulls(uint64_t rows) {
         for (uint64_t counter = 0; counter < rows; ++counter) {
             res = _present_reader->next(reinterpret_cast<char*>(&_value_present));
 
-            if (OLAP_SUCCESS == res && (false == _value_present)) {
+            if (OLAP_SUCCESS == res && !_value_present) {
                 result += 1;
             } else {
                 break;
@@ -887,6 +889,7 @@ OLAPStatus TinyColumnReader::next_vector(
             }
         }
     }
+    // TODO(yingchun): 对于null的cell，此处统计并不准确
     _stats->bytes_read += size;
 
     if (OLAP_ERR_DATA_EOF == res) {

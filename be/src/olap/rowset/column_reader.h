@@ -88,7 +88,7 @@ public:
     // 返回当前行的数据，通过将内部指针移向下一行
     OLAPStatus next(int64_t* value);
     bool eof() {
-        return _eof;
+        return _eof;  // TODO(yingchun): not used
     }
 private:
     bool _eof;
@@ -172,15 +172,15 @@ private:
 class ColumnReader {
 public:
     // 工厂方法, 创建ColumnReader, 如果列有子列, 递归创建sub reader
-    // 如果需要读取的列在segment_columns中不存在, 则:
+    // 如果需要读取的列在segment_included中不存在, 则:
     //     1. 如果列允许Null值, 则创建一个NullValueReader
     //     2. 如果列不允许Null值, 但有默认值, 则创建一个DefaultValueReader
     //     3. 否则创建失败
     // Input:
     //     column_id - 需要创建的列在columns中的位置
     //     columns - 表的schema
-    //     included - 需要创建的列, 如果某列的unique id在included中则创建
-    //     segment_columns - segment中所有column的unique id组成的集合
+    //     included - 需要创建的列, 如果该列的unique id在included中则创建
+    //     segment_included - segment中所有column的unique id组成的集合
     //     encodings - 列的编码信息, 使用encodings[_column_unique_id]访问
     static ColumnReader* create(uint32_t column_id,
             const TabletSchema& schema,
@@ -261,9 +261,10 @@ public:
         switch (_type) {
             case OLAP_FIELD_TYPE_TINYINT: {
                 _values = reinterpret_cast<void*>(mem_pool->allocate(size * sizeof(int8_t)));
-                int32_t value = 0;
+                int8_t value = 0;
                 std::stringstream ss(_default_value);
                 ss >> value;
+                // TODO(yingchun): 向量化
                 for (int i = 0; i < size; ++i) {
                     ((int8_t*)_values)[i] = value;
                 }
@@ -534,6 +535,7 @@ public:
 
         column_vector->set_col_data(_values);
         if (column_vector->no_nulls()) {
+            // TODO(yingchun): 能否一次性读取一整块
             for (uint32_t i = 0; i < size; ++i) {
                 int64_t value = 0;
                 res = _reader.next(&value);
@@ -545,6 +547,7 @@ public:
         } else {
             bool* is_null = column_vector->is_null();
             for (uint32_t i = 0; i < size; ++i) {
+                // TODO(yingchun): 能否使用T而不是int64_t
                 int64_t value = 0;
                 if (!is_null[i]) {
                     res = _reader.next(&value);
@@ -552,6 +555,7 @@ public:
                         break;
                     }
                 }
+                // TODO(yingchun): null值也占据了一个64bit
                 _values[i] = value;
             }
         }

@@ -85,7 +85,6 @@ OLAPStatus RunLengthByteWriter::write(char value) {
             }
         } else {
             res = _write_values();
-
             if (OLAP_SUCCESS == res) {
                 _literals[0] = value;
                 _num_literals = 1;
@@ -104,9 +103,9 @@ OLAPStatus RunLengthByteWriter::write(char value) {
                 _repeat = true;
                 _num_literals++;
             } else {
+                DCHECK_GT(_num_literals + 1, MIN_REPEAT_SIZE);
                 _num_literals -= MIN_REPEAT_SIZE - 1;
                 res = _write_values();
-
                 if (OLAP_SUCCESS == res) {
                     _literals[0] = value;
                     _repeat = true;
@@ -127,9 +126,7 @@ OLAPStatus RunLengthByteWriter::write(char value) {
 }
 
 OLAPStatus RunLengthByteWriter::flush() {
-    OLAPStatus res;
-
-    res = _write_values();
+    OLAPStatus res = _write_values();
     if (OLAP_SUCCESS != res) {
         return res;
     }

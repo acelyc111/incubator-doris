@@ -169,7 +169,7 @@ public:
                 char value = *reinterpret_cast<const char*>(cell.cell_ptr());
                 res = _writer->write(value);
                 if (res != OLAP_SUCCESS) {
-                    LOG(WARNING) << "fail to write double, res=" << res;
+                    LOG(WARNING) << "fail to write byte, res=" << res;
                     return res;
                 }
             }
@@ -475,6 +475,7 @@ private:
     OLAPStatus _finalize_direct_encoding();
 private:
     bool _use_dictionary_encoding;
+    // TODO(yingchun): these info hasn't been used, dict encode will not enable
     std::vector<uint32_t> _string_id;
     std::vector<std::string> _string_keys;
     StringDict _string_dict;
@@ -488,6 +489,7 @@ private:
     DISALLOW_COPY_AND_ASSIGN(VarStringColumnWriter);
 };
 
+// TODO(yingchun): Seems no difference with VarStringColumnWriter, can we remove it?
 // 特例化一下VarStringColumnWriter, 在write的时候提取数据再写入
 class FixLengthStringColumnWriter : public VarStringColumnWriter {
 public:

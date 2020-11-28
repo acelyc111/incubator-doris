@@ -33,6 +33,7 @@ OLAPStatus RunLengthByteReader::_read_values() {
     _used = 0;
     char control_byte = 0;
 
+    // TODO(yingchun): LIKELY
     res = _input->read(&control_byte);
     if (OLAP_SUCCESS != res) {
         OLAP_LOG_WARNING("fail to read control byte.[res = %d]", res);
@@ -103,6 +104,7 @@ OLAPStatus RunLengthByteReader::seek(PositionProvider* position) {
         return res;
     }
 
+    // TODO(yingchun): what does is mean?
     int64_t consumed = position->get_next();
 
     if (consumed != 0) {

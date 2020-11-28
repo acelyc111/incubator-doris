@@ -342,16 +342,14 @@ OLAPStatus ColumnWriter::finalize(ColumnDataHeaderMessage* header) {
         }
     }
 
-    char* index_buf = NULL;
-    // char* index_statistic_buf = NULL;
     // 写index的pb
     size_t pb_size = _index.output_size();
-    index_buf = new(std::nothrow) char[pb_size];
-    ColumnMessage* column = NULL;
+    char* index_buf = new(std::nothrow) char[pb_size];
     
     if (OLAP_SUCCESS != _index.write_to_buffer(index_buf, pb_size)) {
         OLAP_LOG_WARNING("fail to serialize index");
         res = OLAP_ERR_SERIALIZE_PROTOBUF_ERROR;
+        // TODO(yingchun): user SCOPE DEFER
         goto FINALIZE_EXIT;
     }
 
@@ -386,6 +384,7 @@ OLAPStatus ColumnWriter::finalize(ColumnDataHeaderMessage* header) {
 
     // 在Segment头中记录一份Schema信息
     // 这样使得修改表的Schema后不影响对已存在的Segment中的数据读取
+    ColumnMessage* column = NULL;
     column = header->add_column();
     column->set_name(_column.name());
     column->set_type(TabletColumn::get_string_by_field_type(_column.type()));
@@ -426,9 +425,8 @@ void ColumnWriter::get_bloom_filter_info(bool* has_bf_column,
         return;
     }
 
-    for (std::vector<ColumnWriter*>::iterator it = _sub_writers.begin();
-            it != _sub_writers.end(); ++it) {
-        (*it)->get_bloom_filter_info(has_bf_column, bf_hash_function_num, bf_bit_num);
+    for (const auto& sub_writer : _sub_writers) {
+        sub_writer->get_bloom_filter_info(has_bf_column, bf_hash_function_num, bf_bit_num);
         if (*has_bf_column) {
             return;
         }
