@@ -104,6 +104,7 @@ void DownloadAction::handle_error_log(HttpRequest* req, const std::string& file_
 }
 
 void DownloadAction::handle(HttpRequest* req) {
+    // TODO reduce log
     LOG(INFO) << "accept one download request " << req->debug_string();
 
     // add tid to cgroup in order to limit read bandwidth
@@ -119,6 +120,7 @@ void DownloadAction::handle(HttpRequest* req) {
     }
 
     if (_download_type == ERROR_LOG) {
+        // TODO compress
         handle_error_log(req, file_path);
     } else if (_download_type == NORMAL) {
         handle_normal(req, file_path);
