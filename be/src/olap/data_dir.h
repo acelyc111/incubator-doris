@@ -126,7 +126,7 @@ public:
 
     void update_user_data_size(int64_t size);
 
-    std::set<TabletInfo> tablet_set() { return _tablet_set; }
+    size_t tablet_size() const;
 
     void disks_compaction_score_increment(int64_t delta);
 
