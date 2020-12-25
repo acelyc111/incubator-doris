@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "common/logging.h"
 #include "gen_cpp/olap_file.pb.h"
 #include "olap/olap_common.h"
 #include "olap/olap_cond.h"
@@ -224,11 +225,25 @@ bool DeleteHandler::_parse_condition(const std::string& condition_str, TConditio
     return true;
 }
 
+void DeleteHandler::_merge_del_conds() {
+    _merged_del_conds.filter_version = _version;
+    _merged_del_conds.del_cond = new(std::nothrow) Conditions();
+    CHECK(_merged_del_conds.del_cond != nullptr) << "fail to malloc Conditions. size=" << sizeof(Conditions);
+    _merged_del_conds.del_cond->set_tablet_schema(_schema);
+
+    for (const auto& del_cond : _del_conds) {
+        DCHECK_LE(del_cond.filter_version, _version);
+        _merged_del_conds.del_cond->merge_condition(del_cond.del_cond->sorted_conds());
+    }
+}
+
 OLAPStatus DeleteHandler::init(const TabletSchema& schema,
                                const DelPredicateArray& delete_conditions, int64_t version) {
     DCHECK(!_is_inited) << "reinitialize delete handler.";
     DCHECK(version >= 0) << "invalid parameters. version=" << version;
 
+    _version = version;
+    _schema = &schema;
     for (const auto& delete_condition : delete_conditions) {
         // 跳过版本号大于version的过滤条件
         if (delete_condition.version() > version) {
@@ -279,6 +294,19 @@ OLAPStatus DeleteHandler::init(const TabletSchema& schema,
         _del_conds.push_back(temp);
     }
 
+    for (auto& del_cond : _del_conds) {
+        del_cond.del_cond->normalize();
+    }
+
+    // Do lower cost evaluation at first.
+    std::sort(_del_conds.begin(), _del_conds.end(),
+              [] (const DeleteConditions& left,
+                  const DeleteConditions& right) {
+                  return left.del_cond->eval_cost() < right.del_cond->eval_cost();
+              });
+
+    // _merge_del_conds();
+
     _is_inited = true;
 
     return OLAP_SUCCESS;
@@ -309,11 +337,13 @@ void DeleteHandler::finalize() {
         return;
     }
 
+    delete _merged_del_conds.del_cond;
     for (auto& cond : _del_conds) {
         cond.del_cond->finalize();
         delete cond.del_cond;
     }
     _del_conds.clear();
+
     _is_inited = false;
 }
 

@@ -59,13 +59,13 @@ Status Segment::new_iterator(const Schema& schema, const StorageReadOptions& rea
     read_options.stats->total_segment_number++;
     // trying to prune the current segment by segment-level zone map
     if (read_options.conditions != nullptr) {
-        for (auto& column_condition : read_options.conditions->columns()) {
-            int32_t column_id = column_condition.first;
+        for (auto& column_condition : read_options.conditions->sorted_conds()) {
+            int32_t column_id = column_condition->col_index();
             if (_column_readers[column_id] == nullptr ||
                 !_column_readers[column_id]->has_zone_map()) {
                 continue;
             }
-            if (!_column_readers[column_id]->match_condition(column_condition.second)) {
+            if (!_column_readers[column_id]->match_condition(column_condition)) {
                 // any condition not satisfied, return.
                 iter->reset(new EmptySegmentIterator(schema));
                 read_options.stats->filtered_segment_number++;
