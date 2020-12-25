@@ -773,7 +773,6 @@ TEST_F(TestTimestampedVersionTracker, get_stale_version_path_json_doc) {
     auto time_zone = cctz::local_time_zone();
     auto tp = std::chrono::system_clock::now();
     auto time_zone_str = cctz::format("%z", tp, time_zone);
-    std::cout << "time_zone.name: " << time_zone.name() << std::endl;
 
     std::string expect_result = R"([
     {

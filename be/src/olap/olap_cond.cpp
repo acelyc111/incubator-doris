@@ -873,7 +873,7 @@ int Cond::eval_cost() const {
             return 2 * operand_field->field_size();
         case OP_IN:
         case OP_NOT_IN:
-            return 3 * operand_set->size() * (*operand_set.begin())->field_size();
+            return 3 * operand_set.size() * (*operand_set.begin())->field_size();
         default:
             return 0;
     }

@@ -454,10 +454,11 @@ OLAPStatus Reader::_init_return_columns(const ReaderParams& read_params) {
         if (!_delete_handler.empty() && read_params.aggregation) {
             set<uint32_t> column_set(_return_columns.begin(), _return_columns.end());
             for (const auto& conds : _delete_handler.get_delete_conditions()) {
-                for (const auto& cond_column : conds.del_cond->columns()) {
-                    if (column_set.find(cond_column.first) == column_set.end()) {
-                        column_set.insert(cond_column.first);
-                        _return_columns.push_back(cond_column.first);
+                for (const auto& cond_column : conds.del_cond->sorted_conds()) {
+                    auto cid = cond_column->col_index();
+                    if (column_set.find(cid) == column_set.end()) {
+                        column_set.insert(cid);
+                        _return_columns.push_back(cid);
                     }
                 }
             }
@@ -837,14 +838,14 @@ ColumnPredicate* Reader::_parse_to_predicate(const TCondition& condition) {
 
 void Reader::_init_load_bf_columns(const ReaderParams& read_params) {
     // add all columns with condition to _load_bf_columns
-    for (const auto& cond_column : _conditions.columns()) {
-        if (!_tablet->tablet_schema().column(cond_column.first).is_bf_column()) {
+    for (const auto& cond_column : _conditions.sorted_conds()) {
+        if (!_tablet->tablet_schema().column(cond_column->col_index()).is_bf_column()) {
             continue;
         }
-        for (const auto& cond : cond_column.second->conds()) {
+        for (const auto& cond : cond_column->conds()) {
             if (cond->op == OP_EQ ||
                 (cond->op == OP_IN && cond->operand_set.size() < MAX_OP_IN_FIELD_NUM)) {
-                _load_bf_columns.insert(cond_column.first);
+                _load_bf_columns.insert(cond_column->col_index());
             }
         }
     }

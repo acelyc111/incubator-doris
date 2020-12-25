@@ -270,7 +270,7 @@ Status SegmentIterator::_get_row_ranges_from_conditions(RowRanges* condition_row
             }
             RowRanges single_delete_condition_row_ranges = RowRanges::create_single(num_rows());
             RETURN_IF_ERROR(_column_iterators[cid]->get_row_ranges_by_zone_map(
-                    column_cond, delete_column_condition.second,
+                    column_cond, delete_column_condition,
                     &single_delete_condition_row_ranges));
             RowRanges::ranges_union(delete_condition_row_ranges, single_delete_condition_row_ranges,
                                     &delete_condition_row_ranges);

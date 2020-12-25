@@ -401,7 +401,7 @@ OLAPStatus SegmentReader::_pick_delete_row_groups(uint32_t first_block, uint32_t
                     continue;
                 }
                 StreamIndexReader* index_reader = _indices[unique_column_id];
-                int del_ret = i.second->del_eval(index_reader->entry(j).column_statistic().pair());
+                int del_ret = col_cond->del_eval(index_reader->entry(j).column_statistic().pair());
                 if (DEL_SATISFIED == del_ret) {
                     continue;
                 } else if (DEL_PARTIAL_SATISFIED == del_ret) {

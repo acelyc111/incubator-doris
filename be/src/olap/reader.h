@@ -81,7 +81,7 @@ struct ReaderParams {
 
 class Reader {
 public:
-    Reader() = default;
+    Reader();
     ~Reader();
 
     // Initialize Reader with tablet, data version and fetch range.
@@ -115,8 +115,8 @@ private:
 
         std::string range;
         std::string end_range;
-        std::vector<RowCursor*> start_keys;   // TODO(yingchun): should be a cell?
-        std::vector<RowCursor*> end_keys;     // TODO(yingchun): should be a cell?
+        std::vector<RowCursor*> start_keys;
+        std::vector<RowCursor*> end_keys;
     };
 
     friend class CollectIterator;
@@ -160,10 +160,11 @@ private:
     std::shared_ptr<MemTracker> _tracker;
     std::unique_ptr<MemPool> _predicate_mem_pool;
     std::set<uint32_t> _load_bf_columns;
-    std::vector<uint32_t> _return_columns;   // TODO(yingchun): use set?
+    std::vector<uint32_t> _return_columns;
     std::vector<uint32_t> _seek_columns;
 
     TabletSharedPtr _tablet;
+    std::vector<RowsetReaderSharedPtr> _rs_readers;
     RowsetReaderContext _reader_context;
     KeysParam _keys_param;
     std::vector<bool> _is_lower_keys_included;
