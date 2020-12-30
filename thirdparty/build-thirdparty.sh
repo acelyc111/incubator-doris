@@ -705,7 +705,7 @@ build_js_and_css() {
     check_if_source_exist Bootstrap-3.3.7/
     check_if_source_exist jQuery-3.3.1/
 
-    mkdir $TP_INSTALL_DIR/webroot/
+    mkdir -p $TP_INSTALL_DIR/webroot/
     cd $TP_SOURCE_DIR/
     cp -r $DATATABLES_SOURCE $TP_INSTALL_DIR/webroot/
     cp -r Bootstrap-3.3.7/ $TP_INSTALL_DIR/webroot/
@@ -721,36 +721,36 @@ build_js_and_css() {
 # we just comment it, instead of remove it.
 # build_llvm
 
-build_libunixodbc
-build_libevent
-build_zlib
-build_lz4
-build_bzip
-build_lzo2
-#build_openssl
-#build_boost # must before thrift
-build_protobuf
-build_gflags
-build_gtest
-build_glog
-build_rapidjson
-build_snappy
-build_gperftools
-#build_curl
-build_re2
-#build_mysql
-build_thrift
-build_leveldb
-#build_brpc
-build_rocksdb
-#build_librdkafka
-#build_flatbuffers
-#build_arrow
-#build_s2 ldld::  cannotcannot  linklink  directlydirectly  withwith  dylibdylib//frameworkframework,,  youryour  binarybinary  isis  notnot  anan  allowedallowed  clientclient  ofof  //usrusr//liblib//libcrypto.dyliblibcrypto.dylib  forfor  architecturearchitecture  x86_64x86_64
-#build_bitshuffle objcopy
-build_croaringbitmap
-build_orc
-build_js_and_css
-#build_cctz
+#build_libunixodbc
+#build_libevent
+#build_zlib
+#build_lz4
+#build_bzip
+#build_lzo2
+##build_openssl
+build_boost # must before thrift
+#build_protobuf
+#build_gflags
+#build_gtest
+#build_glog
+#build_rapidjson
+#build_snappy
+#build_gperftools
+build_curl
+#build_re2
+build_mysql
+#build_thrift
+#build_leveldb
+build_brpc
+#build_rocksdb
+build_librdkafka
+build_flatbuffers
+build_arrow
+build_s2 ldld::  cannotcannot  linklink  directlydirectly  withwith  dylibdylib//frameworkframework,,  youryour  binarybinary  isis  notnot  anan  allowedallowed  clientclient  ofof  //usrusr//liblib//libcrypto.dyliblibcrypto.dylib  forfor  architecturearchitecture  x86_64x86_64
+build_bitshuffle objcopy
+#build_croaringbitmap
+#build_orc
+#build_js_and_css
+build_cctz
 
 echo "Finihsed to build all thirdparties"
