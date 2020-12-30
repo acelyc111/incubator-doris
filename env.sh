@@ -22,12 +22,12 @@ if [[ -z ${DORIS_HOME} ]]; then
 fi
 
 # check OS type
-if [[ ! -z "$OSTYPE" ]]; then
-    if [[ "$OSTYPE" != "linux-gnu" ]]; then
-        echo "Error: Unsupported OS type: $OSTYPE"
-        exit 1
-    fi
-fi
+#if [[ ! -z "$OSTYPE" ]]; then
+#    if [[ "$OSTYPE" != "linux-gnu" ]]; then
+#        echo "Error: Unsupported OS type: $OSTYPE"
+#        exit 1
+#    fi
+#fi
 
 # include custom environment variables
 if [[ -f ${DORIS_HOME}/custom_env.sh ]]; then
@@ -84,11 +84,11 @@ MVN_CMD=mvn
 if [[ ! -z ${CUSTOM_MVN} ]]; then
     MVN_CMD=${CUSTOM_MVN}
 fi
-if ! ${MVN_CMD} --version; then
-    echo "Error: mvn is not found"
-    exit 1
-fi
-export MVN_CMD
+#if ! ${MVN_CMD} --version; then
+#    echo "Error: mvn is not found"
+#    exit 1
+#fi
+#export MVN_CMD
 
 CMAKE_CMD=cmake
 if [[ ! -z ${CUSTOM_CMAKE} ]]; then

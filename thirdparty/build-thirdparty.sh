@@ -99,7 +99,7 @@ check_prerequest "automake --version" "automake"
 
 # sudo apt-get install libtool
 # sudo yum install libtool
-check_prerequest "libtoolize --version" "libtool"
+#check_prerequest "libtool --version" "libtool"
 
 # sudo apt-get install binutils-dev
 # sudo yum install binutils-devel
@@ -210,7 +210,7 @@ build_thrift() {
     fi
 
     echo ${TP_LIB_DIR}
-    ./configure CPPFLAGS="-I${TP_INCLUDE_DIR}" LDFLAGS="-L${TP_LIB_DIR} -static-libstdc++ -static-libgcc" LIBS="-lcrypto -ldl -lssl" CFLAGS="-fPIC" \
+    ./configure CPPFLAGS="-I${TP_INCLUDE_DIR} -I/usr/local/opt/openssl/include" LDFLAGS="-L${TP_LIB_DIR} -L/usr/local/opt/openssl/lib -L/usr/local/opt/bison/lib -static-libstdc++ -static-libgcc" LIBS="-lcrypto -ldl -lssl" CFLAGS="-fPIC" \
     --prefix=$TP_INSTALL_DIR --docdir=$TP_INSTALL_DIR/doc --enable-static --disable-shared --disable-tests \
     --disable-tutorial --without-qt4 --without-qt5 --without-csharp --without-erlang --without-nodejs \
     --without-lua --without-perl --without-php --without-php_extension --without-dart --without-ruby \
@@ -257,13 +257,13 @@ build_protobuf() {
     check_if_source_exist $PROTOBUF_SOURCE
     cd $TP_SOURCE_DIR/$PROTOBUF_SOURCE
     rm -fr gmock
-    mkdir gmock && cd gmock && tar xf ${TP_SOURCE_DIR}/googletest-release-1.8.0.tar.gz \
+    mkdir -p gmock && cd gmock && tar xf ${TP_SOURCE_DIR}/googletest-release-1.8.0.tar.gz \
     && mv googletest-release-1.8.0 gtest && cd $TP_SOURCE_DIR/$PROTOBUF_SOURCE && ./autogen.sh
     CXXFLAGS="-fPIC -O2 -I ${TP_INCLUDE_DIR}" \
     LDFLAGS="-L${TP_LIB_DIR} -static-libstdc++ -static-libgcc" \
     ./configure --prefix=${TP_INSTALL_DIR} --disable-shared --enable-static --with-zlib=${TP_INSTALL_DIR}/include
     cd src
-    sed -i 's/^AM_LDFLAGS\(.*\)$/AM_LDFLAGS\1 -all-static/' Makefile
+    sed -i '.bak' 's/^AM_LDFLAGS\(.*\)$/AM_LDFLAGS\1 -all-static/' Makefile
     cd -
     make -j$PARALLEL && make install
 }
@@ -432,7 +432,7 @@ build_boost() {
 
     echo "using gcc : doris : ${CXX} ; " > tools/build/src/user-config.jam
     ./bootstrap.sh --prefix=$TP_INSTALL_DIR
-    ./b2 --toolset=gcc-doris link=static -d0 -j$PARALLEL --without-mpi --without-graph --without-graph_parallel --without-python cxxflags="-std=c++11 -fPIC -I$TP_INCLUDE_DIR -L$TP_LIB_DIR" install
+    ./b2 --toolset=gcc-doris link=static -d0 --without-mpi --without-graph --without-graph_parallel --without-python cxxflags="-std=c++11 -fPIC -I$TP_INCLUDE_DIR -L$TP_LIB_DIR" install
 }
 
 # mysql
@@ -456,7 +456,7 @@ build_mysql() {
 
     # copy headers manually
     rm -rf ../../../installed/include/mysql/
-    mkdir ../../../installed/include/mysql/ -p
+    mkdir -p ../../../installed/include/mysql/
     cp -R ./include/* ../../../installed/include/mysql/
     cp -R ../include/* ../../../installed/include/mysql/
     cp ../libbinlogevents/export/binary_log_types.h ../../../installed/include/mysql/
@@ -514,7 +514,7 @@ build_librdkafka() {
     cd $TP_SOURCE_DIR/$LIBRDKAFKA_SOURCE
 
     CPPFLAGS="-I${TP_INCLUDE_DIR}" \
-    LDFLAGS="-L${TP_LIB_DIR}" \
+    LDFLAGS="-L${TP_LIB_DIR} -L/usr/local/opt/openssl/lib" \
     CFLAGS="-fPIC" \
     ./configure --prefix=$TP_INSTALL_DIR --enable-static --disable-sasl
     make -j$PARALLEL && make install
@@ -592,7 +592,7 @@ build_s2() {
     mkdir -p $BUILD_DIR && cd $BUILD_DIR
     rm -rf CMakeCache.txt CMakeFiles/
     CXXFLAGS="-O3" \
-    LDFLAGS="-L${TP_LIB_DIR} -static-libstdc++ -static-libgcc" \
+    LDFLAGS="-L${TP_LIB_DIR} -static-libstdc++ -static-libgcc -L/usr/local/opt/openssl/lib" \
     $CMAKE_CMD -v -DBUILD_SHARED_LIBS=0 -DCMAKE_INSTALL_PREFIX=$TP_INSTALL_DIR \
     -DCMAKE_INCLUDE_PATH="$TP_INSTALL_DIR/include" \
     -DBUILD_SHARED_LIBS=OFF \
@@ -600,6 +600,7 @@ build_s2() {
     -DWITH_GFLAGS=ON \
     -DGLOG_ROOT_DIR="$TP_INSTALL_DIR/include" \
     -DWITH_GLOG=ON \
+    -DOPENSSL_INCLUDE_DIR="/usr/local/opt/openssl/include" \
     -DCMAKE_LIBRARY_PATH="$TP_INSTALL_DIR/lib;$TP_INSTALL_DIR/lib64" ..
     make -j$PARALLEL && make install
 }
@@ -704,7 +705,7 @@ build_js_and_css() {
     check_if_source_exist Bootstrap-3.3.7/
     check_if_source_exist jQuery-3.3.1/
 
-    mkdir $TP_INSTALL_DIR/webroot/
+    mkdir -p $TP_INSTALL_DIR/webroot/
     cd $TP_SOURCE_DIR/
     cp -r $DATATABLES_SOURCE $TP_INSTALL_DIR/webroot/
     cp -r Bootstrap-3.3.7/ $TP_INSTALL_DIR/webroot/
@@ -720,36 +721,36 @@ build_js_and_css() {
 # we just comment it, instead of remove it.
 # build_llvm
 
-build_libunixodbc
-build_libevent
-build_zlib
-build_lz4
-build_bzip
-build_lzo2
-build_openssl
+#build_libunixodbc
+#build_libevent
+#build_zlib
+#build_lz4
+#build_bzip
+#build_lzo2
+##build_openssl
 build_boost # must before thrift
-build_protobuf
-build_gflags
-build_gtest
-build_glog
-build_rapidjson
-build_snappy
-build_gperftools
+#build_protobuf
+#build_gflags
+#build_gtest
+#build_glog
+#build_rapidjson
+#build_snappy
+#build_gperftools
 build_curl
-build_re2
+#build_re2
 build_mysql
-build_thrift
-build_leveldb
+#build_thrift
+#build_leveldb
 build_brpc
-build_rocksdb
+#build_rocksdb
 build_librdkafka
 build_flatbuffers
 build_arrow
-build_s2
-build_bitshuffle
-build_croaringbitmap
-build_orc
+build_s2 ldld::  cannotcannot  linklink  directlydirectly  withwith  dylibdylib//frameworkframework,,  youryour  binarybinary  isis  notnot  anan  allowedallowed  clientclient  ofof  //usrusr//liblib//libcrypto.dyliblibcrypto.dylib  forfor  architecturearchitecture  x86_64x86_64
+build_bitshuffle objcopy
+#build_croaringbitmap
+#build_orc
+#build_js_and_css
 build_cctz
-build_js_and_css
 
 echo "Finihsed to build all thirdparties"

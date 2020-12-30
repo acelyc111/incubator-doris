@@ -21,6 +21,16 @@ set(LIBRARY_OUTPUT_PATH "${BUILD_DIR}/src/udf_samples")
 # where to put generated binaries
 set(EXECUTABLE_OUTPUT_PATH "${BUILD_DIR}/src/udf_samples")
 
+if(POLICY CMP0042)
+    # https://cmake.org/cmake/help/v3.9/policy/CMP0042.html
+    cmake_policy(SET CMP0042 NEW)
+endif()
+
+if(POLICY CMP0068)
+    # https://cmake.org/cmake/help/v3.9/policy/CMP0068.html
+    cmake_policy(SET CMP0068 NEW)
+endif()
+
 add_library(udfsample SHARED udf_sample.cpp)
 target_link_libraries(udfsample
  -static-libstdc++
