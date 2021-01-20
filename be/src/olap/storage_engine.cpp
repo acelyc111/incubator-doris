@@ -114,7 +114,7 @@ StorageEngine::StorageEngine(const EngineOptions& options)
           _index_stream_lru_cache(NULL),
           _file_cache(nullptr),
           _compaction_mem_tracker(
-                  MemTracker::CreateTracker(-1, "compaction mem tracker(unlimited)")),
+                  MemTracker::CreateTracker(-1, "Compaction")),
           _stop_background_threads_latch(1),
           _tablet_manager(new TabletManager(config::tablet_map_shard_size)),
           _txn_manager(new TxnManager(config::txn_map_shard_size, config::txn_shard_size)),

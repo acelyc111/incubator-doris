@@ -450,6 +450,8 @@ CONF_mInt32(priority_queue_remaining_tasks_increased_frequency, "512");
 // sync tablet_meta when modifying meta
 CONF_mBool(sync_tablet_meta, "false");
 
+CONF_Int64(compaction_max_memory_limit_bytes, "10737418240"); // 10GB
+
 // default thrift rpc timeout ms
 CONF_mInt32(thrift_rpc_timeout_ms, "5000");
 

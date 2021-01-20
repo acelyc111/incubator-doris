@@ -29,7 +29,7 @@ namespace doris {
 Compaction::Compaction(TabletSharedPtr tablet, const std::string& label,
                        const std::shared_ptr<MemTracker>& parent_tracker)
         : _mem_tracker(MemTracker::CreateTracker(-1, label, parent_tracker)),
-          _readers_tracker(MemTracker::CreateTracker(-1, "readers tracker", _mem_tracker)),
+          _readers_tracker(MemTracker::CreateTracker(-1, "RowsetReader", _mem_tracker)),
           _tablet(tablet),
           _input_rowsets_size(0),
           _input_row_num(0),
