@@ -359,6 +359,7 @@ DataStreamSender::DataStreamSender(ObjectPool* pool, int sender_id, const RowDes
                     _channel_shared_ptrs[fragment_id_to_channel_index[fragment_instance_id.lo]]);
         }
     }
+    _name = "DataStreamSender";
 }
 
 // We use the ParttitionRange to compare here. It should not be a member function of PartitionInfo

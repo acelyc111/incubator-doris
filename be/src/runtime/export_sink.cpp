@@ -44,7 +44,9 @@ ExportSink::ExportSink(ObjectPool* pool, const RowDescriptor& row_desc,
           _t_output_expr(t_exprs),
           _bytes_written_counter(nullptr),
           _rows_written_counter(nullptr),
-          _write_timer(nullptr) {}
+          _write_timer(nullptr) {
+    _name = "ExportSink";
+}
 
 ExportSink::~ExportSink() {}
 

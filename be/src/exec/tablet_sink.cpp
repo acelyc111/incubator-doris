@@ -447,6 +447,7 @@ OlapTableSink::OlapTableSink(ObjectPool* pool, const RowDescriptor& row_desc,
     if (!texprs.empty()) {
         *status = Expr::create_expr_trees(_pool, texprs, &_output_expr_ctxs);
     }
+    _name = "OlapTableSink";
 }
 
 OlapTableSink::~OlapTableSink() {

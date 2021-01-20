@@ -41,7 +41,7 @@ BaseScanner::BaseScanner(RuntimeState* state, RuntimeProfile* profile,
           _mem_tracker(new MemTracker()),
 #else
           _mem_tracker(
-                  MemTracker::CreateTracker(-1, "Broker Scanner", state->instance_mem_tracker())),
+                  MemTracker::CreateTracker(-1, "BaseScanner", state->instance_mem_tracker())),
 #endif
           _mem_pool(_mem_tracker.get()),
           _dest_tuple_desc(nullptr),

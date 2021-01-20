@@ -175,7 +175,7 @@ Status ExecNode::prepare(RuntimeState* state) {
     _mem_tracker = MemTracker::CreateTracker(_runtime_profile.get(), -1,
                                              "ExecNode " + _runtime_profile->name(),
                                              state->instance_mem_tracker());
-    _expr_mem_tracker = MemTracker::CreateTracker(-1, "ExecNode Exprs", _mem_tracker);
+    _expr_mem_tracker = MemTracker::CreateTracker(-1, "ExecNode:Exprs", _mem_tracker);
     _expr_mem_pool.reset(new MemPool(_expr_mem_tracker.get()));
     // TODO chenhao
     RETURN_IF_ERROR(Expr::prepare(_conjunct_ctxs, state, row_desc(), expr_mem_tracker()));
