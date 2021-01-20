@@ -441,6 +441,7 @@ Status OlapTableSink::init(const TDataSink& t_sink) {
     _tuple_desc_id = table_sink.tuple_id;
     _schema.reset(new OlapTableSchemaParam());
     RETURN_IF_ERROR(_schema->init(table_sink.schema));
+    // TODO(yingchun): pass _mem_tracker as parent memtracker
     _partition = _pool->add(new OlapTablePartitionParam(_schema, table_sink.partition));
     RETURN_IF_ERROR(_partition->init());
     _location = _pool->add(new OlapTableLocationParam(table_sink.location));

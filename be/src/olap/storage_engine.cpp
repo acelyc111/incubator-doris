@@ -108,7 +108,7 @@ StorageEngine::StorageEngine(const EngineOptions& options)
           _effective_cluster_id(-1),
           _is_all_cluster_id_exist(true),
           _index_stream_lru_cache(NULL),
-          _compaction_mem_tracker(MemTracker::CreateTracker(-1, "compaction mem tracker(unlimited)")),
+          _compaction_mem_tracker(MemTracker::CreateTracker(config::compaction_max_memory_limit_bytes, "Compaction")),
           _tablet_manager(new TabletManager(config::tablet_map_shard_size)),
           _txn_manager(new TxnManager(config::txn_map_shard_size, config::txn_shard_size)),
           _rowset_id_generator(new UniqueRowsetIdGenerator(options.backend_uid)),
@@ -544,7 +544,7 @@ void StorageEngine::_perform_cumulative_compaction(TabletSharedPtr best_tablet) 
 
     DorisMetrics::instance()->cumulative_compaction_request_total.increment(1);
 
-    std::string tracker_label = "cumulative compaction " + std::to_string(syscall(__NR_gettid));
+    std::string tracker_label = "CumulativeCompaction:" + std::to_string(syscall(__NR_gettid));
     CumulativeCompaction cumulative_compaction(best_tablet, tracker_label, _compaction_mem_tracker);
 
     OLAPStatus res = cumulative_compaction.compact();
@@ -574,7 +574,7 @@ void StorageEngine::_perform_base_compaction(TabletSharedPtr best_tablet) {
 
     DorisMetrics::instance()->base_compaction_request_total.increment(1);
 
-    std::string tracker_label = "base compaction " + std::to_string(syscall(__NR_gettid));
+    std::string tracker_label = "BaseCompaction:" + std::to_string(syscall(__NR_gettid));
     BaseCompaction base_compaction(best_tablet, tracker_label, _compaction_mem_tracker);
     OLAPStatus res = base_compaction.compact();
     if (res != OLAP_SUCCESS) {

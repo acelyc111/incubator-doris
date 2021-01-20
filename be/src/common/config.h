@@ -421,6 +421,8 @@ namespace config {
     CONF_Int64(load_process_max_memory_limit_bytes, "107374182400"); // 100GB
     CONF_Int32(load_process_max_memory_limit_percent, "80");    // 80%
 
+    CONF_Int64(compaction_max_memory_limit_bytes, "10737418240"); // 10GB
+
     // update interval of tablet stat cache
     CONF_mInt32(tablet_stat_cache_update_interval_second, "300");
 
