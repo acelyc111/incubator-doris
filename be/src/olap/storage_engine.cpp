@@ -984,14 +984,14 @@ bool StorageEngine::check_rowset_id_in_unused_rowsets(const RowsetId& rowset_id)
 
 void StorageEngine::create_cumulative_compaction(
         TabletSharedPtr best_tablet, std::shared_ptr<CumulativeCompaction>& cumulative_compaction) {
-    std::string tracker_label = "cumulative compaction " + std::to_string(syscall(__NR_gettid));
+    std::string tracker_label = "StorageEngine:CumulativeCompaction:" + std::to_string(syscall(__NR_gettid));
     cumulative_compaction.reset(
             new CumulativeCompaction(best_tablet, tracker_label, _compaction_mem_tracker));
 }
 
 void StorageEngine::create_base_compaction(TabletSharedPtr best_tablet,
                                            std::shared_ptr<BaseCompaction>& base_compaction) {
-    std::string tracker_label = "base compaction " + std::to_string(syscall(__NR_gettid));
+    std::string tracker_label = "StorageEngine:BaseCompaction:" + std::to_string(syscall(__NR_gettid));
     base_compaction.reset(new BaseCompaction(best_tablet, tracker_label, _compaction_mem_tracker));
 }
 

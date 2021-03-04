@@ -248,7 +248,7 @@ Status OlapScanner::get_batch(RuntimeState* state, RowBatch* batch, bool* eof) {
     Tuple* tuple = reinterpret_cast<Tuple*>(tuple_buf);
 
     auto tracker = MemTracker::CreateTracker(state->fragment_mem_tracker()->limit(),
-                                             "OlapScanner",
+                                             "OlapScanner:" + print_id(_state->query_id()),
                                              state->fragment_mem_tracker());
     std::unique_ptr<MemPool> mem_pool(new MemPool(tracker.get()));
 
