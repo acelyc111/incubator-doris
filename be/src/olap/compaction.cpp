@@ -166,7 +166,7 @@ OLAPStatus Compaction::construct_input_rowset_readers() {
         RowsetReaderSharedPtr rs_reader;
         RETURN_NOT_OK(rowset->create_reader(
                 MemTracker::CreateTracker(
-                        -1, std::string("Compaction:RowsetReader:") + rowset->rowset_id().to_string(),
+                        -1, "Compaction:RowsetReader:" + rowset->rowset_id().to_string(),
                         _readers_tracker),
                 &rs_reader));
         _input_rs_readers.push_back(std::move(rs_reader));
