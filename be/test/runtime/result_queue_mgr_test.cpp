@@ -31,7 +31,7 @@
 
 namespace doris {
 
-class ResultQueueMgrTest : public testing::Test {};
+class ResultQueueMgrTest : public BaseTest {};
 
 TEST_F(ResultQueueMgrTest, create_normal) {
     BlockQueueSharedPtr block_queue_t;
@@ -139,9 +139,6 @@ TEST_F(ResultQueueMgrTest, cancel_no_block) {
 } // namespace doris
 
 int main(int argc, char** argv) {
-    doris::InitConfig();
-
     ::testing::InitGoogleTest(&argc, argv);
-    doris::CpuInfo::init();
     return RUN_ALL_TESTS();
 }

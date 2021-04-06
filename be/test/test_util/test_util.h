@@ -20,6 +20,10 @@
 #include <string>
 
 namespace doris {
+class BaseTest : public testing::Test {
+public:
+    BaseTest();
+};
 
 #define LOOP_LESS_OR_MORE(less, more) (AllowSlowTests() ? more : less)
 
