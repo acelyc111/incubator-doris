@@ -49,6 +49,9 @@ using std::vector;
 
 namespace doris {
 
+DEFINE_GAUGE_METRIC_PROTOTYPE_5ARG(schema_change_mem_consumption, MetricUnit::BYTES, "",
+                                   mem_pool_consumption, Labels({{"type", "schema_change"}}));
+
 class RowBlockSorter {
 public:
     explicit RowBlockSorter(RowBlockAllocator* allocator);
@@ -1344,6 +1347,16 @@ bool SchemaChangeWithSorting::_external_sorting(vector<RowsetSharedPtr>& src_row
     add_merged_rows(stats.merged_rows);
     add_filtered_rows(stats.filtered_rows);
     return true;
+}
+
+SchemaChangeHandler::SchemaChangeHandler() : _mem_tracker(MemTracker::CreateTracker(-1, "SchemaChange")) {
+    REGISTER_HOOK_METRIC(schema_change_mem_consumption, [this]() {
+      return _mem_tracker->consumption();
+    });
+}
+
+SchemaChangeHandler::~SchemaChangeHandler() {
+    DEREGISTER_HOOK_METRIC(schema_change_mem_consumption);
 }
 
 OLAPStatus SchemaChangeHandler::process_alter_tablet_v2(const TAlterTabletReqV2& request) {

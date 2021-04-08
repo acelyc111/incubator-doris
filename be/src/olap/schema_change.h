@@ -242,8 +242,8 @@ private:
                                            const TabletColumn& column_schema,
                                            const std::string& value);
 private:
-    SchemaChangeHandler() : _mem_tracker(MemTracker::CreateTracker(-1, "SchemaChange")) {}
-    virtual ~SchemaChangeHandler() {}
+    SchemaChangeHandler();
+    virtual ~SchemaChangeHandler();
     SchemaChangeHandler(const SchemaChangeHandler&) = delete;
     SchemaChangeHandler& operator=(const SchemaChangeHandler&) = delete;
 
