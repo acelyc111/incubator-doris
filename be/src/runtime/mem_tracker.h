@@ -94,9 +94,14 @@ public:
             RuntimeProfile* profile, int64_t byte_limit, const std::string& label = std::string(),
             const std::shared_ptr<MemTracker>& parent = std::shared_ptr<MemTracker>());
 
+    static std::shared_ptr<MemTracker> CreateTracker(
+            IntGauge* consumption_metric, int64_t byte_limit, const std::string& label = std::string(),
+            const std::shared_ptr<MemTracker>& parent = std::shared_ptr<MemTracker>());
+
     // this is used for creating an orphan mem tracker, or for unit test.
     // If a mem tracker has parent, it should be created by `CreateTracker()`
-    MemTracker(int64_t byte_limit = -1, const std::string& label = std::string());
+    MemTracker(int64_t byte_limit = -1, const std::string& label = std::string(),
+               const std::shared_ptr<MemTracker>& parent = std::shared_ptr<MemTracker>(), bool log_usage_if_zero = true);
 
     ~MemTracker();
 
@@ -125,12 +130,13 @@ public:
 
         if (consumption_metric_ != nullptr) {
             RefreshConsumptionFromMetric();
-            return; // TODO(yingchun): why return not update tracker?
         }
         for (auto& tracker : all_trackers_) {
             tracker->consumption_->add(bytes);
             if (tracker->consumption_metric_ == nullptr) {
                 DCHECK_GE(tracker->consumption_->current_value(), 0);
+            } else {
+                RefreshConsumptionFromMetric();
             }
         }
     }
@@ -221,7 +227,6 @@ public:
 
         if (consumption_metric_ != nullptr) {
             RefreshConsumptionFromMetric();
-            return;
         }
         for (auto& tracker : all_trackers_) {
             tracker->consumption_->add(-bytes);
@@ -235,6 +240,8 @@ public:
                 DCHECK_GE(tracker->consumption_->current_value(), 0)
                         << std::endl
                         << tracker->LogUsage(UNLIMITED_DEPTH);
+            } else {
+                RefreshConsumptionFromMetric();
             }
         }
     }
@@ -420,6 +427,11 @@ private:
     /// If 'log_usage_if_zero' is false, this tracker (and its children) will not be
     /// included in LogUsage() output if consumption is 0.
     MemTracker(RuntimeProfile* profile, int64_t byte_limit, const std::string& label,
+               const std::shared_ptr<MemTracker>& parent, bool log_usage_if_zero);
+
+    /// C'tor for tracker that uses consumption_metric as the consumption value.
+    /// Consume()/Release() can still be called.
+    MemTracker(IntGauge* consumption_metric, int64_t byte_limit, const std::string& label,
                const std::shared_ptr<MemTracker>& parent, bool log_usage_if_zero);
 
 private:
