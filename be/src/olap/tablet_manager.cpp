@@ -63,7 +63,7 @@ using strings::Substitute;
 namespace doris {
 
 DEFINE_GAUGE_METRIC_PROTOTYPE_5ARG(tablet_meta_mem_consumption, MetricUnit::BYTES, "",
-                                   mem_pool_consumption, Labels({{"type", "tablet_meta"}}));
+                                   mem_consumption, Labels({{"type", "tablet_meta"}}));
 
 static bool _cmp_tablet_by_create_time(const TabletSharedPtr& a, const TabletSharedPtr& b) {
     return a->creation_time() < b->creation_time();

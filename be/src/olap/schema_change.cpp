@@ -50,7 +50,7 @@ using std::vector;
 namespace doris {
 
 DEFINE_GAUGE_METRIC_PROTOTYPE_5ARG(schema_change_mem_consumption, MetricUnit::BYTES, "",
-                                   mem_pool_consumption, Labels({{"type", "schema_change"}}));
+                                   mem_consumption, Labels({{"type", "schema_change"}}));
 
 class RowBlockSorter {
 public:

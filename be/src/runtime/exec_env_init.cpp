@@ -65,7 +65,7 @@
 namespace doris {
 
 DEFINE_GAUGE_METRIC_PROTOTYPE_5ARG(query_mem_consumption, MetricUnit::BYTES, "",
-                                   mem_pool_consumption, Labels({{"type", "query"}}));
+                                   mem_consumption, Labels({{"type", "query"}}));
 
 Status ExecEnv::init(ExecEnv* env, const std::vector<StorePath>& store_paths) {
     return env->_init(store_paths);

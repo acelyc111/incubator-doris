@@ -85,7 +85,7 @@ namespace doris {
 
 DEFINE_GAUGE_METRIC_PROTOTYPE_2ARG(unused_rowsets_count, MetricUnit::ROWSETS);
 DEFINE_GAUGE_METRIC_PROTOTYPE_5ARG(compaction_mem_consumption, MetricUnit::BYTES, "",
-                                   mem_pool_consumption, Labels({{"type", "compaction"}}));
+                                   mem_consumption, Labels({{"type", "compaction"}}));
 
 StorageEngine* StorageEngine::_s_instance = nullptr;
 
