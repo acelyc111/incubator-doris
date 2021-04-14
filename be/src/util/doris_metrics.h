@@ -33,7 +33,7 @@ namespace doris {
     entity->register_hook(#metric, [&]() { onwer->metric->set_value(func()); });
 
 #define REGISTER_HOOK_METRIC(metric, func)                                                      \
-    REGISTER_HOOK_METRIC(DorisMetrics::instance()->server_entity(), DorisMetrics::instance(), metric, func)
+    REGISTER_ENTITY_HOOK_METRIC(DorisMetrics::instance()->server_entity(), DorisMetrics::instance(), metric, func)
 
 #define DEREGISTER_ENTITY_HOOK_METRIC(entity, name)                                             \
     entity->deregister_metric(&METRIC_##name);                                                  \
