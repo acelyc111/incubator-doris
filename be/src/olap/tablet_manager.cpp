@@ -592,6 +592,9 @@ TabletSharedPtr TabletManager::get_tablet(TTabletId tablet_id, SchemaHash schema
 
 TabletSharedPtr TabletManager::_get_tablet_unlocked(TTabletId tablet_id, SchemaHash schema_hash,
                                                     bool include_deleted, string* err) {
+    SCOPED_CLEANUP({
+        TRACE("got tablet");
+    });
     TabletSharedPtr tablet;
     tablet = _get_tablet_unlocked(tablet_id, schema_hash);
     if (tablet == nullptr && include_deleted) {

@@ -74,6 +74,17 @@ const uint32_t REPORT_TASK_WORKER_COUNT = 1;
 const uint32_t REPORT_DISK_STATE_WORKER_COUNT = 1;
 const uint32_t REPORT_OLAP_TABLE_WORKER_COUNT = 1;
 
+#define INIT_TRACER                                                                             \
+    scoped_refptr<Trace> trace(new Trace);                                                      \
+    MonotonicStopWatch watch;                                                                   \
+    watch.start();                                                                              \
+    SCOPED_CLEANUP({                                                                            \
+        if (watch.elapsed_time() / 1e9 > config::agent_task_trace_threshold_sec) {              \
+            LOG(WARNING) << "Trace:" << std::endl << trace->DumpToString(Trace::INCLUDE_ALL);   \
+        }                                                                                       \
+    });                                                                                         \
+    ADOPT_TRACE(trace.get())
+
 std::atomic_ulong TaskWorkerPool::_s_report_version(time(NULL) * 10000);
 Mutex TaskWorkerPool::_s_task_signatures_lock;
 map<TTaskType::type, set<int64_t>> TaskWorkerPool::_s_task_signatures;
@@ -328,15 +339,7 @@ void TaskWorkerPool::_create_tablet_worker_thread_callback() {
             _tasks.pop_front();
         }
 
-        scoped_refptr<Trace> trace(new Trace);
-        MonotonicStopWatch watch;
-        watch.start();
-        SCOPED_CLEANUP({
-            if (watch.elapsed_time() / 1e9 > config::agent_task_trace_threshold_sec) {
-                LOG(WARNING) << "Trace:" << std::endl << trace->DumpToString(Trace::INCLUDE_ALL);
-            }
-        });
-        ADOPT_TRACE(trace.get());
+        INIT_TRACER();
         TRACE("start to create tablet $0", create_tablet_req.tablet_id);
 
         TStatusCode::type status_code = TStatusCode::OK;
@@ -401,6 +404,9 @@ void TaskWorkerPool::_drop_tablet_worker_thread_callback() {
             drop_tablet_req = agent_task_req.drop_tablet_req;
             _tasks.pop_front();
         }
+
+        INIT_TRACER();
+        TRACE("start to drop tablet $0", drop_tablet_req.tablet_id);
 
         TStatusCode::type status_code = TStatusCode::OK;
         std::vector<string> error_msgs;
